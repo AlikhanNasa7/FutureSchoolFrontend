@@ -4,6 +4,7 @@ import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import axiosInstance from '@/lib/axios';
+import { Plus } from 'lucide-react';
 
 interface SubjectData {
     id: string;
@@ -128,29 +129,34 @@ export default function SubjectDetailPage({
                         </p>
                     </div>
                 </div>
-                <ul className="flex gap-2 font-bold">
-                    {tabs.map(t => {
-                        const active =
-                            pathName.split('/')[
-                                pathName.split('/').length - 1
-                            ] == t.href;
-                        const url = `${parentPath}/${t.href}`;
-                        return (
-                            <Link
-                                key={t.href}
-                                href={url}
-                                className={[
-                                    'px-2 py-1 rounded-md transition-colors',
-                                    active
-                                        ? 'bg-[rgba(246,246,246,1)] text-black'
-                                        : 'text-[rgba(16,16,16,0.4)] hover:bg-gray-100',
-                                ].join(' ')}
-                            >
-                                {t.label}
-                            </Link>
-                        );
-                    })}
-                </ul>
+                <div className='flex justify-between'>
+                    <ul className="flex gap-2 font-bold">
+                        {tabs.map(t => {
+                            const active =
+                                pathName.split('/')[
+                                    pathName.split('/').length - 1
+                                ] == t.href;
+                            const url = `${parentPath}/${t.href}`;
+                            return (
+                                <Link
+                                    key={t.href}
+                                    href={url}
+                                    className={[
+                                        'px-2 py-1 rounded-md transition-colors',
+                                        active
+                                            ? 'bg-[rgba(246,246,246,1)] text-black'
+                                            : 'text-[rgba(16,16,16,0.4)] hover:bg-gray-100',
+                                    ].join(' ')}
+                                >
+                                    {t.label}
+                                </Link>
+                            );
+                        })}
+                    </ul>
+                    <Link href={`/create-test/?subject=${subjectId}`} className='bg-[#694CFD] flex items-center gap-2 px-4 py-1 rounded-md transition-colors text-white font-bold'>
+                        Добавить тест
+                    </Link>
+                </div>
             </div>
             <SubjectContext.Provider value={{ subject, loading, error }}>
                 {children}

@@ -95,7 +95,6 @@ const UserContext = createContext<{
 export function UserProvider({ children }: { children: React.ReactNode }) {
     const [state, dispatch] = useReducer(userReducer, initialState);
 
-    // Load user from localStorage on mount
     useEffect(() => {
         const loadUserFromStorage = () => {
             try {

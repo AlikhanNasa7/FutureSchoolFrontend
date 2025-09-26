@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { FileText, BookOpen, Calendar, User, Link, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { FileText, BookOpen, Calendar, Link, Upload } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import axiosInstance from '@/lib/axios';
 import { AxiosError } from 'axios';
 import Image from 'next/image';
+import { useUserState } from '@/contexts/UserContext';
 interface CourseSectionAddItemModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -17,7 +18,15 @@ type ItemType = 'resource' | 'assignment';
 interface ResourceFormData {
     title: string;
     url: string;
-    type: 'file' | 'link' | 'text' | 'directory';
+    type:
+        | 'file'
+        | 'link'
+        | 'text'
+        | 'directory'
+        | 'document'
+        | 'image'
+        | 'video'
+        | 'meet';
     file?: File | null;
 }
 
@@ -26,6 +35,25 @@ interface AssignmentFormData {
     due_at: string;
     max_grade: number;
     teacher: number;
+    file?: File | null;
+}
+
+const fileTypes = ['image', 'video', 'file'];
+
+// Helper function to get file accept types based on resource type
+function getFileAcceptTypes(type: string): string {
+    switch (type) {
+        case 'image':
+            return 'image/*';
+        case 'video':
+            return 'video/*';
+        case 'file':
+            return '*/*';
+        case 'document':
+            return '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf';
+        default:
+            return '*/*';
+    }
 }
 
 export default function CourseSectionAddItemModal({
@@ -50,7 +78,10 @@ export default function CourseSectionAddItemModal({
         due_at: '',
         max_grade: 100,
         teacher: 0,
+        file: null,
     });
+
+    const { user } = useUserState();
 
     const handleResourceSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -59,7 +90,7 @@ export default function CourseSectionAddItemModal({
         try {
             let response;
 
-            if (resourceForm.type === 'file' && resourceForm.file) {
+            if (fileTypes.includes(resourceForm.type) && resourceForm.file) {
                 // Handle file upload
                 const formData = new FormData();
                 formData.append('course_section', courseSectionId.toString());
@@ -67,6 +98,7 @@ export default function CourseSectionAddItemModal({
                 formData.append('title', resourceForm.title);
                 formData.append('file', resourceForm.file);
 
+                console.log('Form data:', resourceForm.file);
                 console.log('Creating file resource:', {
                     course_section: courseSectionId,
                     type: resourceForm.type,
@@ -121,20 +153,56 @@ export default function CourseSectionAddItemModal({
         setIsSubmitting(true);
 
         try {
-            const assignmentData = {
-                course_section: courseSectionId,
-                teacher: assignmentForm.teacher,
-                title: assignmentForm.title,
-                due_at: assignmentForm.due_at,
-                max_grade: assignmentForm.max_grade,
-            };
+            let response;
 
-            console.log('Creating assignment:', assignmentData);
+            if (assignmentForm.file) {
+                // Handle file upload with FormData
+                const formData = new FormData();
+                formData.append('course_section', courseSectionId.toString());
+                formData.append(
+                    'teacher',
+                    (assignmentForm.teacher || user?.id || 0).toString()
+                );
+                formData.append('title', assignmentForm.title);
+                formData.append('due_at', assignmentForm.due_at);
+                formData.append(
+                    'max_grade',
+                    assignmentForm.max_grade.toString()
+                );
+                formData.append('file', assignmentForm.file);
 
-            const response = await axiosInstance.post(
-                '/assignments/',
-                assignmentData
-            );
+                console.log('Creating assignment with file:', {
+                    course_section: courseSectionId,
+                    teacher: assignmentForm.teacher || user?.id,
+                    title: assignmentForm.title,
+                    due_at: assignmentForm.due_at,
+                    max_grade: assignmentForm.max_grade,
+                    file: assignmentForm.file.name,
+                });
+
+                response = await axiosInstance.post('/assignments/', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+            } else {
+                // Handle assignment without file
+                const assignmentData = {
+                    course_section: courseSectionId,
+                    teacher: assignmentForm.teacher || user?.id,
+                    title: assignmentForm.title,
+                    due_at: assignmentForm.due_at,
+                    max_grade: assignmentForm.max_grade,
+                };
+
+                console.log('Creating assignment:', assignmentData);
+
+                response = await axiosInstance.post(
+                    '/assignments/',
+                    assignmentData
+                );
+            }
+
             console.log('Assignment created successfully:', response.data);
             setSuccess('Assignment created successfully!');
             setTimeout(() => {
@@ -167,6 +235,7 @@ export default function CourseSectionAddItemModal({
             due_at: '',
             max_grade: 100,
             teacher: 0,
+            file: null,
         });
         setError(null);
         setSuccess(null);
@@ -177,6 +246,15 @@ export default function CourseSectionAddItemModal({
         onClose();
     };
 
+    useEffect(() => {
+        setResourceForm(prev => ({
+            ...prev,
+            title: '',
+            url: '',
+            file: null,
+        }));
+    }, [resourceForm.type]);
+
     return (
         <Modal
             isOpen={isOpen}
@@ -185,7 +263,6 @@ export default function CourseSectionAddItemModal({
             maxWidth="max-w-2xl"
         >
             <div className="space-y-6">
-                {/* Item Type Selection */}
                 <div className="flex space-x-4">
                     <button
                         type="button"
@@ -213,7 +290,6 @@ export default function CourseSectionAddItemModal({
                     </button>
                 </div>
 
-                {/* Error and Success Messages */}
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-md p-3">
                         <p className="text-sm text-red-600">{error}</p>
@@ -250,6 +326,52 @@ export default function CourseSectionAddItemModal({
                                     >
                                         <Image
                                             src="/document-icons/document.png"
+                                            alt="File"
+                                            width={40}
+                                            height={40}
+                                        />
+                                    </button>
+                                </li>
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setResourceForm(prev => ({
+                                                ...prev,
+                                                type: 'image',
+                                            }))
+                                        }
+                                        className={`rounded-md transition-all duration-200 ${
+                                            resourceForm.type === 'image'
+                                                ? 'ring-2 ring-blue-500 bg-blue-50 focus:ring-offset-2'
+                                                : 'hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <Image
+                                            src="/document-icons/image.png"
+                                            alt="File"
+                                            width={40}
+                                            height={40}
+                                        />
+                                    </button>
+                                </li>
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setResourceForm(prev => ({
+                                                ...prev,
+                                                type: 'video',
+                                            }))
+                                        }
+                                        className={`rounded-md transition-all duration-200 ${
+                                            resourceForm.type === 'video'
+                                                ? 'ring-2 ring-blue-500 bg-blue-50 focus:ring-offset-2'
+                                                : 'hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <Image
+                                            src="/document-icons/video.png"
                                             alt="File"
                                             width={40}
                                             height={40}
@@ -325,6 +447,29 @@ export default function CourseSectionAddItemModal({
                                         />
                                     </button>
                                 </li>
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setResourceForm(prev => ({
+                                                ...prev,
+                                                type: 'meet',
+                                            }))
+                                        }
+                                        className={`rounded-md transition-all duration-200 ${
+                                            resourceForm.type === 'meet'
+                                                ? 'ring-2 ring-blue-500 bg-blue-50 focus:ring-offset-2'
+                                                : 'hover:bg-gray-50 focus:ring-offset-2'
+                                        }`}
+                                    >
+                                        <Image
+                                            src="/document-icons/meet.png"
+                                            alt="Meet"
+                                            width={40}
+                                            height={40}
+                                        />
+                                    </button>
+                                </li>
                             </ul>
                         </div>
 
@@ -348,7 +493,7 @@ export default function CourseSectionAddItemModal({
                         </div>
 
                         {/* File Upload or URL Input */}
-                        {resourceForm.type === 'file' && (
+                        {fileTypes.includes(resourceForm.type) && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     File *
@@ -364,7 +509,9 @@ export default function CourseSectionAddItemModal({
                                             }))
                                         }
                                         className="absolute inset-0 w-32 h-32 opacity-0 cursor-pointer"
-                                        accept="*/*"
+                                        accept={getFileAcceptTypes(
+                                            resourceForm.type
+                                        )}
                                     />
                                     <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors">
                                         {resourceForm.file ? (
@@ -403,7 +550,8 @@ export default function CourseSectionAddItemModal({
                                 )}
                             </div>
                         )}
-                        {resourceForm.type === 'link' && (
+                        {(resourceForm.type === 'link' ||
+                            resourceForm.type === 'meet') && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     URL *
@@ -421,7 +569,11 @@ export default function CourseSectionAddItemModal({
                                         }
                                         required
                                         className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="https://example.com"
+                                        placeholder={
+                                            resourceForm.type === 'link'
+                                                ? 'https://example.com'
+                                                : 'https://meet.google.com/example'
+                                        }
                                     />
                                 </div>
                             </div>
@@ -518,24 +670,55 @@ export default function CourseSectionAddItemModal({
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Teacher
+                                Assignment File (Optional)
                             </label>
                             <div className="relative">
-                                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
-                                    type="number"
-                                    value={assignmentForm.teacher}
+                                    type="file"
                                     onChange={e =>
                                         setAssignmentForm(prev => ({
                                             ...prev,
-                                            teacher:
-                                                parseInt(e.target.value) || 0,
+                                            file: e.target.files?.[0] || null,
                                         }))
                                     }
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Teacher ID"
+                                    className="absolute inset-0 w-32 h-32 opacity-0 cursor-pointer"
+                                    accept="*/*"
                                 />
+                                <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors">
+                                    {assignmentForm.file ? (
+                                        <div className="text-center">
+                                            <div className="flex items-center justify-center mb-2">
+                                                <FileText className="w-8 h-8 text-blue-500" />
+                                            </div>
+                                            <p className="text-sm text-gray-700 font-medium truncate max-w-48">
+                                                {assignmentForm.file.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {(
+                                                    assignmentForm.file.size /
+                                                    1024
+                                                ).toFixed(1)}{' '}
+                                                KB
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center">
+                                            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-500">
+                                                Click to upload file
+                                            </p>
+                                            <p className="text-xs text-gray-400">
+                                                or drag and drop
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+                            {assignmentForm.file && (
+                                <p className="mt-1 text-sm text-gray-600">
+                                    Selected: {assignmentForm.file.name}
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex justify-end space-x-3 pt-4">

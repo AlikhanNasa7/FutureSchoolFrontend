@@ -17,7 +17,8 @@ import { useUserState } from '@/contexts/UserContext';
 import { modalController } from '@/lib/modalController';
 import axiosInstance from '@/lib/axios';
 import { SharedLinkItem } from './SharedLinkItem';
-
+import Image from 'next/image';
+import Link from 'next/link';
 interface WeekMaterialsPanelProps {
     data: WeekMaterialsData;
     courseSectionId?: number;
@@ -67,19 +68,14 @@ function getStatusIcon(
 }
 
 function getStatusText(
-    status: 'not_started' | 'in_progress' | 'submitted' | 'graded'
+    item
 ) {
-    switch (status) {
-        case 'not_started':
-            return 'Не начато';
-        case 'in_progress':
-            return 'В процессе';
-        case 'submitted':
-            return 'Отправлено';
-        case 'graded':
-            return 'Оценено';
-        default:
-            return 'Не начато';
+    if (item.is_submitted === true) {
+        return 'Сдано';
+    } else if (item.is_available === true) {
+        return 'Начать';
+    } else if (item.is_deadline_passed === true) {
+        return 'Просрочено';
     }
 }
 
@@ -115,51 +111,38 @@ function TaskItem({
     isTeacher: boolean;
     onDelete?: (itemId: string, itemType: 'resource' | 'assignment') => void;
 }) {
+    console.log(item, 'item inside TaskItem');
     return (
         <div className="flex items-center justify-between gap-3 py-3">
             {/* Left side - Icon, label, and status */}
             <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="flex-shrink-0 flex items-center justify-center">
-                    {item.icon ||
-                        getIconByType(
-                            item.type === 'info' ? 'text' : item.type,
-                            32
-                        ) || <FileText className="w-8 h-8 text-gray-500" />}
+                    <Image
+                        src={'/document-icons/assignment.png'}
+                        alt={item.title}
+                        width={32}
+                        height={32}
+                    />
                 </div>
 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                         <span className="text-gray-900 truncate">
-                            {item.label}
+                            {item.title}
                         </span>
-                        {item.status && (
-                            <div className="flex items-center gap-1">
-                                {getStatusIcon(item.status)}
-                                <span className="text-xs px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
-                                    {getStatusText(item.status)}
-                                </span>
-                                {item.score && (
-                                    <span className="text-xs px-2 py-0.5 rounded-md bg-green-100 text-green-600">
-                                        {item.score}
-                                    </span>
-                                )}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-                <a
-                    href={item.actionHref}
+                <Link
                     target="_blank"
+                    href={`/assignments/${item.id}`}
                     className="px-4 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transition-colors"
-                    aria-label={item.actionLabel}
                 >
-                    {item.actionLabel}
-                </a>
+                    {getStatusText(item)}
+                </Link>
 
-                {/* Delete Button */}
                 {isTeacher && onDelete && (
                     <DeleteButton
                         onDelete={() => onDelete(item.id, 'assignment')}

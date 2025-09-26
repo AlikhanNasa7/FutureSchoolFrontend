@@ -5,7 +5,8 @@ export type ModalType =
     | 'course-section-add-item'
     | 'course-section-create'
     | 'file-viewer'
-    | 'confirmation';
+    | 'confirmation'
+    | 'file-upload';
 
 export interface EventModalData {
     title: string;
@@ -41,6 +42,11 @@ export interface ConfirmationModalData {
     confirmVariant?: 'danger' | 'primary' | 'secondary';
     loading?: boolean;
     onConfirm: () => void | Promise<void>;
+}
+
+export interface FileUploadModalData {
+    title?: string;
+    onFileSelect: (file: File) => void;
 }
 
 export interface ModalState {

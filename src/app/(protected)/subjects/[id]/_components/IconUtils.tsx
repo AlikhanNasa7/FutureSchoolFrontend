@@ -69,11 +69,6 @@ export function getIconByType(
 ): React.ReactNode {
     if (!type) return null;
 
-    // If it's a file type and we have a file URL, determine the actual type from extension
-    let displayType = type;
-    if (type === 'file' && file) {
-        displayType = getFileTypeFromExtension(file);
-    }
     const iconMap: Record<IconType, string> = {
         meet: '/document-icons/google-meet.png',
         document: '/document-icons/document.png',
@@ -87,7 +82,7 @@ export function getIconByType(
         file: '/document-icons/document.png',
     };
 
-    const iconPath = iconMap[displayType];
+    const iconPath = iconMap[type];
     if (!iconPath) return null;
 
     return (

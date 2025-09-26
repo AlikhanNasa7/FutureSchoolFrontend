@@ -8,6 +8,7 @@ import CourseSectionAddItemModal from './CourseSectionAddItemModal';
 import CourseSectionCreateModal from './CourseSectionCreateModal';
 import FileViewerModal from './FileViewerModal';
 import ConfirmationModal from './ConfirmationModal';
+import FileUploadModal from './FileUploadModal';
 import type {
     ModalState,
     EventModalData,
@@ -15,6 +16,7 @@ import type {
     CourseSectionCreateModalData,
     FileViewerModalData,
     ConfirmationModalData,
+    FileUploadModalData,
 } from '@/lib/modalController';
 
 export default function ModalProvider() {
@@ -89,6 +91,18 @@ export default function ModalProvider() {
                     data={modalState.data as ConfirmationModalData}
                     isOpen={modalState.isOpen}
                     onClose={() => modalController.close()}
+                />
+            );
+        case 'file-upload':
+            return (
+                <FileUploadModal
+                    isOpen={modalState.isOpen}
+                    onClose={() => modalController.close()}
+                    onFileSelect={
+                        (modalState.data as FileUploadModalData)
+                            ?.onFileSelect || (() => {})
+                    }
+                    title={(modalState.data as FileUploadModalData)?.title}
                 />
             );
         default:

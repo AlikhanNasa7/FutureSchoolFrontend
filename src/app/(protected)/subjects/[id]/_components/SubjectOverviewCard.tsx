@@ -26,19 +26,13 @@ export type SubjectOverviewData = {
 interface SubjectOverviewCardProps {
     data: SubjectOverviewData;
     courseSectionId?: number;
-    onDeleteItem?: (itemId: string) => void;
 }
 
 export default function SubjectOverviewCard({
     data,
     courseSectionId,
-    onDeleteItem,
 }: SubjectOverviewCardProps) {
     return (
-        <SubjectOverviewPanel
-            data={data}
-            courseSectionId={courseSectionId}
-            onDeleteItem={onDeleteItem}
-        />
+        <SubjectOverviewPanel data={data} courseSectionId={courseSectionId} />
     );
 }

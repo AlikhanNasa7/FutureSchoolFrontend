@@ -8,6 +8,7 @@ import {
     Image as ImageIcon,
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import Image from 'next/image';
 
 interface FileViewerModalProps {
     isOpen: boolean;
@@ -54,7 +55,6 @@ export default function FileViewerModal({
         window.open(file.url, '_blank', 'noopener,noreferrer');
     };
 
-    // Determine file type
     const getFileType = () => {
         const extension = file.url.split('.').pop()?.toLowerCase();
         return extension || 'unknown';
@@ -81,7 +81,6 @@ export default function FileViewerModal({
             maxWidth="max-w-4xl"
         >
             <div className="space-y-4">
-                {/* File Info */}
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                         {isImage ? (
@@ -123,9 +122,8 @@ export default function FileViewerModal({
                     </div>
                 </div>
 
-                {/* Document Content */}
                 <div
-                    className="bg-white rounded-lg border flex flex-col"
+                    className="bg-white rounded-lg border flex flex-col overflow-auto"
                     style={{ height: '500px' }}
                 >
                     {isImage ? (

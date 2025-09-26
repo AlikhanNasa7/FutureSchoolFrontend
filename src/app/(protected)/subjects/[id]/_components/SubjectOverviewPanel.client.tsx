@@ -10,29 +10,22 @@ import { SharedLinkItem } from './SharedLinkItem';
 interface SubjectOverviewPanelProps {
     data: SubjectOverviewData;
     courseSectionId?: number;
-    onDeleteItem?: (itemId: string) => void;
 }
 
-interface Resource {
-    href: string;
-    title: string;
-    type?: string;
-    size?: number;
-    file?: string;
-}
+export function handleFileView(
+    fileData: { file: string; title: string; type: string },
+    filename: string
+) {
+    console.log(fileData, filename, 'fileData', 'filename');
+    const fileUrl = fileData.file;
 
-function handleFileView(resource: Resource, filename: string) {
-    console.log(resource, filename, 'resource', 'filename');
-    const fileUrl = resource.file;
-
-    console.log('Opening file in modal:', { resource, fileUrl, filename });
+    console.log('Opening file in modal:', { fileData, fileUrl, filename });
 
     modalController.open('file-viewer', {
         file: {
             url: fileUrl,
             title: filename,
-            type: resource.type,
-            size: resource.size,
+            type: fileData.type,
         },
     });
 }
@@ -40,7 +33,6 @@ function handleFileView(resource: Resource, filename: string) {
 export default function SubjectOverviewPanel({
     data,
     courseSectionId,
-    onDeleteItem,
 }: SubjectOverviewPanelProps) {
     const [isExpanded, setIsExpanded] = useState(true);
     const { user } = useUserState();
@@ -136,7 +128,6 @@ export default function SubjectOverviewPanel({
                                 <SharedLinkItem
                                     item={resource}
                                     isTeacher={isTeacher}
-                                    onDelete={onDeleteItem}
                                     onFileView={handleFileView}
                                 />
                             </div>

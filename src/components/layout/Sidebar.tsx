@@ -12,13 +12,15 @@ import {
     HelpCircle,
     Settings,
     MoreVertical,
+    BookOpen,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useUser, useUserState } from '@/contexts/UserContext';
+import { useUserState } from '@/contexts/UserContext';
 
 const navigation = [
     { name: 'Главная', href: '/dashboard', icon: Home },
     { name: 'Предметы', href: '/subjects', icon: Box },
+    { name: 'Задания', href: '/assignments', icon: BookOpen },
     { name: 'Дневник', href: '/diary', icon: FileText },
 ];
 
@@ -59,7 +61,12 @@ export default function Sidebar() {
                 <div className="flex h-full flex-col bg-white">
                     <div className="p-6">
                         <div className="flex items-center space-x-3 mb-6">
-                            <Image src="/Logo.png" alt="logo" width={48} height={48} />
+                            <Image
+                                src="/Logo.png"
+                                alt="logo"
+                                width={48}
+                                height={48}
+                            />
                             <span className="text-xl font-bold text-gray-900">
                                 Astar
                             </span>
@@ -152,10 +159,10 @@ export default function Sidebar() {
                                         </div>
                                         <div className="text-xs text-gray-500">
                                             {user?.username}
-                                        </div>  
+                                        </div>
                                         <div className="text-xs text-gray-500">
                                             {user?.role}
-                                        </div>  
+                                        </div>
                                     </div>
                                 </div>
 

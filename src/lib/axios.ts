@@ -6,19 +6,16 @@ import axios, {
     InternalAxiosRequestConfig,
 } from 'axios';
 
-// Extend AxiosRequestConfig to include metadata
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
     metadata?: {
         startTime: Date;
     };
 }
 
-// Extend InternalAxiosRequestConfig to include _retry flag
 interface CustomInternalAxiosRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
 }
 
-// Create axios instance
 const axiosInstance: AxiosInstance = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
     timeout: 10000,
@@ -27,34 +24,8 @@ const axiosInstance: AxiosInstance = axios.create({
     },
 });
 
-// Track if we're currently refreshing the token
 let isRefreshing = false;
-// Store failed requests to retry after token refresh
-let failedQueue: Array<{
-    resolve: (value?: unknown) => void;
-    reject: (error?: unknown) => void;
-    config: InternalAxiosRequestConfig;
-}> = [];
 
-// Process the queue of failed requests
-const processQueue = (error: unknown, token: string | null = null) => {
-    failedQueue.forEach(({ resolve, reject, config }) => {
-        if (error) {
-            reject(error);
-        } else {
-            // Retry the original request with new token
-            if (token && config.headers) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-            resolve(axiosInstance(config));
-        }
-    });
-
-    // Clear the queue
-    failedQueue = [];
-};
-
-// Function to refresh the access token
 const refreshAccessToken = async (): Promise<string | null> => {
     try {
         const refreshToken =
@@ -76,7 +47,6 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
         const { access, refresh: newRefreshToken } = response.data;
 
-        // Store the new tokens
         if (typeof window !== 'undefined') {
             localStorage.setItem('accessToken', access);
             localStorage.setItem('refreshToken', newRefreshToken);
@@ -89,24 +59,20 @@ const refreshAccessToken = async (): Promise<string | null> => {
     }
 };
 
-// Request interceptor
 axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        // Get token from localStorage or sessionStorage
         const token =
             typeof window !== 'undefined'
                 ? localStorage.getItem('accessToken') ||
                   sessionStorage.getItem('accessToken')
                 : null;
 
-        // Add authorization header if token exists
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         } else {
             console.log('⚠️ No token found for request');
         }
 
-        // Add request timestamp for debugging
         (config as CustomAxiosRequestConfig).metadata = {
             startTime: new Date(),
         };
@@ -126,7 +92,6 @@ axiosInstance.interceptors.request.use(
     }
 );
 
-// Response interceptor
 axiosInstance.interceptors.response.use(
     (response: AxiosResponse) => {
         const endTime = new Date();
@@ -163,7 +128,6 @@ axiosInstance.interceptors.response.use(
             data: error.response?.data,
         });
 
-        // Log authentication errors specifically
         if (error.response?.status === 401) {
             console.error(
                 '🔒 Authentication Error - Token may be invalid or expired'
@@ -172,11 +136,8 @@ axiosInstance.interceptors.response.use(
 
         const originalRequest = error.config;
 
-        // Handle authentication errors with token refresh
         if (error.response?.status === 401 && originalRequest) {
-            // Don't retry refresh token requests to avoid infinite loops
             if (originalRequest.url?.includes('/auth/refresh')) {
-                // Clear stored tokens and redirect to login
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
@@ -186,16 +147,6 @@ axiosInstance.interceptors.response.use(
                 return Promise.reject(error);
             }
 
-            if (isRefreshing) {
-                // If we're already refreshing, add this request to the queue
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({
-                        resolve,
-                        reject,
-                        config: originalRequest,
-                    });
-                });
-            }
 
             (originalRequest as CustomInternalAxiosRequestConfig)._retry = true;
             isRefreshing = true;
@@ -204,21 +155,14 @@ axiosInstance.interceptors.response.use(
                 const newToken = await refreshAccessToken();
 
                 if (newToken) {
-                    // Update the original request with new token
                     if (originalRequest.headers) {
                         originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     }
 
-                    // Process the queue with success
-                    processQueue(null, newToken);
 
-                    // Retry the original request
                     return axiosInstance(originalRequest);
                 } else {
-                    // Token refresh failed, process queue with error
-                    processQueue(new Error('Token refresh failed'));
 
-                    // Clear tokens and redirect to login
                     if (typeof window !== 'undefined') {
                         localStorage.removeItem('accessToken');
                         localStorage.removeItem('refreshToken');
@@ -229,10 +173,7 @@ axiosInstance.interceptors.response.use(
                     return Promise.reject(error);
                 }
             } catch (refreshError) {
-                // Token refresh failed, process queue with error
-                processQueue(refreshError);
 
-                // Clear tokens and redirect to login
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
@@ -247,7 +188,6 @@ axiosInstance.interceptors.response.use(
             }
         }
 
-        // Handle server errors
         if (error.response?.status && error.response.status >= 500) {
             console.error('Server Error:', error.response.data);
         }

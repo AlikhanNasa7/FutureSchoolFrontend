@@ -59,7 +59,6 @@ export default function LoginPage() {
         console.log(result);
 
         if (result) {
-            // Redirect to dashboard or home page after successful login
             if (typeof window !== 'undefined') {
                 window.location.href = '/dashboard';
             }

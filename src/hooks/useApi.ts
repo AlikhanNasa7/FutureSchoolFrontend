@@ -297,7 +297,6 @@ export function useComments() {
     return useCrud<Comment>('/comments');
 }
 
-// Hook for authentication
 export function useAuth() {
     const {
         loginStart,
@@ -322,7 +321,6 @@ export function useAuth() {
 
                 const { access, refresh, user } = response.data;
 
-                // Store tokens
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('accessToken', access);
                     localStorage.setItem('refreshToken', refresh);
@@ -334,7 +332,6 @@ export function useAuth() {
                     });
                 }
 
-                // Update global state
                 loginSuccess(user);
                 return true;
             } catch (error) {
@@ -375,7 +372,6 @@ export function useAuth() {
 
                 const { token, user } = response.data.data;
 
-                // Store token
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('token', token);
                     localStorage.setItem('user', JSON.stringify(user));
