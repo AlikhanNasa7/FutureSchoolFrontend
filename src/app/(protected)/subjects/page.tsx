@@ -19,7 +19,33 @@ interface SubjectData {
     type: string;
     course_code: string;
     description: string;
+    course_name?: string;
+    classroom_display?: string;
+    teacher_email?: string;
 }
+
+// Helper function to extract subject type from course_code
+const getSubjectTypeFromCourseCode = (courseCode: string): string => {
+    const code = courseCode.toUpperCase();
+
+    if (code.includes('MATH')) return 'Mathematics';
+    if (code.includes('ENG')) return 'English';
+    if (code.includes('PHYS')) return 'Physics';
+    if (code.includes('CHEM')) return 'Chemistry';
+    if (code.includes('BIO')) return 'Biology';
+    if (code.includes('KAZ')) return 'Kazakh';
+    if (code.includes('LIT')) return 'Literature';
+    if (code.includes('GEO')) return 'Geography';
+    if (code.includes('HIST')) return 'History';
+    if (code.includes('CS') || code.includes('COMP')) return 'Computer Science';
+    if (code.includes('ART')) return 'Art';
+    if (code.includes('MUS')) return 'Music';
+    if (code.includes('PE') || code.includes('SPORT'))
+        return 'Physical Education';
+    if (code.includes('RUS')) return 'Russian';
+
+    return 'Other';
+};
 
 const sampleSubjects: SubjectData[] = [
     {
@@ -127,6 +153,46 @@ export default function SubjectsPage() {
     // Check if user can perform CRUD operations (only superadmin and schooladmin)
     const canEdit = user?.role === 'superadmin' || user?.role === 'schooladmin';
 
+    // Transform backend data to frontend format
+    const transformSubjectData = (backendData: unknown[]): SubjectData[] => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return backendData.map((item: any) => {
+            const subjectType = getSubjectTypeFromCourseCode(item.course_code);
+            // Map subject type to background image
+            const bgIdMap: Record<string, string> = {
+                Mathematics: 'math-bg.png',
+                English: 'english-bg.png',
+                Physics: 'physics-bg.png',
+                Chemistry: 'chemistry-bg.png',
+                Biology: 'biology-bg.png',
+                Kazakh: 'kazakh-language-bg.png',
+                Literature: 'literature-bg.png',
+                Geography: 'geography-bg.png',
+                History: 'history-bg.png',
+                'Computer Science': 'cs-bg.png',
+                Art: 'art-bg.png',
+                Music: 'music-bg.png',
+                'Physical Education': 'pe-bg.png',
+                Russian: 'russian-bg.png',
+            };
+
+            return {
+                id: item.id.toString(),
+                name: item.course_name,
+                professor: item.teacher_username || 'Unknown',
+                bgId: bgIdMap[subjectType] || 'default-bg.png',
+                urlPath: item.id.toString(),
+                grade: parseInt(item.course_code.match(/\d+/)?.[0] || '0'),
+                type: subjectType,
+                course_code: item.course_code,
+                description: item.course_name,
+                course_name: item.course_name,
+                classroom_display: item.classroom_display,
+                teacher_email: item.teacher_email,
+            };
+        });
+    };
+
     // Fetch subjects from API based on user role
     const fetchSubjects = async () => {
         setFetchLoading(true);
@@ -134,62 +200,21 @@ export default function SubjectsPage() {
             let response;
 
             if (user?.role === 'superadmin') {
-                response = await axiosInstance.get('/courses/');
-                const fetchedSubjects = response.data.map((course: any) => ({
-                    id: course.id.toString(),
-                    name: course.name,
-                    professor: course.teacher || 'Unknown Teacher',
-                    bgId: 'math-bg.png', // Default background
-                    urlPath: course.name.toLowerCase().replace(/\s+/g, '-'),
-                    grade: course.grade_level || 11,
-                    type: course.subject || 'Other',
-                    course_code: course.course_code || '',
-                    description: course.description || '',
-                }));
-                setSubjects(fetchedSubjects);
+                response = await axiosInstance.get('/subject-groups/');
+                setSubjects(transformSubjectData(response.data));
             } else if (user?.role === 'teacher') {
                 response = await axiosInstance.get(
                     `/subject-groups/?teacher=${user.id}`
                 );
-                const fetchedSubjects = response.data.map(
-                    (subjectGroup: any) => ({
-                        id: subjectGroup.id.toString(),
-                        name: subjectGroup.course_name || 'Unknown Course',
-                        professor:
-                            subjectGroup.teacher_username || 'Unknown Teacher',
-                        bgId: 'math-bg.png', // Default background
-                        urlPath: subjectGroup.id.toString(), // Use subject-group ID for routing
-                        grade: 11, // Default grade since not in subject-group data
-                        type: 'Other', // Default type since not in subject-group data
-                        course_code: subjectGroup.course_code || '',
-                        description: '', // No description in subject-group data
-                        classroom_display: subjectGroup.classroom_display || '',
-                        teacher_email: subjectGroup.teacher_email || '',
-                    })
-                );
-                setSubjects(fetchedSubjects);
+                setSubjects(transformSubjectData(response.data));
             } else if (user?.role === 'student') {
-                const userClassroom = user.student_data.classrooms[0].id; // Get from user data or default
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const userClassroom = (user as any).student_data
+                    ?.classrooms?.[0]?.id; // Get from user data or default
                 response = await axiosInstance.get(
                     `/subject-groups/?classroom=${userClassroom}`
                 );
-                const fetchedSubjects = response.data.map(
-                    (subjectGroup: any) => ({
-                        id: subjectGroup.id.toString(),
-                        name: subjectGroup.course_name || 'Unknown Course',
-                        professor:
-                            subjectGroup.teacher_username || 'Unknown Teacher',
-                        bgId: 'math-bg.png', // Default background
-                        urlPath: subjectGroup.id.toString(), // Use subject-group ID for routing
-                        grade: 11, // Default grade since not in subject-group data
-                        type: 'Other', // Default type since not in subject-group data
-                        course_code: subjectGroup.course_code || '',
-                        description: '', // No description in subject-group data
-                        classroom_display: subjectGroup.classroom_display || '',
-                        teacher_email: subjectGroup.teacher_email || '',
-                    })
-                );
-                setSubjects(fetchedSubjects);
+                setSubjects(transformSubjectData(response.data));
             } else {
                 // Default fallback
                 setSubjects(sampleSubjects);
@@ -208,6 +233,7 @@ export default function SubjectsPage() {
         if (user) {
             fetchSubjects();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const teachers = useMemo(() => {
@@ -295,9 +321,11 @@ export default function SubjectsPage() {
         }
     };
 
+    console.log(subjects);
+
     const filteredSubjects = useMemo(() => {
         return subjects.filter(subject => {
-            const matchesSearch = subject.name
+            const matchesSearch = (subject.course_name || subject.name)
                 .toLowerCase()
                 .includes(searchQuery.toLowerCase());
             const matchesTeacher =

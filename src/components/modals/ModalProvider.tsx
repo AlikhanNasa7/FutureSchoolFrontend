@@ -9,6 +9,7 @@ import CourseSectionCreateModal from './CourseSectionCreateModal';
 import FileViewerModal from './FileViewerModal';
 import ConfirmationModal from './ConfirmationModal';
 import FileUploadModal from './FileUploadModal';
+import AddStudentModal from './AddStudentModal';
 import type {
     ModalState,
     EventModalData,
@@ -17,6 +18,7 @@ import type {
     FileViewerModalData,
     ConfirmationModalData,
     FileUploadModalData,
+    AddStudentModalData,
 } from '@/lib/modalController';
 
 export default function ModalProvider() {
@@ -103,6 +105,25 @@ export default function ModalProvider() {
                             ?.onFileSelect || (() => {})
                     }
                     title={(modalState.data as FileUploadModalData)?.title}
+                />
+            );
+        case 'add-student':
+            return (
+                <AddStudentModal
+                    isOpen={modalState.isOpen}
+                    classroomId={
+                        (modalState.data as AddStudentModalData)?.classroomId ||
+                        0
+                    }
+                    classroomName={
+                        (modalState.data as AddStudentModalData)
+                            ?.classroomName || ''
+                    }
+                    onClose={() => modalController.close()}
+                    onStudentAdded={
+                        (modalState.data as AddStudentModalData)
+                            ?.onStudentAdded || (() => {})
+                    }
                 />
             );
         default:

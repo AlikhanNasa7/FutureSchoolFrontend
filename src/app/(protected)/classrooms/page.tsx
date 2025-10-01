@@ -1,79 +1,62 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Edit, Trash2, Users } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
 import axiosInstance from '@/lib/axios';
 import ClassroomModal from '@/components/classrooms/ClassroomModal';
+import { useRouter } from 'next/navigation';
 
 interface ClassroomData {
     id: number;
-    name: string;
-    school_id: number;
+    school: number;
     grade: number;
-    section: string;
-    capacity: number;
-    created_at: string;
-    updated_at: string;
+    letter: string;
+    kundelik_id: string;
+    language: string;
+    school_name: string;
+    total_students: number;
 }
-
-const sampleClassrooms: ClassroomData[] = [
-    {
-        id: 1,
-        name: '11A',
-        school_id: 1,
-        grade: 11,
-        section: 'A',
-        capacity: 30,
-        created_at: '2023-01-01T00:00:00Z',
-        updated_at: '2023-01-01T00:00:00Z',
-    },
-    {
-        id: 2,
-        name: '11B',
-        school_id: 1,
-        grade: 11,
-        section: 'B',
-        capacity: 25,
-        created_at: '2023-01-01T00:00:00Z',
-        updated_at: '2023-01-01T00:00:00Z',
-    },
-    {
-        id: 3,
-        name: '10A',
-        school_id: 1,
-        grade: 10,
-        section: 'A',
-        capacity: 28,
-        created_at: '2023-01-01T00:00:00Z',
-        updated_at: '2023-01-01T00:00:00Z',
-    },
-];
-
 export default function ClassroomsPage() {
-    const [classrooms, setClassrooms] =
-        useState<ClassroomData[]>(sampleClassrooms);
+    const [classrooms, setClassrooms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingClassroom, setEditingClassroom] =
         useState<ClassroomData | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const { user } = useUserState();
+    const router = useRouter();
 
-    // Check if user can perform CRUD operations
-    const canEdit =
-        user?.role === 'superadmin' ||
-        user?.role === 'schooladmin' ||
-        user?.role === 'teacher';
+    const canEdit = user?.role === 'superadmin' || user?.role === 'schooladmin';
 
-    // CRUD Functions
+    useEffect(() => {
+        function fetchClassrooms() {
+            axiosInstance.get('/classrooms/').then(response => {
+                const classrooms = response.data.map(
+                    (classroom: ClassroomData) => ({
+                        ...classroom,
+                        name: `${classroom.grade}${classroom.letter}`,
+                    })
+                );
+                setClassrooms(classrooms);
+            });
+        }
+        fetchClassrooms();
+    }, []);
+
+    useEffect(() => {
+        if (user && user.role !== 'superadmin' && user.role !== 'schooladmin') {
+            router.push('/dashboard');
+        }
+    }, [user, router]);
+
     const handleCreateClassroom = async (
         classroomData: Omit<ClassroomData, 'id' | 'created_at' | 'updated_at'>
     ) => {
         setLoading(true);
         try {
             const response = await axiosInstance.post(
-                '/api/classrooms/',
+                '/classrooms/',
                 classroomData
             );
             const newClassroom = {
@@ -96,7 +79,7 @@ export default function ClassroomsPage() {
     ) => {
         setLoading(true);
         try {
-            await axiosInstance.put(`/api/classrooms/${id}/`, classroomData);
+            await axiosInstance.put(`/classrooms/${id}/`, classroomData);
             setClassrooms(prev =>
                 prev.map(classroom =>
                     classroom.id === id
@@ -121,7 +104,7 @@ export default function ClassroomsPage() {
 
         setLoading(true);
         try {
-            await axiosInstance.delete(`/api/classrooms/${id}/`);
+            await axiosInstance.delete(`/classrooms/${id}/`);
             setClassrooms(prev =>
                 prev.filter(classroom => classroom.id !== id)
             );
@@ -170,47 +153,52 @@ export default function ClassroomsPage() {
                 {filteredClassrooms.map(classroom => (
                     <div
                         key={classroom.id}
-                        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 relative group"
+                        className="bg-white rounded-2xl overflow-hidden relative group"
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                {classroom.name}
-                            </h3>
-                            {canEdit && (
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() =>
-                                            setEditingClassroom(classroom)
-                                        }
-                                        className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                                        disabled={loading}
-                                    >
-                                        <Edit className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            handleDeleteClassroom(classroom.id)
-                                        }
-                                        className="p-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                                        disabled={loading}
-                                    >
-                                        <Trash2 className="w-3 h-3" />
-                                    </button>
+                        <div className="p-6 flex flex-col justify-between">
+                            <div className="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 className="text-2xl font-semibold text-black leading-tight">
+                                        {classroom.grade} "{classroom.letter}"
+                                    </h3>
+                                    <p className="text-base font-semibold text-black/30 mt-2">
+                                        {classroom.total_students} учеников
+                                    </p>
                                 </div>
-                            )}
-                        </div>
+                                {canEdit && (
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() =>
+                                                setEditingClassroom(classroom)
+                                            }
+                                            className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                            disabled={loading}
+                                        >
+                                            <Edit className="w-3 h-3" />
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                handleDeleteClassroom(
+                                                    classroom.id
+                                                )
+                                            }
+                                            className="p-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                                            disabled={loading}
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                                <Users className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm text-gray-600">
-                                    Grade {classroom.grade} - Section{' '}
-                                    {classroom.section}
-                                </span>
-                            </div>
-                            <div className="text-sm text-gray-600">
-                                Capacity: {classroom.capacity} students
-                            </div>
+                            <button
+                                onClick={() =>
+                                    router.push(`/classrooms/${classroom.id}`)
+                                }
+                                className="bg-[#694CFD] hover:bg-[#5a3fe6] text-white text-lg font-medium py-3 px-6 rounded-lg transition-colors w-fit self-end"
+                            >
+                                Посмотреть
+                            </button>
                         </div>
                     </div>
                 ))}

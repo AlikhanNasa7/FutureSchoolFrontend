@@ -1,52 +1,87 @@
 'use client';
-
+import axiosInstance from '@/lib/axios';
 import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import Question from '../questions/[questionOrder]/_components/Question';
 
 interface TestContentProps {
     testId: string;
 }
 
-interface TestData {
+interface QuestionData {
     id: string;
+    position: number;
+    text: string;
+    type: 'multiple_choice' | 'open_question' | 'matching';
+    options?: Array<{
+        text: string;
+        is_correct: boolean;
+        position: number;
+    }>;
+    correct_answer_text?: string;
+    matching_pairs_json?: Array<{
+        left: string;
+        right: string;
+    }>;
+}
+
+type AnswerValue = number[] | string | number[][];
+
+interface TestData {
+    id: number;
+    course_section: number;
+    teacher: number;
     title: string;
     description: string;
-    deadline: string;
-    status: 0 | 1 | 2; // 0 = not started, 1 = in progress, 2 = finished
-    grade?: string; // only if test was finished (status = 2)
-    currentQuestion?: number; // only if test is in progress (status = 1)
+    is_published: boolean;
+    scheduled_at: string;
+    reveal_results_at: string;
+    time_limit_minutes: number;
+    allow_multiple_attempts: boolean;
+    max_attempts: number;
+    show_correct_answers: boolean;
+    show_feedback: boolean;
+    show_score_immediately: boolean;
+    course_section_title: string;
+    course_name: string;
+    course_code: string;
+    subject_group: number;
+    classroom_name: string;
+    classroom_grade: number;
+    classroom_letter: string;
+    teacher_username: string;
+    teacher_first_name: string;
+    teacher_last_name: string;
+    total_points: number;
+    attempt_count: number;
+    is_available: boolean;
+    can_see_results: boolean;
+    can_attempt: boolean;
+    is_deadline_passed: boolean;
+    has_attempted: boolean;
+    my_active_attempt_id: number | null;
+    my_latest_attempt_can_view_results: boolean;
+    last_submitted_attempt_id: number | null;
+    questions: QuestionData[];
 }
 
 export default function TestContent({ testId }: TestContentProps) {
     const [testData, setTestData] = useState<TestData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
+    const [isTestStarted, setIsTestStarted] = useState(false);
+    const [activeAttemptId, setActiveAttemptId] = useState<number | null>(null);
 
     useEffect(() => {
-        // Fetch test data from backend API
         const fetchTestData = async () => {
             setLoading(true);
 
             try {
-                // In real app, this would be an API call:
-                // const response = await fetch(`/api/tests/${testId}`);
-                // const testData = await response.json();
+                const response = await axiosInstance.get(`/tests/${testId}`);
+                const testData = response.data;
 
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // Mock test data - in real app this would come from API
-                const mockTestData: TestData = {
-                    id: testId,
-                    title: 'Тест по Математике - Арифметика',
-                    description:
-                        'Проверьте свои знания основ арифметики. Тест включает вопросы по сложению, вычитанию, умножению и делению.',
-                    deadline: '2024-12-31 23:59',
-                    status: 0, // This would come from backend API
-                    // status: 1, currentQuestion: 3, // Example for in-progress
-                    // status: 2, grade: '85/100', // Example for finished
-                };
-
-                setTestData(mockTestData);
+                setTestData(testData);
             } catch (error) {
                 console.error('Failed to fetch test data:', error);
                 setTestData(null);
@@ -58,24 +93,152 @@ export default function TestContent({ testId }: TestContentProps) {
         fetchTestData();
     }, [testId]);
 
-    const handleStartTest = () => {
-        // Logic to start the test - redirect to first question
-        console.log('Starting test:', testId);
-        window.location.href = `/tests/${testId}/questions/1`;
-    };
+    const handleStartTest = async () => {
+        try {
+            console.log('Starting test:', testId);
+            const response = await axiosInstance.post('/attempts/start/', {
+                test: parseInt(testId),
+            });
 
-    const handleContinueTest = () => {
-        // Logic to continue the test from current question
-        console.log('Continuing test:', testId);
-        if (testData?.currentQuestion) {
-            window.location.href = `/tests/${testId}/questions/${testData.currentQuestion}`;
+            const attempt = response.data;
+            setActiveAttemptId(attempt.id);
+            setIsTestStarted(true);
+            setCurrentQuestionIndex(0);
+
+            if (attempt.answers && attempt.answers.length > 0) {
+                const existingAnswers: Record<number, AnswerValue> = {};
+                attempt.answers.forEach(
+                    (answer: {
+                        question_id: number;
+                        selected_option_ids?: number[];
+                        text_answer?: string;
+                        matching_answers_json?: number[][];
+                    }) => {
+                        if (answer.question_id) {
+                            if (answer.selected_option_ids) {
+                                existingAnswers[answer.question_id] =
+                                    answer.selected_option_ids;
+                            } else if (answer.text_answer) {
+                                existingAnswers[answer.question_id] =
+                                    answer.text_answer;
+                            } else if (answer.matching_answers_json) {
+                                existingAnswers[answer.question_id] =
+                                    answer.matching_answers_json;
+                            }
+                        }
+                    }
+                );
+                setAnswers(existingAnswers);
+            } else {
+                // Clear answers for a new attempt
+                setAnswers({});
+            }
+        } catch (error) {
+            console.error('Failed to start test:', error);
         }
     };
 
     const handleViewResults = () => {
-        // Logic to view test results
         console.log('Viewing results for test:', testId);
-        window.location.href = `/tests/${testId}/results`;
+        if (testData?.last_submitted_attempt_id) {
+            window.location.href = `/tests/${testId}/results?attempt=${testData.last_submitted_attempt_id}`;
+        }
+    };
+
+    const handleAnswerChange = (questionIndex: number, answer: AnswerValue) => {
+        setAnswers(prev => ({
+            ...prev,
+            [questionIndex]: answer,
+        }));
+    };
+
+    const submitCurrentAnswer = async (questionIndex: number) => {
+        console.log('Submitting current answer for question:', questionIndex);
+        if (!activeAttemptId || !testData) return;
+
+        const currentQuestion = testData.questions[questionIndex];
+        const currentAnswer = answers[questionIndex];
+        console.log('answers', answers, currentAnswer);
+        console.log('Current question:', currentQuestion);
+        console.log('Current answer:', currentAnswer);
+        if (!currentQuestion || !currentAnswer) return;
+
+        try {
+            const submitData: {
+                question_id: string;
+                selected_option_ids?: number[];
+                text_answer?: string;
+                matching_answers_json?: number[][];
+            } = {
+                question_id: currentQuestion.id,
+            };
+
+            // Format answer based on question type
+            if (currentQuestion.type === 'multiple_choice') {
+                submitData.selected_option_ids = Array.isArray(currentAnswer)
+                    ? (currentAnswer as number[])
+                    : [currentAnswer as unknown as number];
+            } else if (currentQuestion.type === 'open_question') {
+                submitData.text_answer = currentAnswer as string;
+            } else if (currentQuestion.type === 'matching') {
+                submitData.matching_answers_json = currentAnswer as number[][];
+            }
+
+            await axiosInstance.post(
+                `/attempts/${activeAttemptId}/submit-answer/`,
+                submitData
+            );
+        } catch (error) {
+            console.error('Failed to submit answer:', error);
+        }
+    };
+
+    const handleNextQuestion = async () => {
+        // Submit current answer before moving to next question
+        await submitCurrentAnswer(currentQuestionIndex);
+
+        if (testData && currentQuestionIndex < testData.questions.length - 1) {
+            setCurrentQuestionIndex(prev => prev + 1);
+        }
+    };
+
+    const handlePreviousQuestion = () => {
+        if (currentQuestionIndex > 0) {
+            setCurrentQuestionIndex(prev => prev - 1);
+        }
+    };
+
+    const handleSubmitTest = async () => {
+        try {
+            if (!activeAttemptId) {
+                console.error('No active attempt found');
+                return;
+            }
+
+            // Submit current answer before submitting the test
+            await submitCurrentAnswer(currentQuestionIndex);
+
+            const response = await axiosInstance.post(
+                `/attempts/${activeAttemptId}/submit/`,
+                {}
+            );
+            console.log('Test submitted successfully:', response.data);
+
+            // Navigate to results with the attempt ID
+            window.location.href = `/tests/${testId}/results?attempt=${activeAttemptId}`;
+        } catch (error) {
+            console.error('Failed to submit test:', error);
+        }
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
     };
 
     if (loading) {
@@ -111,6 +274,60 @@ export default function TestContent({ testId }: TestContentProps) {
         );
     }
 
+    // If test is started, show question interface
+    if (isTestStarted && testData && testData.questions) {
+        const currentQuestion = testData.questions[currentQuestionIndex];
+        const isLastQuestion =
+            currentQuestionIndex === testData.questions.length - 1;
+        const isFirstQuestion = currentQuestionIndex === 0;
+
+        return (
+            <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                Вопрос {currentQuestionIndex + 1} из{' '}
+                                {testData.questions.length}
+                            </h1>
+                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                {currentQuestion.type === 'multiple_choice'
+                                    ? 'Выбор ответа'
+                                    : currentQuestion.type === 'open_question'
+                                      ? 'Открытый вопрос'
+                                      : 'Сопоставление'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-8">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-8">
+                        {currentQuestion.text}
+                    </h2>
+
+                    {/* Question Content */}
+                    <div className="mb-8">
+                        <Question
+                            questionData={currentQuestion}
+                            selectedAnswers={
+                                answers[currentQuestionIndex] || []
+                            }
+                            onAnswerChange={answer =>
+                                handleAnswerChange(currentQuestionIndex, answer)
+                            }
+                            onNext={handleNextQuestion}
+                            onPrevious={handlePreviousQuestion}
+                            onSubmit={handleSubmitTest}
+                            isFirstQuestion={isFirstQuestion}
+                            isLastQuestion={isLastQuestion}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="mx-auto">
             <div className="bg-white rounded-lg shadow-md p-8">
@@ -125,115 +342,164 @@ export default function TestContent({ testId }: TestContentProps) {
                 </div>
 
                 {/* Test Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div className="bg-red-50 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-blue-50 rounded-lg p-4">
                         <div className="flex items-center gap-3">
-                            <Clock className="w-6 h-6 text-red-600" />
+                            <Clock className="w-6 h-6 text-blue-600" />
                             <div>
-                                <p className="text-sm text-gray-600">Дедлайн</p>
+                                <p className="text-sm text-gray-600">
+                                    Время на тест
+                                </p>
                                 <p className="text-lg font-semibold text-gray-900">
-                                    {testData.deadline}
+                                    {testData.time_limit_minutes} минут
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {testData.status === 2 && testData.grade && (
-                        <div className="bg-green-50 rounded-lg p-4">
-                            <div className="flex items-center gap-3">
-                                <CheckCircle className="w-6 h-6 text-green-600" />
-                                <div>
-                                    <p className="text-sm text-gray-600">
-                                        Оценка
-                                    </p>
-                                    <p className="text-lg font-semibold text-gray-900">
-                                        {testData.grade}
-                                    </p>
-                                </div>
+                    <div className="bg-purple-50 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                            <CheckCircle className="w-6 h-6 text-purple-600" />
+                            <div>
+                                <p className="text-sm text-gray-600">
+                                    Максимум баллов
+                                </p>
+                                <p className="text-lg font-semibold text-gray-900">
+                                    {testData.total_points}
+                                </p>
                             </div>
                         </div>
-                    )}
+                    </div>
 
-                    {testData.status === 1 && testData.currentQuestion && (
-                        <div className="bg-blue-50 rounded-lg p-4">
-                            <div className="flex items-center gap-3">
-                                <Clock className="w-6 h-6 text-blue-600" />
-                                <div>
-                                    <p className="text-sm text-gray-600">
-                                        Текущий вопрос
-                                    </p>
-                                    <p className="text-lg font-semibold text-gray-900">
-                                        {testData.currentQuestion}
-                                    </p>
-                                </div>
+                    <div className="bg-green-50 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                            <Clock className="w-6 h-6 text-green-600" />
+                            <div>
+                                <p className="text-sm text-gray-600">
+                                    Запланировано на
+                                </p>
+                                <p className="text-lg font-semibold text-gray-900">
+                                    {formatDate(testData.scheduled_at)}
+                                </p>
                             </div>
                         </div>
-                    )}
+                    </div>
+                </div>
+
+                {/* Course Information */}
+                <div className="bg-gray-50 rounded-lg p-4 mb-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        Информация о курсе
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-sm text-gray-600">Предмет</p>
+                            <p className="font-medium text-gray-900">
+                                {testData.course_name}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-600">Код курса</p>
+                            <p className="font-medium text-gray-900">
+                                {testData.course_code}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-600">Класс</p>
+                            <p className="font-medium text-gray-900">
+                                {testData.classroom_name}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-600">
+                                Преподаватель
+                            </p>
+                            <p className="font-medium text-gray-900">
+                                {testData.teacher_first_name}{' '}
+                                {testData.teacher_last_name}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Action */}
                 <div className="text-center">
-                    {testData.status === 0 && (
+                    {testData.is_available &&
+                        testData.can_attempt &&
+                        !testData.has_attempted && (
+                            <>
+                                <div className="mb-6">
+                                    <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+                                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                                        Готов к прохождению
+                                    </h2>
+                                    <p className="text-gray-600 mb-6">
+                                        Нажмите кнопку ниже, чтобы начать
+                                        прохождение теста.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={handleStartTest}
+                                    className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                                >
+                                    Начать тест
+                                </button>
+                            </>
+                        )}
+
+                    {testData.my_active_attempt_id && (
                         <>
                             <div className="mb-6">
                                 <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
                                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                                    Тест еще не начат
+                                    Продолжить тест
                                 </h2>
                                 <p className="text-gray-600 mb-6">
-                                    Нажмите кнопку ниже, чтобы начать
-                                    прохождение теста.
+                                    У вас есть незавершенная попытка. Продолжите
+                                    или начните заново.
                                 </p>
                             </div>
                             <button
                                 onClick={handleStartTest}
                                 className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                             >
-                                Начать тест
-                            </button>
-                        </>
-                    )}
-
-                    {testData.status === 1 && (
-                        <>
-                            <div className="mb-6">
-                                <Clock className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                                    Тест в процессе
-                                </h2>
-                                <p className="text-gray-600 mb-6">
-                                    Вы уже начали этот тест. Можете продолжить с
-                                    вопроса {testData.currentQuestion}.
-                                </p>
-                            </div>
-                            <button
-                                onClick={handleContinueTest}
-                                className="bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-                            >
                                 Продолжить тест
                             </button>
                         </>
                     )}
 
-                    {testData.status === 2 && (
-                        <>
-                            <div className="mb-6">
-                                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                                    Тест завершен
-                                </h2>
-                                <p className="text-gray-600 mb-6">
-                                    Вы успешно прошли тест. Можете посмотреть
-                                    результаты.
-                                </p>
-                            </div>
-                            <button
-                                onClick={handleViewResults}
-                                className="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
-                            >
-                                Посмотреть результаты
-                            </button>
-                        </>
+                    {testData.has_attempted &&
+                        testData.my_latest_attempt_can_view_results && (
+                            <>
+                                <div className="mb-6">
+                                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                                        Тест завершен
+                                    </h2>
+                                    <p className="text-gray-600 mb-6">
+                                        Вы уже прошли этот тест. Можете
+                                        посмотреть результаты.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={handleViewResults}
+                                    className="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
+                                >
+                                    Посмотреть результаты
+                                </button>
+                            </>
+                        )}
+
+                    {testData.is_deadline_passed && (
+                        <div className="mb-6">
+                            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                                Срок истек
+                            </h2>
+                            <p className="text-gray-600 mb-6">
+                                Время для прохождения этого теста истекло.
+                            </p>
+                        </div>
                     )}
                 </div>
             </div>

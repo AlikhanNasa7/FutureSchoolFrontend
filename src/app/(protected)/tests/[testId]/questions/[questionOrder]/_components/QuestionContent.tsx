@@ -1,226 +1,306 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Clock, CheckCircle } from 'lucide-react';
-
-interface QuestionContentProps {
-    testId: string;
-    questionNumber: number;
-}
+import { useState } from 'react';
 
 interface QuestionData {
     id: string;
-    question: string;
-    options: string[];
-    type: 'single' | 'multiple';
-    correctAnswer?: number | number[];
+    position: number;
+    text: string;
+    type: 'multiple_choice' | 'open_question' | 'matching';
+    options?: Array<{
+        id: number;
+        text: string;
+        is_correct: boolean;
+        position: number;
+    }>;
+    correct_answer_text?: string;
+    matching_pairs_json?: Array<{
+        left: string;
+        right: string;
+    }>;
+}
+
+type AnswerValue = number[] | string | number[][];
+
+interface QuestionContentProps {
+    questionData: QuestionData;
+    selectedAnswers: AnswerValue;
+    onAnswerChange: (answers: AnswerValue) => void;
 }
 
 export default function QuestionContent({
-    testId,
-    questionNumber,
+    questionData,
+    selectedAnswers,
+    onAnswerChange,
 }: QuestionContentProps) {
-    const [questionData, setQuestionData] = useState<QuestionData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
-    const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes in seconds
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-    useEffect(() => {
-        const fetchQuestion = async () => {
-            setLoading(true);
-
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Mock question data
-            const mockQuestion: QuestionData = {
-                id: `q${questionNumber}`,
-                question: `Вопрос ${questionNumber}: Чему равно 2 + 2?`,
-                options: ['3', '4', '5', '6'],
-                type: 'single',
-                correctAnswer: 1, // index of correct answer
-            };
-
-            setQuestionData(mockQuestion);
-            setLoading(false);
-        };
-
-        fetchQuestion();
-    }, [testId, questionNumber]);
-
-    // Timer countdown
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 0) {
-                    // Time's up - submit test
-                    handleSubmit();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
-
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const handleAnswerSelect = (optionIndex: number) => {
-        if (questionData?.type === 'single') {
-            setSelectedAnswers([optionIndex]);
-        } else {
-            setSelectedAnswers(prev =>
-                prev.includes(optionIndex)
-                    ? prev.filter(i => i !== optionIndex)
-                    : [...prev, optionIndex]
-            );
+    const handleMultipleChoiceSelect = (optionId: number) => {
+        if (questionData.options) {
+            // For multiple choice, only allow one selection
+            onAnswerChange([optionId]);
         }
     };
 
-    const handleNext = () => {
-        const nextQuestion = questionNumber + 1;
-        window.location.href = `/tests/${testId}/questions/${nextQuestion}`;
+    const handleOpenQuestionChange = (value: string) => {
+        onAnswerChange(value);
     };
 
-    const handlePrevious = () => {
-        if (questionNumber > 1) {
-            const prevQuestion = questionNumber - 1;
-            window.location.href = `/tests/${testId}/questions/${prevQuestion}`;
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index.toString());
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+        e.preventDefault();
+        const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+
+        if (dragIndex !== dropIndex) {
+            const matchingPairs = questionData.matching_pairs_json || [];
+
+            // Get current order of right items (indices)
+            const defaultOrder = matchingPairs.map((_, index) => index);
+            const currentOrder =
+                selectedAnswers &&
+                Array.isArray(selectedAnswers) &&
+                selectedAnswers.length > 0 &&
+                Array.isArray(selectedAnswers[0])
+                    ? (selectedAnswers as number[][])[0] || defaultOrder
+                    : defaultOrder;
+
+            const newOrder = [...currentOrder];
+
+            // Swap the items at dragIndex and dropIndex
+            if (dragIndex < newOrder.length && dropIndex < newOrder.length) {
+                [newOrder[dragIndex], newOrder[dropIndex]] = [
+                    newOrder[dropIndex],
+                    newOrder[dragIndex],
+                ];
+
+                // Store the new order as an array of indices (what backend expects)
+                onAnswerChange([newOrder] as AnswerValue);
+            }
         }
+        setDraggedIndex(null);
     };
 
-    const handleSubmit = () => {
-        // Submit test logic
-        console.log('Submitting test:', testId);
-        window.location.href = `/tests/${testId}/results`;
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
     };
 
-    if (loading) {
+    if (questionData.type === 'multiple_choice') {
+        console.log(selectedAnswers);
         return (
-            <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-lg shadow-md p-8">
-                    <div className="animate-pulse">
-                        <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                        <div className="space-y-3">
-                            <div className="h-4 bg-gray-200 rounded"></div>
-                            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                            <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+            <div className="space-y-4">
+                {questionData.options?.map((option, index) => (
+                    <label
+                        key={index}
+                        className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                            Array.isArray(selectedAnswers) &&
+                            (selectedAnswers as number[]).includes(option.id)
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                        <input
+                            type="radio"
+                            name="answer"
+                            checked={
+                                Array.isArray(selectedAnswers) &&
+                                (selectedAnswers as number[]).includes(
+                                    option.id
+                                )
+                            }
+                            onChange={() =>
+                                handleMultipleChoiceSelect(option.id)
+                            }
+                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="ml-3 text-gray-900">
+                            {option.text}
+                        </span>
+                    </label>
+                ))}
+            </div>
+        );
+    }
+
+    if (questionData.type === 'open_question') {
+        return (
+            <div className="space-y-4">
+                <textarea
+                    value={
+                        typeof selectedAnswers === 'string'
+                            ? selectedAnswers
+                            : ''
+                    }
+                    onChange={e => handleOpenQuestionChange(e.target.value)}
+                    placeholder="Введите ваш ответ здесь..."
+                    className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical min-h-[120px]"
+                />
+            </div>
+        );
+    }
+
+    if (questionData.type === 'matching') {
+        const leftItems =
+            questionData.matching_pairs_json?.map(pair => pair.left) || [];
+        const rightItems =
+            questionData.matching_pairs_json?.map(pair => pair.right) || [];
+
+        // Get current order or use default
+        const defaultOrder = rightItems.map((_, index) => index);
+        const currentOrder =
+            selectedAnswers &&
+            Array.isArray(selectedAnswers) &&
+            selectedAnswers.length > 0 &&
+            Array.isArray(selectedAnswers[0])
+                ? (selectedAnswers as number[][])[0] || defaultOrder
+                : defaultOrder;
+
+        console.log('Debug - rightItems:', rightItems);
+        console.log('Debug - currentOrder:', currentOrder);
+        console.log('Debug - selectedAnswers:', selectedAnswers);
+
+        return (
+            <div className="space-y-6">
+                <div className="text-center">
+                    <p className="text-gray-600 mb-4">
+                        Перетащите элементы в правом столбце, чтобы изменить их
+                        порядок
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                    {/* Left column - Fixed items */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                            Элементы
+                        </h3>
+                        <div className="space-y-2">
+                            {leftItems.map((item, index) => (
+                                <div
+                                    key={index}
+                                    className="p-3 bg-gray-50 rounded border"
+                                >
+                                    <span className="font-medium">{item}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right column - Draggable items */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                            Ответы
+                        </h3>
+                        <div className="space-y-2">
+                            {currentOrder && currentOrder.length > 0
+                                ? currentOrder.map(
+                                      (originalIndex, displayIndex) => {
+                                          const item =
+                                              rightItems[
+                                                  originalIndex as number
+                                              ];
+                                          const isDragging =
+                                              draggedIndex === displayIndex;
+
+                                          return (
+                                              <div
+                                                  key={`${originalIndex}-${displayIndex}`}
+                                                  draggable
+                                                  onDragStart={e =>
+                                                      handleDragStart(
+                                                          e,
+                                                          displayIndex
+                                                      )
+                                                  }
+                                                  onDragOver={handleDragOver}
+                                                  onDrop={e =>
+                                                      handleDrop(
+                                                          e,
+                                                          displayIndex
+                                                      )
+                                                  }
+                                                  onDragEnd={handleDragEnd}
+                                                  className={`p-3 rounded border cursor-move transition-colors ${
+                                                      isDragging
+                                                          ? 'bg-yellow-100 border-yellow-400'
+                                                          : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                                  }`}
+                                              >
+                                                  <div className="flex items-center justify-between">
+                                                      <span>{item}</span>
+                                                      <span className="text-sm text-gray-500">
+                                                          #{displayIndex + 1}
+                                                      </span>
+                                                  </div>
+                                              </div>
+                                          );
+                                      }
+                                  )
+                                : // Fallback: show right items in original order
+                                  rightItems.map((item, index) => (
+                                      <div
+                                          key={`fallback-${item}`}
+                                          draggable
+                                          onDragStart={e =>
+                                              handleDragStart(e, index)
+                                          }
+                                          onDragOver={handleDragOver}
+                                          onDrop={e => handleDrop(e, index)}
+                                          onDragEnd={handleDragEnd}
+                                          className="p-3 rounded border cursor-move transition-colors bg-blue-50 border-blue-200 hover:bg-blue-100"
+                                      >
+                                          <div className="flex items-center justify-between">
+                                              <span>{item}</span>
+                                              <span className="text-sm text-gray-500">
+                                                  #{index + 1}
+                                              </span>
+                                          </div>
+                                      </div>
+                                  ))}
                         </div>
                     </div>
                 </div>
+
+                {/* Show current order */}
+                <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Текущий порядок:
+                    </h4>
+                    <div className="text-sm text-gray-600">
+                        {currentOrder && currentOrder.length > 0
+                            ? currentOrder.map(
+                                  (originalIndex, displayIndex) => (
+                                      <span
+                                          key={`display-${originalIndex}-${displayIndex}`}
+                                          className="mr-2"
+                                      >
+                                          {displayIndex + 1}.{' '}
+                                          {rightItems[originalIndex as number]}
+                                          {displayIndex <
+                                              currentOrder.length - 1 && ', '}
+                                      </span>
+                                  )
+                              )
+                            : rightItems.map((item, index) => (
+                                  <span key={index} className="mr-2">
+                                      {index + 1}. {item}
+                                      {index < rightItems.length - 1 && ', '}
+                                  </span>
+                              ))}
+                    </div>
+                </div>
             </div>
         );
     }
 
-    if (!questionData) {
-        return (
-            <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                        Вопрос не найден
-                    </h2>
-                    <p className="text-gray-600">
-                        Запрашиваемый вопрос не существует.
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Вопрос {questionNumber}
-                        </h1>
-                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                            {questionData.type === 'single'
-                                ? 'Один ответ'
-                                : 'Несколько ответов'}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-red-600">
-                        <Clock className="w-5 h-5" />
-                        <span className="text-lg font-semibold">
-                            {formatTime(timeLeft)}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Question */}
-            <div className="bg-white rounded-lg shadow-md p-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-8">
-                    {questionData.question}
-                </h2>
-
-                {/* Options */}
-                <div className="space-y-4 mb-8">
-                    {questionData.options.map((option, index) => (
-                        <label
-                            key={index}
-                            className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                                selectedAnswers.includes(index)
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                        >
-                            <input
-                                type={
-                                    questionData.type === 'single'
-                                        ? 'radio'
-                                        : 'checkbox'
-                                }
-                                name="answer"
-                                checked={selectedAnswers.includes(index)}
-                                onChange={() => handleAnswerSelect(index)}
-                                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                            />
-                            <span className="ml-3 text-gray-900">{option}</span>
-                        </label>
-                    ))}
-                </div>
-
-                {/* Navigation */}
-                <div className="flex items-center justify-between">
-                    <button
-                        onClick={handlePrevious}
-                        disabled={questionNumber <= 1}
-                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Предыдущий
-                    </button>
-
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={handleSubmit}
-                            className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-                        >
-                            <CheckCircle className="w-4 h-4" />
-                            Завершить тест
-                        </button>
-
-                        <button
-                            onClick={handleNext}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                        >
-                            Следующий
-                            <ArrowRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+    return null;
 }

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import QuestionContent from './_components/QuestionContent';
+import Question from './_components/Question';
 import QuestionSkeleton from './_components/QuestionSkeleton';
 
 interface QuestionPageProps {
@@ -11,15 +11,14 @@ interface QuestionPageProps {
 
 export default async function QuestionPage({ params }: QuestionPageProps) {
     const { testId, questionOrder } = await params;
-    const questionNumber = parseInt(questionOrder, 10);
 
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="container mx-auto px-4 py-8">
                 <Suspense fallback={<QuestionSkeleton />}>
-                    <QuestionContent
+                    <Question
                         testId={testId}
-                        questionNumber={questionNumber}
+                        questionOrder={questionOrder}
                     />
                 </Suspense>
             </div>

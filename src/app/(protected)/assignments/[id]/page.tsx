@@ -36,6 +36,24 @@ interface Assignment {
     is_available: string;
     is_deadline_passed: boolean;
     is_submitted: boolean;
+    student_submission?: {
+        id: number;
+        submitted_at: string;
+        text: string;
+        file: string;
+        grade_value?: number;
+        grade_feedback?: string;
+        graded_at?: string;
+        attachments: {
+            id: number;
+            type: string;
+            title: string;
+            content: string;
+            file_url: string;
+            file: string;
+            position: number;
+        }[];
+    } | null;
 }
 
 export default function AssignmentPage() {
@@ -48,7 +66,37 @@ export default function AssignmentPage() {
     const [submitting, setSubmitting] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-    const {user} = useUserState();
+    const { user } = useUserState();
+
+    // Helper function to download a file
+    const downloadFile = async (fileUrl: string, filename: string) => {
+        try {
+            // Fetch the file as a blob
+            const response = await fetch(fileUrl);
+            const blob = await response.blob();
+
+            // Create a temporary URL for the blob
+            const url = window.URL.createObjectURL(blob);
+
+            // Create a temporary download link
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+
+            // Trigger the download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up the blob URL
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Download failed:', error);
+            // Fallback: open in new tab if download fails
+            window.open(fileUrl, '_blank');
+        }
+    };
+
     const fetchAssignment = useCallback(async () => {
         try {
             setLoading(true);
@@ -86,11 +134,15 @@ export default function AssignmentPage() {
             formData.append('assignment', assignmentId.toString());
             formData.append('file', selectedFile);
 
-            const response = await axiosInstance.post('submissions/', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            const response = await axiosInstance.post(
+                'submissions/',
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }
+            );
 
             console.log(response.data, 'response');
 
@@ -126,9 +178,9 @@ export default function AssignmentPage() {
     };
 
     const getStatusColor = (assignment: Assignment) => {
-        if (assignment.is_submitted === 'true') {
+        if (assignment.is_submitted === true) {
             return 'bg-green-100 text-green-800 border-green-200';
-        } else if (assignment.is_deadline_passed === 'true') {
+        } else if (assignment.is_deadline_passed === true) {
             return 'bg-red-100 text-red-800 border-red-200';
         } else {
             return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -202,17 +254,15 @@ export default function AssignmentPage() {
                                 </span>
                             </div>
                         </div>
-                        <button
-                            onClick={handleSubmit}
-                            disabled={
-                                !selectedFile ||
-                                submitting ||
-                                assignment.is_submitted === 'true'
-                            }
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {submitting ? 'Отправка...' : 'Сдать'}
-                        </button>
+                        {!assignment.is_submitted && (
+                            <button
+                                onClick={handleSubmit}
+                                disabled={!selectedFile || submitting}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {submitting ? 'Отправка...' : 'Сдать'}
+                            </button>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -245,41 +295,172 @@ export default function AssignmentPage() {
                         </div>
                     </div>
 
-                    {/* File Upload Section */}
-                    <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                            Прикрепить файл
-                        </h2>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                            {selectedFile && <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <Upload className="w-5 h-5 text-green-600" />
-                                    <div>
-                                        <p className="font-medium text-green-900">
-                                            {selectedFile.name}
-                                        </p>
-                                        <p className="text-sm text-green-700">
-                                            {(
-                                                selectedFile.size / 1024
-                                            ).toFixed(1)}{' '}
-                                            KB
-                                        </p>
+                    {/* File Upload Section - Only show if not submitted */}
+                    {!assignment.is_submitted && (
+                        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                                Прикрепить файл
+                            </h2>
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                {selectedFile && (
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <Upload className="w-5 h-5 text-green-600" />
+                                            <div>
+                                                <p className="font-medium text-green-900">
+                                                    {selectedFile.name}
+                                                </p>
+                                                <p className="text-sm text-green-700">
+                                                    {(
+                                                        selectedFile.size / 1024
+                                                    ).toFixed(1)}{' '}
+                                                    KB
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() =>
+                                                setSelectedFile(null)
+                                            }
+                                            className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                                        >
+                                            Удалить
+                                        </button>
                                     </div>
-                                </div>
-                                <button
-                                    onClick={() => setSelectedFile(null)}
-                                    className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-                                >
-                                    Удалить
-                                </button>
-                            </div>}
-                            {!selectedFile && <div className="flex items-center justify-between cursor-pointer" onClick={handleOpenUploadModal}>
-                                <div className="flex items-center space-x-3">
-                                    <Upload className="w-5 h-5 text-green-600" />
-                                </div>
-                            </div>}
+                                )}
+                                {!selectedFile && (
+                                    <div
+                                        className="flex items-center justify-between cursor-pointer"
+                                        onClick={handleOpenUploadModal}
+                                    >
+                                        <div className="flex items-center space-x-3">
+                                            <Upload className="w-5 h-5 text-green-600" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* Submitted File Section - Show if assignment is submitted */}
+                    {assignment.is_submitted &&
+                        assignment.student_submission && (
+                            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                                    Сданная работа
+                                </h2>
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <FileText className="w-5 h-5 text-blue-600" />
+                                            <div>
+                                                <p className="font-medium text-blue-900">
+                                                    {assignment
+                                                        .student_submission.file
+                                                        ? assignment.student_submission.file
+                                                              .split('/')
+                                                              .pop()
+                                                        : 'Текстовая работа'}
+                                                </p>
+                                                <p className="text-sm text-blue-700">
+                                                    Сдано:{' '}
+                                                    {new Date(
+                                                        assignment.student_submission.submitted_at
+                                                    ).toLocaleDateString(
+                                                        'ru-RU'
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {assignment.student_submission.file && (
+                                            <button
+                                                onClick={() => {
+                                                    const filename =
+                                                        assignment.student_submission.file
+                                                            .split('/')
+                                                            .pop() ||
+                                                        'submission';
+                                                    downloadFile(
+                                                        assignment
+                                                            .student_submission
+                                                            .file,
+                                                        filename
+                                                    );
+                                                }}
+                                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                            >
+                                                Скачать
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Render image if the submitted file is an image */}
+                                    {assignment.student_submission.file &&
+                                        assignment.student_submission.file.match(
+                                            /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i
+                                        ) && (
+                                            <div className="mt-4">
+                                                <img
+                                                    src={
+                                                        assignment
+                                                            .student_submission
+                                                            .file
+                                                    }
+                                                    alt="Submitted work"
+                                                    className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
+                                                    style={{
+                                                        maxHeight: '400px',
+                                                    }}
+                                                    onError={e => {
+                                                        // Hide the image if it fails to load
+                                                        e.currentTarget.style.display =
+                                                            'none';
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+                                    {assignment.student_submission.text && (
+                                        <div className="mt-3 p-3 bg-white rounded border">
+                                            <p className="text-sm text-gray-700">
+                                                <strong>
+                                                    Текстовая часть:
+                                                </strong>
+                                            </p>
+                                            <p className="mt-1 text-gray-900">
+                                                {
+                                                    assignment
+                                                        .student_submission.text
+                                                }
+                                            </p>
+                                        </div>
+                                    )}
+                                    {assignment.student_submission
+                                        .grade_value !== null && (
+                                        <div className="mt-3 p-3 bg-yellow-50 rounded border border-yellow-200">
+                                            <p className="text-sm font-medium text-yellow-800">
+                                                Оценка:{' '}
+                                                {
+                                                    assignment
+                                                        .student_submission
+                                                        .grade_value
+                                                }{' '}
+                                                / {assignment.max_grade}
+                                            </p>
+                                            {assignment.student_submission
+                                                .grade_feedback && (
+                                                <p className="mt-1 text-sm text-yellow-700">
+                                                    {
+                                                        assignment
+                                                            .student_submission
+                                                            .grade_feedback
+                                                    }
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     <div>
                         <p>Учитель: {assignment.teacher_username}</p>
                         <p>Неделя: {assignment.course_section_title}</p>

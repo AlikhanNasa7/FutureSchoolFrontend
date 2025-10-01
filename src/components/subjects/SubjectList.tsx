@@ -10,6 +10,12 @@ interface SubjectData {
     professor: string;
     bgId: string;
     urlPath: string;
+    course_code?: string;
+    grade?: number;
+    type?: string;
+    description?: string;
+    classroom_display?: string;
+    teacher_email?: string;
 }
 
 interface SubjectListProps {

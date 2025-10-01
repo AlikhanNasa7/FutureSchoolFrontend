@@ -6,7 +6,8 @@ export type ModalType =
     | 'course-section-create'
     | 'file-viewer'
     | 'confirmation'
-    | 'file-upload';
+    | 'file-upload'
+    | 'add-student';
 
 export interface EventModalData {
     title: string;
@@ -15,6 +16,8 @@ export interface EventModalData {
     teacher: string;
     time: string;
     description: string;
+    url?: string;
+    type?: 'test' | 'assignment';
 }
 
 export interface CourseSectionAddItemModalData {
@@ -47,6 +50,12 @@ export interface ConfirmationModalData {
 export interface FileUploadModalData {
     title?: string;
     onFileSelect: (file: File) => void;
+}
+
+export interface AddStudentModalData {
+    classroomId: number;
+    classroomName: string;
+    onStudentAdded: () => void;
 }
 
 export interface ModalState {

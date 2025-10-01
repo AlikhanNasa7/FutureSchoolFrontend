@@ -1,16 +1,37 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { EventClickArg } from '@fullcalendar/core';
 import { modalController } from '@/lib/modalController';
 import type { EventModalData } from '@/lib/modalController';
+import axiosInstance from '@/lib/axios';
 import './calendar.css';
 
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth() + 1;
+
+// Interfaces for API data
+interface Test {
+    id: number;
+    title: string;
+    scheduled_at: string;
+    due_at?: string;
+    course_name: string;
+    teacher_username: string;
+    description?: string;
+}
+
+interface Assignment {
+    id: number;
+    title: string;
+    due_at: string;
+    course_name: string;
+    teacher_username: string;
+    description?: string;
+}
 
 const sampleEvents = [
     {
@@ -354,6 +375,91 @@ const sampleEvents = [
 ];
 
 const Calendar = () => {
+    // State for fetched data
+    const [tests, setTests] = useState<Test[]>([]);
+    const [assignments, setAssignments] = useState<Assignment[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    console.log(tests, 'tests');
+    console.log(assignments, 'assignments');
+    // Fetch tests and assignments data
+    const fetchCalendarData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Fetch tests and assignments in parallel
+            const [testsResponse, assignmentsResponse] = await Promise.all([
+                axiosInstance.get('/tests/'),
+                axiosInstance.get('/assignments/'),
+            ]);
+
+            setTests(testsResponse.data.results || testsResponse.data);
+            setAssignments(
+                assignmentsResponse.data.results || assignmentsResponse.data
+            );
+        } catch (err) {
+            console.error('Error fetching calendar data:', err);
+            setError('Failed to load calendar data');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Fetch data on component mount
+    useEffect(() => {
+        fetchCalendarData();
+    }, [fetchCalendarData]);
+
+    // Transform API data to calendar events
+    const calendarEvents = useMemo(() => {
+        const events: any[] = [];
+
+        // Add tests as events
+        tests.forEach(test => {
+            events.push({
+                id: `test-${test.id}`,
+                title: test.title,
+                start: test.scheduled_at.split('T')[0], // Use scheduled_at date
+                backgroundColor: 'rgb(224, 242, 254)', // Blue for tests
+                borderColor: 'rgb(224, 242, 254)',
+                textColor: '#374151',
+                display: 'block',
+                description: test.description || '',
+                subject: test.course_name,
+                teacher: test.teacher_username,
+                time: new Date(test.scheduled_at).toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }),
+                type: 'test',
+            });
+        });
+
+        // Add assignments as events
+        assignments.forEach(assignment => {
+            events.push({
+                id: `assignment-${assignment.id}`,
+                title: assignment.title,
+                start: assignment.due_at.split('T')[0], // Use due_at date
+                backgroundColor: 'rgb(255, 237, 213)', // Orange for assignments
+                borderColor: 'rgb(255, 237, 213)',
+                textColor: '#374151',
+                display: 'block',
+                description: assignment.description || '',
+                subject: assignment.course_name,
+                teacher: assignment.teacher_username,
+                time: new Date(assignment.due_at).toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }),
+                type: 'assignment',
+            });
+        });
+
+        return events;
+    }, [tests, assignments]);
+
     const calendarOptions = useMemo(
         () => ({
             plugins: [dayGridPlugin, interactionPlugin],
@@ -367,7 +473,7 @@ const Calendar = () => {
             aspectRatio: 1.35,
             dayMaxEvents: 5,
             moreLinkClick: 'popover',
-            events: sampleEvents,
+            events: calendarEvents,
             eventDisplay: 'block',
             dayHeaderFormat: {
                 weekday: 'short' as const,
@@ -386,6 +492,16 @@ const Calendar = () => {
             locale: 'ru',
             eventClick: function (eventInfo: EventClickArg) {
                 if (eventInfo.event.start) {
+                    const eventType = eventInfo.event.extendedProps?.type;
+                    const eventId = eventInfo.event.id.replace(
+                        `${eventType}-`,
+                        ''
+                    );
+                    const url =
+                        eventType === 'test'
+                            ? `/tests/${eventId}`
+                            : `/assignments/${eventId}`;
+
                     const eventData: EventModalData = {
                         title: eventInfo.event.title,
                         start: eventInfo.event.start
@@ -396,6 +512,8 @@ const Calendar = () => {
                         time: eventInfo.event.extendedProps?.time || '',
                         description:
                             eventInfo.event.extendedProps?.description || '',
+                        url: url,
+                        type: eventType,
                     };
                     modalController.open('event-modal', eventData);
                 }
@@ -407,8 +525,36 @@ const Calendar = () => {
                 // Handle date changes if needed
             },
         }),
-        []
+        [calendarEvents]
     );
+
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="pl-8 pr-6 pt-6 pb-6">
+                    <div className="flex items-center justify-center h-64">
+                        <div className="text-gray-500">
+                            Загрузка календаря...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (error) {
+        return (
+            <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="pl-8 pr-6 pt-6 pb-6">
+                    <div className="flex items-center justify-center h-64">
+                        <div className="text-red-500">{error}</div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">

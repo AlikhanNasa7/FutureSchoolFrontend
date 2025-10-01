@@ -67,9 +67,7 @@ function getStatusIcon(
     }
 }
 
-function getStatusText(
-    item
-) {
+function getStatusText(item) {
     if (item.is_submitted === true) {
         return 'Сдано';
     } else if (item.is_available === true) {
@@ -154,6 +152,64 @@ function TaskItem({
     );
 }
 
+function TestItem({
+    item,
+    isTeacher,
+    onDelete,
+}: {
+    item: Extract<WeekItem, { kind: 'test' }>;
+    isTeacher: boolean;
+    onDelete?: (itemId: string, itemType: 'resource' | 'test') => void;
+}) {
+    console.log(item, 'item inside TestItem');
+
+    // Determine navigation path based on user role
+    const testHref = isTeacher
+        ? `/tests/${item.id}/results`
+        : `/tests/${item.id}`;
+    const buttonText = isTeacher ? 'Результаты' : 'Пройти тест';
+
+    return (
+        <div className="flex items-center justify-between gap-3 py-3">
+            {/* Left side - Icon, label, and status */}
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex-shrink-0 flex items-center justify-center">
+                    <Image
+                        src={'/document-icons/test.png'}
+                        alt={item.title}
+                        width={32}
+                        height={32}
+                    />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <span className="text-gray-900 truncate">
+                            {item.title}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+                <Link
+                    href={testHref}
+                    className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                >
+                    {buttonText}
+                </Link>
+
+                {isTeacher && onDelete && (
+                    <DeleteButton
+                        onDelete={() => onDelete(item.id, 'test')}
+                        itemName={item.title}
+                    />
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function WeekMaterialsPanel({
     data,
     courseSectionId,
@@ -187,33 +243,6 @@ export default function WeekMaterialsPanel({
         }
     }, [courseSectionId]);
 
-    const handleDeleteSection = useCallback(async () => {
-        console.log(data, 'data inside handleDeleteSection');
-        if (data.id) {
-            setDeleteLoading(true);
-            try {
-                await axiosInstance.delete(`/course-sections/${data.id}/`);
-                console.log('Section deleted successfully');
-            } catch (error) {
-                console.error('Error deleting section:', error);
-            } finally {
-                setDeleteLoading(false);
-            }
-        }
-    }, [data.id]);
-
-    const handleDeleteSectionClick = useCallback(() => {
-        modalController.open('confirmation', {
-            title: 'Delete Section',
-            message: `Are you sure you want to delete the section "${data.title}"? This will permanently remove all resources and assignments in this section. This action cannot be undone.`,
-            confirmText: 'Delete Section',
-            cancelText: 'Cancel',
-            confirmVariant: 'danger',
-            onConfirm: handleDeleteSection,
-            loading: deleteLoading,
-        });
-    }, [data.id, handleDeleteSection, deleteLoading]);
-
     console.log(data, 'data');
 
     return (
@@ -240,11 +269,6 @@ export default function WeekMaterialsPanel({
                             >
                                 <Plus className="w-4 h-4" />
                             </button>
-                            <DeleteButton
-                                onDelete={handleDeleteSectionClick}
-                                itemName={data.title}
-                                loading={deleteLoading}
-                            />
                         </>
                     )}
                     <button
@@ -268,10 +292,32 @@ export default function WeekMaterialsPanel({
                     isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                 }`}
             >
+                {data.tests.length > 0 && (
+                    <div className="space-y-0 w-full overflow-hidden">
+                        {data.tests.map((item, index) => {
+                            return (
+                                <div key={item.id}>
+                                    {index > 0 && (
+                                        <div className="border-t border-gray-100" />
+                                    )}
+                                    <TestItem
+                                        item={
+                                            item as Extract<
+                                                WeekItem,
+                                                { kind: 'test' }
+                                            >
+                                        }
+                                        isTeacher={isTeacher}
+                                        onDelete={undefined}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
                 {data.resources.length > 0 && (
                     <div className="space-y-0 w-full overflow-hidden">
                         {data.resources.map((item, index) => {
-
                             return (
                                 <div key={item.id}>
                                     {index > 0 && (
@@ -302,6 +348,7 @@ export default function WeekMaterialsPanel({
                                         >
                                     }
                                     isTeacher={isTeacher}
+                                    onDelete={undefined}
                                 />
                             </div>
                         ))}

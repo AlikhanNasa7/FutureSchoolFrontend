@@ -18,10 +18,11 @@ import Image from 'next/image';
 import { useUserState } from '@/contexts/UserContext';
 
 const navigation = [
-    { name: 'Главная', href: '/dashboard', icon: Home },
-    { name: 'Предметы', href: '/subjects', icon: Box },
-    { name: 'Задания', href: '/assignments', icon: BookOpen },
-    { name: 'Дневник', href: '/diary', icon: FileText },
+    { name: 'Главная', href: '/dashboard', icon: Home, roles: ['teacher', 'student', 'superadmin', 'schooladmin'] },
+    { name: 'Предметы', href: '/subjects', icon: Box, roles: ['teacher', 'student'] },
+    { name: 'Задания', href: '/assignments', icon: BookOpen, roles: ['teacher', 'student'] },
+    { name: 'Дневник', href: '/diary', icon: FileText, roles: ['teacher', 'student'] },
+    { name: 'Классы', href: '/classrooms', icon: Box, roles: ['schooladmin', 'superadmin'] },
 ];
 
 const utilityItems = [
@@ -84,8 +85,11 @@ export default function Sidebar() {
 
                     <nav className="flex-1 px-6">
                         <div className="space-y-2">
-                            {navigation.map(item => {
+                            {user?.role && navigation.map(item => {
                                 const isActive = pathname === item.href;
+                                if (!item.roles.includes(user?.role as string)) {
+                                    return null;
+                                }
                                 return (
                                     <Link
                                         key={item.name}

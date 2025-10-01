@@ -188,7 +188,7 @@ export default function SubjectContents() {
             </div>
 
             <div className="mb-8">
-                <div className="relative">
+                <div className="relative flex flex-col gap-4">
                     {weekMaterialsData &&
                         weekMaterialsData.length > 0 &&
                         weekMaterialsData.map(data => (
@@ -200,20 +200,6 @@ export default function SubjectContents() {
                         ))}
                 </div>
             </div>
-
-            {/* Add Section Button for Teachers */}
-            {isTeacher && (
-                <div className="flex justify-center">
-                    <button
-                        onClick={handleAddSection}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-lg"
-                        title="Add New Section"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add New Section
-                    </button>
-                </div>
-            )}
         </div>
     );
 }

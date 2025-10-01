@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Modal from '@/components/ui/Modal';
 import type { EventModalData } from '@/lib/modalController';
 
@@ -14,7 +15,16 @@ export default function EventModal({
     isOpen,
     onClose,
 }: EventModalProps) {
+    const router = useRouter();
+
     if (!isOpen || !event) return null;
+
+    const handleNavigate = () => {
+        if (event.url) {
+            router.push(event.url);
+            onClose();
+        }
+    };
 
     const getEventTypeColor = (title: string) => {
         if (title === 'Домашнее Задание') return 'rgb(255, 237, 213)';
@@ -83,7 +93,15 @@ export default function EventModal({
                 <p className="text-gray-600 text-sm">{event.description}</p>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-3">
+                {event.url && (
+                    <button
+                        onClick={handleNavigate}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        Перейти
+                    </button>
+                )}
                 <button
                     onClick={onClose}
                     className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"

@@ -23,14 +23,16 @@ interface SubjectData {
 }
 
 // Create context for subject data
-const SubjectContext = createContext<{
+export const SubjectContext = createContext<{
     subject: SubjectData | null;
     loading: boolean;
     error: string | null;
+    subjectGroupMembers: any[];
 }>({
     subject: null,
     loading: true,
     error: null,
+    subjectGroupMembers: [],
 });
 
 // Hook to use subject context
@@ -46,6 +48,7 @@ const tabs = [
     { href: 'contents', label: 'Contents' },
     { href: 'participants', label: 'Participants' },
     { href: 'grades', label: 'Grades' },
+    { href: 'attendance', label: 'Attendance' },
 ];
 
 function useParentPath() {
@@ -65,8 +68,9 @@ export default function SubjectDetailPage({
     const [subject, setSubject] = useState<SubjectData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+    const [subjectGroupMembers, setSubjectGroupMembers] = useState([]);
     console.log(subject, 'subject');
+    console.log(subjectGroupMembers, 'subjectGroupMembers');
 
     useEffect(() => {
         const fetchSubject = async () => {
@@ -78,7 +82,14 @@ export default function SubjectDetailPage({
             setSubject(response.data);
             setLoading(false);
         };
+        const fetchSubjectGroupMembers = async () => {
+            const response = await axiosInstance.get(
+                `/subject-groups/${subjectId}/members/`
+            );
+            setSubjectGroupMembers(response.data);
+        };
         fetchSubject();
+        fetchSubjectGroupMembers();
     }, [subjectId]);
 
     console.log(pathName, pathName.split('/')[pathName.split('/').length - 1]);
@@ -158,7 +169,7 @@ export default function SubjectDetailPage({
                     </Link>
                 </div>
             </div>
-            <SubjectContext.Provider value={{ subject, loading, error }}>
+            <SubjectContext.Provider value={{ subject, loading, error, subjectGroupMembers }}>
                 {children}
             </SubjectContext.Provider>
         </div>

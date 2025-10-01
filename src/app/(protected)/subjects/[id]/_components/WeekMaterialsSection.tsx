@@ -39,6 +39,16 @@ export type WeekItem =
           status?: 'not_started' | 'in_progress' | 'submitted' | 'graded';
           score?: string;
           icon?: React.ReactNode;
+      }
+    | {
+          id: string;
+          kind: 'test';
+          title: string;
+          file?: string;
+          type?: 'test';
+          status?: 'not_started' | 'in_progress' | 'completed' | 'graded';
+          score?: string;
+          icon?: React.ReactNode;
       };
 
 export type WeekMaterialsData = {
@@ -46,6 +56,7 @@ export type WeekMaterialsData = {
     title: string;
     resources: WeekItem[];
     assignments: WeekItem[];
+    tests: WeekItem[];
 };
 
 interface WeekMaterialsSectionProps {
@@ -64,10 +75,5 @@ export default function WeekMaterialsSection({
 }: WeekMaterialsSectionProps) {
     if (!data?.title) return null;
 
-    return (
-        <WeekMaterialsPanel
-            data={data}
-            courseSectionId={courseSectionId}
-        />
-    );
+    return <WeekMaterialsPanel data={data} courseSectionId={courseSectionId} />;
 }

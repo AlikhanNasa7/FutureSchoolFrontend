@@ -1,118 +1,95 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { modalController } from '@/lib/modalController';
 import type { EventModalData } from '@/lib/modalController';
+import axiosInstance from '@/lib/axios';
+
+interface ApiAssignment {
+    id: number;
+    title: string;
+    description: string;
+    due_at: string;
+    course_name: string;
+    teacher_username: string;
+    is_submitted?: boolean;
+}
 
 interface Assignment {
-    id: string;
+    id: number;
     title: string;
-    start: string;
+    description: string;
+    dueDate: string;
     subject: string;
     teacher: string;
-    time: string;
-    description: string;
+    status: 'pending' | 'completed' | 'overdue';
     backgroundColor: string;
     borderColor: string;
     textColor: string;
-    dueDate: string;
-    status: 'pending' | 'completed' | 'overdue';
 }
 
 interface PendingAssignmentsProps {
     assignments?: Assignment[];
 }
 
-const sampleAssignments: Assignment[] = [
-    {
-        id: '1',
-        title: 'Домашнее Задание',
-        start: '2025-08-31',
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        description: 'Выполнить упражнения 1-10 из учебника по математике',
-        subject: 'Математика',
-        teacher: 'Иванова А.П.',
-        time: '08:00',
-        dueDate: '2025-09-02',
-        status: 'pending',
-    },
-    {
-        id: '2',
-        title: 'Домашнее Задание',
-        start: '2025-08-30',
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        description: 'Написать сочинение по литературе',
-        subject: 'Литература',
-        teacher: 'Петрова М.С.',
-        time: '10:30',
-        dueDate: '2025-09-01',
-        status: 'overdue',
-    },
-    {
-        id: '3',
-        title: 'Домашнее Задание',
-        start: '2025-08-29',
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        description: 'Решить задачи по физике',
-        subject: 'Физика',
-        teacher: 'Сидоров В.К.',
-        time: '13:00',
-        dueDate: '2025-08-31',
-        status: 'pending',
-    },
-    {
-        id: '4',
-        title: 'Домашнее Задание',
-        start: '2025-08-28',
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        description: 'Подготовить доклад по биологии',
-        subject: 'Биология',
-        teacher: 'Волкова Л.Н.',
-        time: '15:30',
-        dueDate: '2025-09-03',
-        status: 'pending',
-    },
-    {
-        id: '5',
-        title: 'Домашнее Задание',
-        start: '2025-08-27',
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        description: 'Изучить исторические даты',
-        subject: 'История',
-        teacher: 'Козлова Е.В.',
-        time: '17:00',
-        dueDate: '2025-08-30',
-        status: 'completed',
-    },
-    {
-        id: '6',
-        title: 'Домашнее Задание',
-        start: '2025-08-26',
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        description: 'Выучить новые слова по английскому',
-        subject: 'Английский язык',
-        teacher: 'Морозова Т.А.',
-        time: '14:00',
-        dueDate: '2025-08-29',
-        status: 'overdue',
-    },
-];
-
 export default function PendingAssignments({
-    assignments = sampleAssignments,
+    assignments: propAssignments,
 }: PendingAssignmentsProps) {
+    const [rawAssignments, setRawAssignments] = useState<ApiAssignment[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchAssignments = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await axiosInstance.get('/assignments/');
+            setRawAssignments(response.data.results || response.data);
+        } catch (err) {
+            console.error('Error fetching assignments:', err);
+            setError('Failed to load assignments');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchAssignments();
+    }, [fetchAssignments]);
+
+    const transformedAssignments = useMemo(() => {
+        return rawAssignments.map((assignment): Assignment => {
+            const dueDate = new Date(assignment.due_at);
+            const now = new Date();
+            const isOverdue = dueDate < now && !assignment.is_submitted;
+            const isCompleted = assignment.is_submitted || false;
+
+            let status: 'pending' | 'completed' | 'overdue';
+            if (isCompleted) {
+                status = 'completed';
+            } else if (isOverdue) {
+                status = 'overdue';
+            } else {
+                status = 'pending';
+            }
+
+            return {
+                id: assignment.id,
+                title: assignment.title,
+                description: assignment.description || '',
+                dueDate: assignment.due_at,
+                subject: assignment.course_name,
+                teacher: assignment.teacher_username,
+                status,
+                backgroundColor: 'rgb(255, 237, 213)',
+                borderColor: 'rgb(255, 237, 213)',
+                textColor: '#374151',
+            };
+        });
+    }, [rawAssignments]);
+
+    const assignments = propAssignments || transformedAssignments;
+
     const pendingAssignments = useMemo(() => {
         return assignments
             .filter(
@@ -121,7 +98,6 @@ export default function PendingAssignments({
                     assignment.status === 'overdue'
             )
             .sort((a, b) => {
-                // Sort by due date, then by status (overdue first)
                 const dateA = new Date(a.dueDate);
                 const dateB = new Date(b.dueDate);
                 if (dateA.getTime() !== dateB.getTime()) {
@@ -134,11 +110,16 @@ export default function PendingAssignments({
     const handleAssignmentClick = (assignment: Assignment) => {
         const eventData: EventModalData = {
             title: assignment.title,
-            start: assignment.start,
+            start: assignment.dueDate,
             subject: assignment.subject,
             teacher: assignment.teacher,
-            time: assignment.time,
+            time: new Date(assignment.dueDate).toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+            }),
             description: assignment.description,
+            url: `/assignments/${assignment.id}`,
+            type: 'assignment',
         };
         modalController.open('event-modal', eventData);
     };
@@ -172,16 +153,48 @@ export default function PendingAssignments({
         }
     };
 
+    if (loading) {
+        return (
+            <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        Ожидающие задания
+                    </h2>
+                </div>
+                <div className="p-6">
+                    <div className="flex items-center justify-center h-32">
+                        <div className="text-gray-500">Загрузка заданий...</div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        Ожидающие задания
+                    </h2>
+                </div>
+                <div className="p-6">
+                    <div className="flex items-center justify-center h-32">
+                        <div className="text-red-500">{error}</div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
-            {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
                     Ожидающие задания
                 </h2>
             </div>
 
-            {/* Assignments List */}
             <div className="p-4 sm:max-h-72 overflow-y-auto h-auto">
                 {pendingAssignments.length === 0 ? (
                     <div className="text-center py-8">
@@ -223,7 +236,6 @@ export default function PendingAssignments({
                                 }}
                             >
                                 <div className="flex items-center justify-between">
-                                    {/* Left side - Subject and Status */}
                                     <div className="flex items-center space-x-3">
                                         <div className="text-sm font-semibold text-gray-900 min-w-[60px]">
                                             {assignment.subject}
@@ -235,7 +247,6 @@ export default function PendingAssignments({
                                         </div>
                                     </div>
 
-                                    {/* Right side - Due Date */}
                                     <div className="text-right">
                                         <div className="text-xs text-gray-500">
                                             Сдать{' '}
@@ -244,7 +255,6 @@ export default function PendingAssignments({
                                     </div>
                                 </div>
 
-                                {/* Hover Effect */}
                                 <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-5 rounded-lg transition-opacity duration-200 pointer-events-none"></div>
                             </div>
                         ))}
