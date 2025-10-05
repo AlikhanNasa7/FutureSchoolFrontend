@@ -140,7 +140,7 @@ export default function SubjectDetailPage({
                         </p>
                     </div>
                 </div>
-                <div className='flex justify-between'>
+                <div className='flex justify-between md:flex-row flex-col'>
                     <ul className="flex gap-2 font-bold">
                         {tabs.map(t => {
                             const active =
@@ -164,7 +164,7 @@ export default function SubjectDetailPage({
                             );
                         })}
                     </ul>
-                    <Link href={`/create-test/?subject=${subjectId}`} className='bg-[#694CFD] flex items-center gap-2 px-4 py-1 rounded-md transition-colors text-white font-bold'>
+                    <Link href={`/create-test/?subject=${subjectId}`} className='bg-[#694CFD] flex items-center gap-2 px-4 py-1 rounded-md transition-colors text-white font-bold w-fit'>
                         Добавить тест
                     </Link>
                 </div>

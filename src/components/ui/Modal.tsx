@@ -28,26 +28,26 @@ export default function Modal({
 
     return (
         <div
-            className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50"
+            className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-2 sm:p-4"
             onClick={handleBackdropClick}
         >
             <div
-                className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full ${maxWidth} mx-4`}
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 sm:p-6 w-full ${maxWidth} max-h-[95vh] overflow-hidden flex flex-col`}
             >
                 {title && (
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-gray-800">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate pr-2">
                             {title}
                         </h2>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
                         >
-                            <X size={24} />
+                            <X size={20} className="sm:w-6 sm:h-6" />
                         </button>
                     </div>
                 )}
-                {children}
+                <div className="flex-1 overflow-auto">{children}</div>
             </div>
         </div>
     );

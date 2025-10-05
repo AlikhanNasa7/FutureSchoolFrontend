@@ -6,6 +6,7 @@ import type { SubjectOverviewData } from './SubjectOverviewCard';
 import { useUserState } from '@/contexts/UserContext';
 import { modalController } from '@/lib/modalController';
 import { SharedLinkItem } from './SharedLinkItem';
+import axiosInstance from '@/lib/axios';
 
 interface SubjectOverviewPanelProps {
     data: SubjectOverviewData;
@@ -13,21 +14,311 @@ interface SubjectOverviewPanelProps {
 }
 
 export function handleFileView(
-    fileData: { file: string; title: string; type: string },
-    filename: string
+    fileData: {
+        file: string;
+        title: string;
+        type: string;
+        id?: number | string;
+    },
+    filename: string,
+    courseSectionId?: number
 ) {
     console.log(fileData, filename, 'fileData', 'filename');
-    const fileUrl = fileData.file;
 
-    console.log('Opening file in modal:', { fileData, fileUrl, filename });
+    // Check if this is a directory
+    if (fileData.type === 'directory') {
+        console.log('Opening directory in modal:', { fileData, filename });
 
-    modalController.open('file-viewer', {
-        file: {
-            url: fileUrl,
-            title: filename,
-            type: fileData.type,
-        },
+        // Fetch directory contents from API
+        const resourceId =
+            typeof fileData.id === 'string'
+                ? parseInt(fileData.id)
+                : fileData.id || 0;
+        fetchDirectoryContents(resourceId, filename, courseSectionId);
+    } else {
+        // Regular file - open in file viewer
+        const fileUrl = fileData.file;
+        console.log('Opening file in modal:', { fileData, fileUrl, filename });
+
+        modalController.open('file-viewer', {
+            file: {
+                url: fileUrl,
+                title: filename,
+                type: fileData.type,
+            },
+        });
+    }
+}
+
+async function fetchDirectoryContents(
+    resourceId: number,
+    directoryTitle: string,
+    courseSectionId?: number
+) {
+    // Validate resourceId
+    if (!resourceId || resourceId === 0) {
+        console.error('Invalid resource ID for directory:', resourceId);
+        modalController.open('directory-viewer', {
+            directory: {
+                title: directoryTitle,
+                files: [],
+                parent_id: resourceId,
+            },
+            onFileClick: (file: {
+                id: number;
+                title: string;
+                type: string;
+                file_url?: string;
+                file?: string;
+                is_directory?: boolean;
+            }) => {
+                handleFileView(
+                    {
+                        file: file.file_url || file.file || '',
+                        title: file.title,
+                        type: file.is_directory ? 'directory' : 'file',
+                        id: file.id,
+                    },
+                    file.title
+                );
+            },
+            onAddFile: (parentId: number) => {
+                console.log('Add file to directory:', parentId);
+            },
+            onDownloadFolder: () => {
+                console.log('Download entire folder');
+            },
+        });
+        return;
+    }
+
+    try {
+        const response = await axiosInstance.get(`/resources/${resourceId}/`);
+        const resource = response.data;
+
+        // Transform children data to match DirectoryModal format
+        const files =
+            resource.children?.map(
+                (child: {
+                    id: number;
+                    title: string;
+                    type: string;
+                    file?: string;
+                    size?: number;
+                }) => ({
+                    id: child.id,
+                    title: child.title,
+                    type: child.type,
+                    file_url: child.file,
+                    file: child.file,
+                    size: child.size,
+                    is_directory: child.type === 'directory',
+                })
+            ) || [];
+
+        const directoryData = {
+            title: directoryTitle,
+            files: files,
+            parent_id: resourceId,
+        };
+
+        modalController.open('directory-viewer', {
+            directory: directoryData,
+            onFileClick: (file: {
+                id: number;
+                title: string;
+                type: string;
+                file_url?: string;
+                file?: string;
+                is_directory?: boolean;
+            }) => {
+                // Handle individual file clicks within directory
+                handleFileView(
+                    {
+                        file: file.file_url || file.file || '',
+                        title: file.title,
+                        type: file.is_directory ? 'directory' : 'file',
+                        id: file.id,
+                    },
+                    file.title,
+                    courseSectionId
+                );
+            },
+            onAddFile: (parentId: number) => {
+                console.log('Add file to directory:', parentId);
+                if (courseSectionId) {
+                    handleAddFileToDirectory(
+                        parentId,
+                        directoryTitle,
+                        courseSectionId,
+                        () => {
+                            // Refresh directory contents after adding files
+                            fetchDirectoryContents(
+                                resourceId,
+                                directoryTitle,
+                                courseSectionId
+                            );
+                        }
+                    );
+                }
+            },
+            onDownloadFolder: () => {
+                console.log('Download entire folder');
+                handleDownloadFolder(resourceId, directoryTitle);
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching directory contents:', error);
+        // Fallback to empty directory
+        modalController.open('directory-viewer', {
+            directory: {
+                title: directoryTitle,
+                files: [],
+                parent_id: resourceId,
+            },
+            onFileClick: (file: {
+                id: number;
+                title: string;
+                type: string;
+                file_url?: string;
+                file?: string;
+                is_directory?: boolean;
+            }) => {
+                handleFileView(
+                    {
+                        file: file.file_url || file.file || '',
+                        title: file.title,
+                        type: file.is_directory ? 'directory' : 'file',
+                        id: file.id,
+                    },
+                    file.title,
+                    courseSectionId
+                );
+            },
+            onAddFile: (parentId: number) => {
+                console.log('Add file to directory:', parentId);
+                if (courseSectionId) {
+                    handleAddFileToDirectory(
+                        parentId,
+                        directoryTitle,
+                        courseSectionId,
+                        () => {
+                            // Refresh directory contents after adding files
+                            fetchDirectoryContents(
+                                resourceId,
+                                directoryTitle,
+                                courseSectionId
+                            );
+                        }
+                    );
+                }
+            },
+            onDownloadFolder: () => {
+                console.log('Download entire folder');
+                handleDownloadFolder(resourceId, directoryTitle);
+            },
+        });
+    }
+}
+
+export function handleDirectoryView(
+    directoryData: {
+        title: string;
+        files: Array<{
+            id: number;
+            title: string;
+            type: string;
+            file_url?: string;
+            file?: string;
+            size?: number;
+            is_directory?: boolean;
+        }>;
+        parent_id?: number;
+    },
+    onFileClick?: (file: {
+        id: number;
+        title: string;
+        type: string;
+        file_url?: string;
+        file?: string;
+        is_directory?: boolean;
+    }) => void,
+    onAddFile?: (parentId: number) => void,
+    onDownloadFolder?: () => void
+) {
+    console.log('Opening directory in modal:', directoryData);
+
+    modalController.open('directory-viewer', {
+        directory: directoryData,
+        onFileClick,
+        onAddFile,
+        onDownloadFolder,
     });
+}
+
+export function handleAddFileToDirectory(
+    directoryId: number,
+    directoryTitle: string,
+    courseSectionId: number,
+    onSuccess?: () => void
+) {
+    console.log('Opening add file to directory modal:', {
+        directoryId,
+        directoryTitle,
+        courseSectionId,
+    });
+
+    modalController.open('add-file-to-directory', {
+        directoryId,
+        directoryTitle,
+        courseSectionId,
+        onSuccess,
+    });
+}
+
+export async function handleDownloadFolder(
+    directoryId: number,
+    directoryTitle: string
+) {
+    console.log('Downloading folder as ZIP:', { directoryId, directoryTitle });
+
+    try {
+        const { default: axiosInstance } = await import('@/lib/axios');
+
+        // Make request to download ZIP
+        const response = await axiosInstance.get(
+            `/resources/${directoryId}/download-zip/`,
+            {
+                responseType: 'blob', // Important for binary data
+            }
+        );
+
+        // Create blob URL and trigger download
+        const blob = new Blob([response.data], { type: 'application/zip' });
+        const url = window.URL.createObjectURL(blob);
+
+        // Create temporary link element to trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${directoryTitle}.zip`;
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        console.log('Folder download completed successfully');
+    } catch (error) {
+        console.error('Error downloading folder:', error);
+
+        // Show user-friendly error message
+        const errorMessage =
+            error instanceof Error
+                ? error.message
+                : 'Failed to download folder';
+        alert(`Error downloading folder: ${errorMessage}`);
+    }
 }
 
 export default function SubjectOverviewPanel({
@@ -128,7 +419,13 @@ export default function SubjectOverviewPanel({
                                 <SharedLinkItem
                                     item={resource}
                                     isTeacher={isTeacher}
-                                    onFileView={handleFileView}
+                                    onFileView={(fileData, filename) =>
+                                        handleFileView(
+                                            fileData,
+                                            filename,
+                                            courseSectionId
+                                        )
+                                    }
                                 />
                             </div>
                         ))}

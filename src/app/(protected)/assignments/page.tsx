@@ -38,8 +38,8 @@ interface Assignment {
         assignment: number;
     }[];
     is_available: string;
-    is_deadline_passed: string;
-    is_submitted: string;
+    is_deadline_passed: boolean;
+    is_submitted: boolean;
 }
 
 export default function AssignmentsPage() {
@@ -80,9 +80,9 @@ export default function AssignmentsPage() {
     };
 
     const getStatusColor = (assignment: Assignment) => {
-        if (assignment.is_submitted === 'true') {
+        if (assignment.is_submitted === true) {
             return 'bg-green-100 text-green-800 border-green-200';
-        } else if (assignment.is_deadline_passed === 'true') {
+        } else if (assignment.is_deadline_passed === true) {
             return 'bg-red-100 text-red-800 border-red-200';
         } else {
             return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -90,9 +90,9 @@ export default function AssignmentsPage() {
     };
 
     const getStatusText = (assignment: Assignment) => {
-        if (assignment.is_submitted === 'true') {
+        if (assignment.is_submitted === true) {
             return 'Сдано';
-        } else if (assignment.is_deadline_passed === 'true') {
+        } else if (assignment.is_deadline_passed === true) {
             return 'Просрочено';
         } else {
             return 'В ожидании';
@@ -100,9 +100,9 @@ export default function AssignmentsPage() {
     };
 
     const getStatusIcon = (assignment: Assignment) => {
-        if (assignment.is_submitted === 'true') {
+        if (assignment.is_submitted === true) {
             return <CheckCircle className="w-4 h-4" />;
-        } else if (assignment.is_deadline_passed === 'true') {
+        } else if (assignment.is_deadline_passed === true) {
             return <AlertCircle className="w-4 h-4" />;
         } else {
             return <Clock className="w-4 h-4" />;

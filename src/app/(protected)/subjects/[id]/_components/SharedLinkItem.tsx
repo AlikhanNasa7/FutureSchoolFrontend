@@ -18,11 +18,11 @@ interface SharedLinkItemProps {
         image?: string;
         recording?: string;
         title: string;
-        type: string;
+        type?: string;
     };
     isTeacher: boolean;
     onFileView?: (
-        fileData: { file: string; title: string; type: string },
+        fileData: { file: string; title: string; type: string; id?: string },
         title: string
     ) => void;
 }
@@ -32,7 +32,6 @@ export function SharedLinkItem({
     isTeacher,
     onFileView,
 }: SharedLinkItemProps) {
-    const isFile = item.file;
     const isLink = item.type === 'link' && item.url;
     const isDirectory = item.type === 'directory';
     const isMeet = item.type === 'meet';
@@ -68,15 +67,24 @@ export function SharedLinkItem({
                 {
                     file: item.file,
                     title: item.title,
-                    type: item.type,
+                    type: item.type || 'file',
+                    id: item.id,
                 },
                 item.title
             );
         } else if (isLink && item.url) {
             window.open(item.url, '_blank');
-        } else if (isDirectory) {
-            // Navigate to directory - you might want to use router here
-            console.log('Navigate to directory:', item.id);
+        } else if (isDirectory && onFileView) {
+            // Open directory in modal
+            onFileView(
+                {
+                    file: item.file || '',
+                    title: item.title,
+                    type: item.type || 'directory',
+                    id: item.id,
+                },
+                item.title
+            );
         } else if (isMeet && item.meet) {
             window.open(item.meet, '_blank');
         } else if (isDocument && item.document) {

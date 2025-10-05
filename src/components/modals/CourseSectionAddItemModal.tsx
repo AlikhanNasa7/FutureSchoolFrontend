@@ -28,6 +28,7 @@ interface ResourceFormData {
         | 'video'
         | 'meet';
     file?: File | null;
+    files?: File[]; // For multiple file uploads
 }
 
 interface AssignmentFormData {
@@ -38,7 +39,7 @@ interface AssignmentFormData {
     file?: File | null;
 }
 
-const fileTypes = ['image', 'video', 'file'];
+const fileTypes = ['image', 'video', 'file', 'directory'];
 
 // Helper function to get file accept types based on resource type
 function getFileAcceptTypes(type: string): string {
@@ -49,6 +50,8 @@ function getFileAcceptTypes(type: string): string {
             return 'video/*';
         case 'file':
             return '*/*';
+        case 'directory':
+            return '*/*'; // Allow any file type for directories
         case 'document':
             return '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf';
         default:
@@ -71,6 +74,7 @@ export default function CourseSectionAddItemModal({
         url: '',
         type: 'file',
         file: null,
+        files: [],
     });
 
     const [assignmentForm, setAssignmentForm] = useState<AssignmentFormData>({
@@ -90,15 +94,47 @@ export default function CourseSectionAddItemModal({
         try {
             let response;
 
-            if (fileTypes.includes(resourceForm.type) && resourceForm.file) {
-                // Handle file upload
+            if (
+                resourceForm.type === 'directory' &&
+                resourceForm.files &&
+                resourceForm.files.length > 0
+            ) {
+                // Handle directory with multiple files using new backend endpoint
+                const formData = new FormData();
+                formData.append('course_section', courseSectionId.toString());
+                formData.append('title', resourceForm.title);
+
+                // Append all files
+                resourceForm.files.forEach(file => {
+                    formData.append('files', file);
+                });
+
+                console.log('Creating directory with files:', {
+                    course_section: courseSectionId,
+                    title: resourceForm.title,
+                    fileCount: resourceForm.files.length,
+                });
+
+                response = await axiosInstance.post(
+                    '/resources/create-directory-with-files/',
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    }
+                );
+            } else if (
+                fileTypes.includes(resourceForm.type) &&
+                resourceForm.file
+            ) {
+                // Handle single file upload
                 const formData = new FormData();
                 formData.append('course_section', courseSectionId.toString());
                 formData.append('type', resourceForm.type);
                 formData.append('title', resourceForm.title);
                 formData.append('file', resourceForm.file);
 
-                console.log('Form data:', resourceForm.file);
                 console.log('Creating file resource:', {
                     course_section: courseSectionId,
                     type: resourceForm.type,
@@ -106,13 +142,17 @@ export default function CourseSectionAddItemModal({
                     file: resourceForm.file.name,
                 });
 
-                response = await axiosInstance.post('/resources/', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
+                response = await axiosInstance.post(
+                    '/learning/resources/',
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    }
+                );
             } else {
-                // Handle regular resource (link, text, directory)
+                // Handle regular resource (link, text, directory without files)
                 const resourceData = {
                     course_section: courseSectionId,
                     type: resourceForm.type,
@@ -123,7 +163,7 @@ export default function CourseSectionAddItemModal({
                 console.log('Creating resource:', resourceData);
 
                 response = await axiosInstance.post(
-                    '/resources/',
+                    '/learning/resources/',
                     resourceData
                 );
             }
@@ -229,6 +269,7 @@ export default function CourseSectionAddItemModal({
             url: '',
             type: 'file',
             file: null,
+            files: [],
         });
         setAssignmentForm({
             title: '',
@@ -252,6 +293,7 @@ export default function CourseSectionAddItemModal({
             title: '',
             url: '',
             file: null,
+            files: [],
         }));
     }, [resourceForm.type]);
 
@@ -496,53 +538,177 @@ export default function CourseSectionAddItemModal({
                         {fileTypes.includes(resourceForm.type) && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    File *
+                                    {resourceForm.type === 'directory'
+                                        ? `Attach Files (Optional) - ${resourceForm.files?.length || 0}/10`
+                                        : 'File *'}
                                 </label>
-                                <div className="relative">
-                                    <input
-                                        type="file"
-                                        onChange={e =>
-                                            setResourceForm(prev => ({
-                                                ...prev,
-                                                file:
-                                                    e.target.files?.[0] || null,
-                                            }))
-                                        }
-                                        className="absolute inset-0 w-32 h-32 opacity-0 cursor-pointer"
-                                        accept={getFileAcceptTypes(
-                                            resourceForm.type
-                                        )}
-                                    />
-                                    <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors">
-                                        {resourceForm.file ? (
-                                            <div className="text-center">
-                                                <div className="flex items-center justify-center mb-2">
-                                                    <FileText className="w-8 h-8 text-blue-500" />
+
+                                {/* Multiple file input for directories */}
+                                {resourceForm.type === 'directory' ? (
+                                    <div>
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={e => {
+                                                    const selectedFiles =
+                                                        Array.from(
+                                                            e.target.files || []
+                                                        );
+                                                    const currentFiles =
+                                                        resourceForm.files ||
+                                                        [];
+                                                    const totalFiles =
+                                                        currentFiles.length +
+                                                        selectedFiles.length;
+
+                                                    if (totalFiles > 10) {
+                                                        setError(
+                                                            'Maximum 10 files allowed'
+                                                        );
+                                                        return;
+                                                    }
+
+                                                    setResourceForm(prev => ({
+                                                        ...prev,
+                                                        files: [
+                                                            ...(prev.files ||
+                                                                []),
+                                                            ...selectedFiles,
+                                                        ],
+                                                    }));
+                                                }}
+                                                className="absolute inset-0 w-full h-32 opacity-0 cursor-pointer"
+                                                accept={getFileAcceptTypes(
+                                                    resourceForm.type
+                                                )}
+                                            />
+                                            <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors">
+                                                <div className="text-center">
+                                                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                                    <p className="text-sm text-gray-500">
+                                                        Click to attach files to
+                                                        directory
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">
+                                                        or drag and drop (Max 10
+                                                        files)
+                                                    </p>
                                                 </div>
-                                                <p className="text-sm text-gray-700 font-medium truncate max-w-48">
-                                                    {resourceForm.file.name}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {(
-                                                        resourceForm.file.size /
-                                                        1024
-                                                    ).toFixed(1)}{' '}
-                                                    KB
-                                                </p>
                                             </div>
-                                        ) : (
-                                            <div className="text-center">
-                                                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                                <p className="text-sm text-gray-500">
-                                                    Click to upload file
-                                                </p>
-                                                <p className="text-xs text-gray-400">
-                                                    or drag and drop
-                                                </p>
-                                            </div>
-                                        )}
+                                        </div>
+
+                                        {/* Display selected files */}
+                                        {resourceForm.files &&
+                                            resourceForm.files.length > 0 && (
+                                                <div className="mt-3 space-y-2">
+                                                    <p className="text-sm font-medium text-gray-700">
+                                                        Selected Files:
+                                                    </p>
+                                                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                                                        {resourceForm.files.map(
+                                                            (file, index) => (
+                                                                <div
+                                                                    key={index}
+                                                                    className="flex items-center justify-between bg-gray-50 p-2 rounded"
+                                                                >
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <FileText className="w-4 h-4 text-blue-500" />
+                                                                        <span className="text-sm text-gray-700 truncate max-w-48">
+                                                                            {
+                                                                                file.name
+                                                                            }
+                                                                        </span>
+                                                                        <span className="text-xs text-gray-500">
+                                                                            {(
+                                                                                file.size /
+                                                                                1024
+                                                                            ).toFixed(
+                                                                                1
+                                                                            )}{' '}
+                                                                            KB
+                                                                        </span>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setResourceForm(
+                                                                                prev => ({
+                                                                                    ...prev,
+                                                                                    files:
+                                                                                        prev.files?.filter(
+                                                                                            (
+                                                                                                _,
+                                                                                                i
+                                                                                            ) =>
+                                                                                                i !==
+                                                                                                index
+                                                                                        ) ||
+                                                                                        [],
+                                                                                })
+                                                                            );
+                                                                        }}
+                                                                        className="text-red-500 hover:text-red-700 text-sm"
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                     </div>
-                                </div>
+                                ) : (
+                                    /* Single file input for other types */
+                                    <div className="relative">
+                                        <input
+                                            type="file"
+                                            onChange={e =>
+                                                setResourceForm(prev => ({
+                                                    ...prev,
+                                                    file:
+                                                        e.target.files?.[0] ||
+                                                        null,
+                                                }))
+                                            }
+                                            className="absolute inset-0 w-32 h-32 opacity-0 cursor-pointer"
+                                            accept={getFileAcceptTypes(
+                                                resourceForm.type
+                                            )}
+                                        />
+                                        <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors">
+                                            {resourceForm.file ? (
+                                                <div className="text-center">
+                                                    <div className="flex items-center justify-center mb-2">
+                                                        <FileText className="w-8 h-8 text-blue-500" />
+                                                    </div>
+                                                    <p className="text-sm text-gray-700 font-medium truncate max-w-48">
+                                                        {resourceForm.file.name}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {(
+                                                            resourceForm.file
+                                                                .size / 1024
+                                                        ).toFixed(1)}{' '}
+                                                        KB
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center">
+                                                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                                    <p className="text-sm text-gray-500">
+                                                        Click to upload file
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">
+                                                        or drag and drop
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {resourceForm.file && (
                                     <p className="mt-1 text-sm text-gray-600">
                                         Selected: {resourceForm.file.name}

@@ -7,18 +7,22 @@ import EventModal from './EventModal';
 import CourseSectionAddItemModal from './CourseSectionAddItemModal';
 import CourseSectionCreateModal from './CourseSectionCreateModal';
 import FileViewerModal from './FileViewerModal';
+import DirectoryModal from './DirectoryModal';
 import ConfirmationModal from './ConfirmationModal';
 import FileUploadModal from './FileUploadModal';
 import AddStudentModal from './AddStudentModal';
+import AddFileToDirectoryModal from './AddFileToDirectoryModal';
 import type {
     ModalState,
     EventModalData,
     CourseSectionAddItemModalData,
     CourseSectionCreateModalData,
     FileViewerModalData,
+    DirectoryModalData,
     ConfirmationModalData,
     FileUploadModalData,
     AddStudentModalData,
+    AddFileToDirectoryModalData,
 } from '@/lib/modalController';
 
 export default function ModalProvider() {
@@ -87,6 +91,29 @@ export default function ModalProvider() {
                     onClose={() => modalController.close()}
                 />
             );
+        case 'directory-viewer':
+            return (
+                <DirectoryModal
+                    directory={
+                        (modalState.data as DirectoryModalData)?.directory || {
+                            title: '',
+                            files: [],
+                        }
+                    }
+                    onFileClick={
+                        (modalState.data as DirectoryModalData)?.onFileClick
+                    }
+                    onAddFile={
+                        (modalState.data as DirectoryModalData)?.onAddFile
+                    }
+                    onDownloadFolder={
+                        (modalState.data as DirectoryModalData)
+                            ?.onDownloadFolder
+                    }
+                    isOpen={modalState.isOpen}
+                    onClose={() => modalController.close()}
+                />
+            );
         case 'confirmation':
             return (
                 <ConfirmationModal
@@ -123,6 +150,29 @@ export default function ModalProvider() {
                     onStudentAdded={
                         (modalState.data as AddStudentModalData)
                             ?.onStudentAdded || (() => {})
+                    }
+                />
+            );
+        case 'add-file-to-directory':
+            return (
+                <AddFileToDirectoryModal
+                    isOpen={modalState.isOpen}
+                    directoryId={
+                        (modalState.data as AddFileToDirectoryModalData)
+                            ?.directoryId || 0
+                    }
+                    directoryTitle={
+                        (modalState.data as AddFileToDirectoryModalData)
+                            ?.directoryTitle || ''
+                    }
+                    courseSectionId={
+                        (modalState.data as AddFileToDirectoryModalData)
+                            ?.courseSectionId || 0
+                    }
+                    onClose={() => modalController.close()}
+                    onSuccess={
+                        (modalState.data as AddFileToDirectoryModalData)
+                            ?.onSuccess
                     }
                 />
             );

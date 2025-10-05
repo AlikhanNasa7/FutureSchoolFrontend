@@ -18,11 +18,36 @@ import Image from 'next/image';
 import { useUserState } from '@/contexts/UserContext';
 
 const navigation = [
-    { name: 'Главная', href: '/dashboard', icon: Home, roles: ['teacher', 'student', 'superadmin', 'schooladmin'] },
-    { name: 'Предметы', href: '/subjects', icon: Box, roles: ['teacher', 'student'] },
-    { name: 'Задания', href: '/assignments', icon: BookOpen, roles: ['teacher', 'student'] },
-    { name: 'Дневник', href: '/diary', icon: FileText, roles: ['teacher', 'student'] },
-    { name: 'Классы', href: '/classrooms', icon: Box, roles: ['schooladmin', 'superadmin'] },
+    {
+        name: 'Главная',
+        href: '/dashboard',
+        icon: Home,
+        roles: ['teacher', 'student', 'superadmin', 'schooladmin'],
+    },
+    {
+        name: 'Предметы',
+        href: '/subjects',
+        icon: Box,
+        roles: ['teacher', 'student'],
+    },
+    {
+        name: 'Задания',
+        href: '/assignments',
+        icon: BookOpen,
+        roles: ['teacher', 'student'],
+    },
+    {
+        name: 'Дневник',
+        href: '/diary',
+        icon: FileText,
+        roles: ['teacher', 'student'],
+    },
+    {
+        name: 'Классы',
+        href: '/classrooms',
+        icon: Box,
+        roles: ['schooladmin', 'superadmin'],
+    },
 ];
 
 const utilityItems = [
@@ -47,7 +72,7 @@ export default function Sidebar() {
         <>
             {sidebarOpen && (
                 <div
-                    className="fixed inset-0 z-40 lg:hidden"
+                    className="fixed inset-0 z-40 lg:hidden hidden min-[576px]:block"
                     onClick={() => setSidebarOpen(false)}
                 >
                     <div className="fixed inset-0 bg-gray-600 bg-opacity-75" />
@@ -55,7 +80,7 @@ export default function Sidebar() {
             )}
 
             <div
-                className={`h-screen fixed inset-y-0 top-0 left-0 z-50 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static ${
+                className={`h-screen fixed inset-y-0 top-0 left-0 z-50 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static hidden min-[576px]:block ${
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
@@ -85,33 +110,40 @@ export default function Sidebar() {
 
                     <nav className="flex-1 px-6">
                         <div className="space-y-2">
-                            {user?.role && navigation.map(item => {
-                                const isActive = pathname === item.href;
-                                if (!item.roles.includes(user?.role as string)) {
-                                    return null;
-                                }
-                                return (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                                            isActive
-                                                ? 'bg-purple-100 text-purple-600'
-                                                : 'text-gray-700 hover:bg-gray-50'
-                                        }`}
-                                        onClick={() => setSidebarOpen(false)}
-                                    >
-                                        <item.icon
-                                            className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                            {user?.role &&
+                                navigation.map(item => {
+                                    const isActive = pathname === item.href;
+                                    if (
+                                        !item.roles.includes(
+                                            user?.role as string
+                                        )
+                                    ) {
+                                        return null;
+                                    }
+                                    return (
+                                        <Link
+                                            key={item.name}
+                                            href={item.href}
+                                            className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                                 isActive
-                                                    ? 'text-purple-600'
-                                                    : 'text-gray-500'
+                                                    ? 'bg-purple-100 text-purple-600'
+                                                    : 'text-gray-700 hover:bg-gray-50'
                                             }`}
-                                        />
-                                        {item.name}
-                                    </Link>
-                                );
-                            })}
+                                            onClick={() =>
+                                                setSidebarOpen(false)
+                                            }
+                                        >
+                                            <item.icon
+                                                className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                                                    isActive
+                                                        ? 'text-purple-600'
+                                                        : 'text-gray-500'
+                                                }`}
+                                            />
+                                            {item.name}
+                                        </Link>
+                                    );
+                                })}
                         </div>
 
                         <div className="mt-8 space-y-2">

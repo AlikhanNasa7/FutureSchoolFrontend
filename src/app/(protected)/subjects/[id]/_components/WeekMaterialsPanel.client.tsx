@@ -1,21 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import {
-    ChevronDown,
-    FileText,
-    CheckCircle,
-    Clock,
-    AlertCircle,
-    Plus,
-    Info,
-    Trash2,
-} from 'lucide-react';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import type { WeekMaterialsData, WeekItem } from './WeekMaterialsSection';
-import { getIconByType } from './IconUtils';
 import { useUserState } from '@/contexts/UserContext';
 import { modalController } from '@/lib/modalController';
-import axiosInstance from '@/lib/axios';
 import { SharedLinkItem } from './SharedLinkItem';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -50,54 +39,66 @@ export function DeleteButton({
     );
 }
 
-function getStatusIcon(
-    status: 'not_started' | 'in_progress' | 'submitted' | 'graded'
+function getStatusText(item: WeekItem) {
+    if (item.kind === 'task') {
+        if (item.status === 'submitted') {
+            return 'Сдано';
+        } else if (item.status === 'in_progress') {
+            return 'В процессе';
+        } else {
+            return 'Начать';
+        }
+    } else if (item.kind === 'test') {
+        if (item.status === 'completed') {
+            return 'Завершено';
+        } else if (item.status === 'in_progress') {
+            return 'В процессе';
+        } else {
+            return 'Начать';
+        }
+    }
+    return 'Начать';
+}
+
+function handleFileView(
+    fileData: { file: string; title: string; type: string; id?: string },
+    filename: string,
+    courseSectionId?: number
 ) {
-    switch (status) {
-        case 'not_started':
-            return <AlertCircle className="w-4 h-4 text-gray-400" />;
-        case 'in_progress':
-            return <Clock className="w-4 h-4 text-yellow-500" />;
-        case 'submitted':
-            return <CheckCircle className="w-4 h-4 text-blue-500" />;
-        case 'graded':
-            return <CheckCircle className="w-4 h-4 text-green-500" />;
-        default:
-            return <AlertCircle className="w-4 h-4 text-gray-400" />;
+    console.log(fileData, filename, 'fileData', 'filename');
+
+    // Check if this is a directory
+    if (fileData.type === 'directory') {
+        console.log('Opening directory in modal:', { fileData, filename });
+
+        // Import the handleFileView from SubjectOverviewPanel to use the directory logic
+        import('./SubjectOverviewPanel.client').then(
+            ({ handleFileView: handleFileViewFromOverview }) => {
+                handleFileViewFromOverview(
+                    {
+                        file: fileData.file || '',
+                        title: filename,
+                        type: fileData.type || 'file',
+                        id: fileData.id ? parseInt(fileData.id) : undefined,
+                    },
+                    filename,
+                    courseSectionId
+                );
+            }
+        );
+    } else {
+        // Regular file - open in file viewer
+        const fileUrl = fileData.file;
+        console.log('Opening file in modal:', { fileData, fileUrl, filename });
+
+        modalController.open('file-viewer', {
+            file: {
+                url: fileUrl,
+                title: filename,
+                type: fileData.type,
+            },
+        });
     }
-}
-
-function getStatusText(item) {
-    if (item.is_submitted === true) {
-        return 'Сдано';
-    } else if (item.is_available === true) {
-        return 'Начать';
-    } else if (item.is_deadline_passed === true) {
-        return 'Просрочено';
-    }
-}
-
-interface Resource {
-    href: string;
-    title: string;
-    type?: string;
-    size?: number;
-}
-
-function handleFileView(resource: Resource, filename: string) {
-    console.log(resource, filename, 'resource', 'filename');
-    const fileUrl = resource.file;
-
-    console.log('Opening file in modal:', { resource, fileUrl, filename });
-
-    modalController.open('file-viewer', {
-        file: {
-            url: fileUrl,
-            title: filename,
-            type: resource.type,
-            size: resource.size,
-        },
-    });
 }
 
 function TaskItem({
@@ -215,7 +216,6 @@ export default function WeekMaterialsPanel({
     courseSectionId,
 }: WeekMaterialsPanelProps) {
     const [isExpanded, setIsExpanded] = useState(true);
-    const [deleteLoading, setDeleteLoading] = useState(false);
     const { user } = useUserState();
     const isTeacher = user?.role === 'teacher';
 
@@ -326,7 +326,13 @@ export default function WeekMaterialsPanel({
                                     <SharedLinkItem
                                         item={item}
                                         isTeacher={isTeacher}
-                                        onFileView={handleFileView}
+                                        onFileView={(fileData, filename) =>
+                                            handleFileView(
+                                                fileData,
+                                                filename,
+                                                courseSectionId
+                                            )
+                                        }
                                     />
                                 </div>
                             );

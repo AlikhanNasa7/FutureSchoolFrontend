@@ -5,9 +5,11 @@ export type ModalType =
     | 'course-section-add-item'
     | 'course-section-create'
     | 'file-viewer'
+    | 'directory-viewer'
     | 'confirmation'
     | 'file-upload'
-    | 'add-student';
+    | 'add-student'
+    | 'add-file-to-directory';
 
 export interface EventModalData {
     title: string;
@@ -37,6 +39,25 @@ export interface FileViewerModalData {
     };
 }
 
+export interface DirectoryModalData {
+    directory: {
+        title: string;
+        files: Array<{
+            id: number;
+            title: string;
+            type: string;
+            file_url?: string;
+            file?: string;
+            size?: number;
+            is_directory?: boolean;
+        }>;
+        parent_id?: number;
+    };
+    onFileClick?: (file: any) => void;
+    onAddFile?: (parentId: number) => void;
+    onDownloadFolder?: () => void;
+}
+
 export interface ConfirmationModalData {
     title: string;
     message: string;
@@ -56,6 +77,13 @@ export interface AddStudentModalData {
     classroomId: number;
     classroomName: string;
     onStudentAdded: () => void;
+}
+
+export interface AddFileToDirectoryModalData {
+    directoryId: number;
+    directoryTitle: string;
+    courseSectionId: number;
+    onSuccess?: () => void;
 }
 
 export interface ModalState {

@@ -8,6 +8,7 @@ import { AxiosError } from 'axios';
 import { handleFileView } from '../../subjects/[id]/_components/SubjectOverviewPanel.client';
 import { modalController } from '@/lib/modalController';
 import { useUserState } from '@/contexts/UserContext';
+import SubmissionsTable from '@/components/assignments/SubmissionsTable';
 
 interface Assignment {
     id: number;
@@ -54,6 +55,29 @@ interface Assignment {
             position: number;
         }[];
     } | null;
+    all_submissions?:
+        | {
+              id: number;
+              submitted_at: string;
+              text: string;
+              file: string;
+              student_username: string;
+              student_first_name: string;
+              student_last_name: string;
+              grade_value?: number;
+              grade_feedback?: string;
+              graded_at?: string;
+              attachments: {
+                  id: number;
+                  type: string;
+                  title: string;
+                  content: string;
+                  file_url: string;
+                  file: string;
+                  position: number;
+              }[];
+          }[]
+        | null;
 }
 
 export default function AssignmentPage() {
@@ -130,7 +154,7 @@ export default function AssignmentPage() {
         try {
             setSubmitting(true);
             const formData = new FormData();
-            formData.append('student', user.id.toString());
+            formData.append('student', user?.id.toString() || '');
             formData.append('assignment', assignmentId.toString());
             formData.append('file', selectedFile);
 
@@ -199,17 +223,15 @@ export default function AssignmentPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6">
-                <div className="max-w-4xl mx-auto">
-                    <div className="animate-pulse">
-                        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-                            <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-                        </div>
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                        </div>
+            <div className="container mx-auto px-4 py-8">
+                <div className="animate-pulse">
+                    <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                        <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+                        <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                     </div>
                 </div>
             </div>
@@ -218,25 +240,24 @@ export default function AssignmentPage() {
 
     if (error || !assignment) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6">
-                <div className="max-w-4xl mx-auto">
-                    <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-                        <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                            Ошибка загрузки
-                        </h2>
-                        <p className="text-gray-600">
-                            {error || 'Задание не найдено'}
-                        </p>
-                    </div>
+            <div className="container mx-auto px-4 py-8">
+                <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                    <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        Ошибка загрузки
+                    </h2>
+                    <p className="text-gray-600">
+                        {error || 'Задание не найдено'}
+                    </p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <div className="container mx-auto px-4 py-8">
+            <div className="space-y-6">
+                {/* Assignment Meta Information */}
                 <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-4">
@@ -247,22 +268,25 @@ export default function AssignmentPage() {
                                 <h1 className="text-2xl font-bold text-gray-900">
                                     {assignment.title}
                                 </h1>
-                                <span
-                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(assignment)}`}
-                                >
-                                    {getStatusText(assignment)}
-                                </span>
+                                {user?.role === 'student' && (
+                                    <span
+                                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(assignment)}`}
+                                    >
+                                        {getStatusText(assignment)}
+                                    </span>
+                                )}
                             </div>
                         </div>
-                        {!assignment.is_submitted && (
-                            <button
-                                onClick={handleSubmit}
-                                disabled={!selectedFile || submitting}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                {submitting ? 'Отправка...' : 'Сдать'}
-                            </button>
-                        )}
+                        {user?.role === 'student' &&
+                            !assignment.is_submitted && (
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={!selectedFile || submitting}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    {submitting ? 'Отправка...' : 'Сдать'}
+                                </button>
+                            )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -295,8 +319,8 @@ export default function AssignmentPage() {
                         </div>
                     </div>
 
-                    {/* File Upload Section - Only show if not submitted */}
-                    {!assignment.is_submitted && (
+                    {/* File Upload Section - Only show for students if not submitted */}
+                    {user?.role === 'student' && !assignment.is_submitted && (
                         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">
                                 Прикрепить файл
@@ -342,8 +366,8 @@ export default function AssignmentPage() {
                         </div>
                     )}
 
-                    {/* Submitted File Section - Show if assignment is submitted */}
-                    {assignment.is_submitted &&
+                    {user?.role === 'student' &&
+                        assignment.is_submitted &&
                         assignment.student_submission && (
                             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -376,13 +400,13 @@ export default function AssignmentPage() {
                                             <button
                                                 onClick={() => {
                                                     const filename =
-                                                        assignment.student_submission.file
-                                                            .split('/')
+                                                        assignment.student_submission?.file
+                                                            ?.split('/')
                                                             .pop() ||
                                                         'submission';
                                                     downloadFile(
                                                         assignment
-                                                            .student_submission
+                                                            .student_submission!
                                                             .file,
                                                         filename
                                                     );
@@ -497,6 +521,15 @@ export default function AssignmentPage() {
                         </div>
                     )}
                 </div>
+
+                {/* Student Submissions - Only show for teachers */}
+                {user?.role === 'teacher' && assignment.all_submissions && (
+                    <SubmissionsTable
+                        submissions={assignment.all_submissions}
+                        maxGrade={assignment.max_grade}
+                        onGradeUpdate={fetchAssignment}
+                    />
+                )}
             </div>
         </div>
     );
