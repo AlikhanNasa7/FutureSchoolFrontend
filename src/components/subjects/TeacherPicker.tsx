@@ -42,7 +42,7 @@ export default function TeacherPicker({
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-[200px] p-3 rounded-md bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-lg font-semibold text-[#626262] flex items-center justify-between"
+                className="w-full p-3 rounded-md bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold text-[#626262] flex items-center justify-between"
             >
                 <span className="truncate">
                     {selectedTeacher || 'Все преподаватели'}
@@ -65,7 +65,7 @@ export default function TeacherPicker({
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                <div className="absolute w-full top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
                     <div className="py-1">
                         <button
                             onClick={() => handleTeacherSelect('')}

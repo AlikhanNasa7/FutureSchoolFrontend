@@ -331,15 +331,18 @@ export default function AssignmentPage() {
                                         <div className="flex items-center space-x-3">
                                             <Upload className="w-5 h-5 text-green-600" />
                                             <div>
-                                                <p className="font-medium text-green-900">
-                                                    {selectedFile.name}
-                                                </p>
-                                                <p className="text-sm text-green-700">
-                                                    {(
-                                                        selectedFile.size / 1024
-                                                    ).toFixed(1)}{' '}
-                                                    KB
-                                                </p>
+                                                {selectedFile && (
+                                                <>
+                                                    <p className="font-medium text-green-900">
+                                                        {selectedFile.name}
+                                                    </p>
+                                                    <p className="text-sm text-green-700">
+                                                        {(
+                                                            selectedFile.size / 1024
+                                                        ).toFixed(1)}{' '}
+                                                        KB
+                                                    </p>
+                                                </>)}
                                             </div>
                                         </div>
                                         <button
@@ -359,6 +362,11 @@ export default function AssignmentPage() {
                                     >
                                         <div className="flex items-center space-x-3">
                                             <Upload className="w-5 h-5 text-green-600" />
+                                            {!selectedFile && (
+                                                    <p className="font-medium text-green-900">
+                                                        Нажмите чтобы выбрать
+                                                    </p>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -515,7 +523,7 @@ export default function AssignmentPage() {
                                 className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 inline-flex items-center gap-2 w-full max-w-full text-left hover:shadow-sm"
                             >
                                 <span className="truncate block w-full max-w-full overflow-hidden">
-                                    {assignment.file}
+                                    {assignment.file.length> 60 ? assignment.file.slice(0, 60) + '...' : assignment.file}
                                 </span>
                             </button>
                         </div>

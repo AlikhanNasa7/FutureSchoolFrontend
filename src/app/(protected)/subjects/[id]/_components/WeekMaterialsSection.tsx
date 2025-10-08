@@ -36,8 +36,12 @@ export type WeekItem =
               | 'video'
               | 'image'
               | 'recording'; // icon type
-          status?: 'not_started' | 'in_progress' | 'submitted' | 'graded';
+          is_available?: boolean;
+          is_deadline_passed?: boolean;
+          is_submitted?: boolean;
           score?: string;
+          grade_value?: number;
+          max_grade?: number;
           icon?: React.ReactNode;
       }
     | {
@@ -46,8 +50,12 @@ export type WeekItem =
           title: string;
           file?: string;
           type?: 'test';
-          status?: 'not_started' | 'in_progress' | 'completed' | 'graded';
+          is_available?: boolean;
+          is_deadline_passed?: boolean;
+          is_submitted?: boolean;
           score?: string;
+          grade_value?: number;
+          max_grade?: number;
           icon?: React.ReactNode;
       };
 

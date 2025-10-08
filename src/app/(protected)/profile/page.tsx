@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
     User,
     Mail,
@@ -12,95 +11,10 @@ import {
     Edit,
     CheckCircle,
     Clock,
-    AlertCircle,
 } from 'lucide-react';
 import { useUserState, useUserActions } from '@/contexts/UserContext';
 
-interface UserProfile {
-    id: string;
-    name: string;
-    username: string;
-    email: string;
-    phone: string;
-    role: 'student' | 'teacher' | 'admin' | 'superadmin';
-    grade?: string;
-    class?: string;
-    subjects?: string[];
-    joinDate: string;
-    avatar: string;
-    bio: string;
-}
 
-interface Task {
-    id: string;
-    title: string;
-    description: string;
-    dueDate: string;
-    status: 'pending' | 'completed' | 'overdue';
-    priority: 'low' | 'medium' | 'high';
-    subject: string;
-}
-
-const sampleProfile: UserProfile = {
-    id: '1',
-    name: 'Есжан Рахатұлы',
-    username: 'yeszhan_rakhatuly',
-    email: 'yeszhan.rakhatuly@example.com',
-    phone: '+7 (777) 123-45-67',
-    role: 'student',
-    grade: '11',
-    class: '11А',
-    subjects: [
-        'Математика',
-        'Физика',
-        'Химия',
-        'Биология',
-        'История',
-        'Литература',
-    ],
-    joinDate: '2023-09-01',
-    avatar: '/avatars/student.jpg',
-    bio: 'Активный ученик, увлекаюсь точными науками и программированием.',
-};
-
-const sampleTasks: Task[] = [
-    {
-        id: '1',
-        title: 'Домашнее задание по математике',
-        description: 'Решить задачи 1-10 из учебника',
-        dueDate: '2024-01-15',
-        status: 'pending',
-        priority: 'high',
-        subject: 'Математика',
-    },
-    {
-        id: '2',
-        title: 'Подготовка к экзамену по физике',
-        description: 'Повторить главы 5-8',
-        dueDate: '2024-01-20',
-        status: 'pending',
-        priority: 'medium',
-        subject: 'Физика',
-    },
-    {
-        id: '3',
-        title: 'Лабораторная работа по химии',
-        description: 'Провести эксперимент и написать отчет',
-        dueDate: '2024-01-12',
-        status: 'completed',
-        priority: 'low',
-        subject: 'Химия',
-    },
-    {
-        id: '4',
-        title: 'Сочинение по литературе',
-        description: 'Написать сочинение на тему "Образ главного героя"',
-        dueDate: '2024-01-10',
-        status: 'overdue',
-        priority: 'high',
-        subject: 'Литература',
-    },
-];
 
 const getRoleInfo = (role: string) => {
     switch (role) {
@@ -137,56 +51,32 @@ const getRoleInfo = (role: string) => {
     }
 };
 
-const getPriorityColor = (priority: string) => {
-    switch (priority) {
-        case 'high':
-            return 'text-red-600 bg-red-50';
-        case 'medium':
-            return 'text-yellow-600 bg-yellow-50';
-        case 'low':
-            return 'text-green-600 bg-green-50';
-        default:
-            return 'text-gray-600 bg-gray-50';
-    }
-};
-
-const getStatusIcon = (status: string) => {
-    switch (status) {
-        case 'completed':
-            return <CheckCircle className="w-4 h-4 text-green-500" />;
-        case 'overdue':
-            return <AlertCircle className="w-4 h-4 text-red-500" />;
-        case 'pending':
-            return <Clock className="w-4 h-4 text-yellow-500" />;
-        default:
-            return <Clock className="w-4 h-4 text-gray-500" />;
-    }
-};
-
 export default function ProfilePage() {
-    const [isEditing, setIsEditing] = useState(false);
     const { user, isAuthenticated, isLoading, error } = useUserState();
     const { logout, clearError } = useUserActions();
 
-    // Use user data from context or fallback to sample data
     const profileData = user
         ? {
               id: user.id,
-              name: user.name,
+              name:
+                  user.first_name && user.last_name
+                      ? `${user.first_name} ${user.last_name}`
+                      : user.name,
               username: user.username,
               email: user.email,
-              phone: '+7 (777) 123-45-67', // Default phone since not in user context
+              phone: user.phone_number || 'Не указан',
               role: user.role as 'student' | 'teacher' | 'admin' | 'superadmin',
-              // Role-specific data
               ...(user.role === 'student' && {
-                  grade: '11',
-                  class: '11A',
-                  subjects: ['Математика', 'Физика', 'Химия'],
-                  bio: 'Студент 11 класса, увлекаюсь точными науками',
+                  grade:
+                      user.student_data?.classrooms?.[0]?.grade || 'Не указан',
+                  class:
+                      user.student_data?.classrooms?.[0]?.letter || 'Не указан',
+                  subjects: user.student_data?.subjects || [],
+                  bio: `Студент ${user.student_data?.classrooms?.[0]?.grade || ''} класса`,
               }),
               ...(user.role === 'teacher' && {
-                  subjects: ['Математика', 'Физика'],
-                  bio: 'Преподаватель точных наук',
+                  subjects: [], // Teachers don't have subjects in their data structure
+                  bio: 'Преподаватель',
               }),
               ...(user.role === 'admin' && {
                   bio: 'Администратор системы',
@@ -194,15 +84,12 @@ export default function ProfilePage() {
               ...(user.role === 'superadmin' && {
                   bio: 'Супер администратор системы',
               }),
-              // Common fields
-              joinDate: '2023-09-01', // Default join date
-              avatar: '/avatars/default.jpg', // Default avatar
+              avatar: user.avatar || '/avatars/default.jpg',
           }
-        : sampleProfile;
+        : null;
 
-    const roleInfo = getRoleInfo(profileData.role);
+    const roleInfo = profileData ? getRoleInfo(profileData.role) : null;
 
-    // Show loading state
     if (isLoading) {
         return (
             <div className="container mx-auto px-4 pb-8">
@@ -215,7 +102,6 @@ export default function ProfilePage() {
         );
     }
 
-    // Show error state
     if (error) {
         return (
             <div className="container mx-auto px-4 pb-8">
@@ -234,13 +120,14 @@ export default function ProfilePage() {
         );
     }
 
-    // Show not authenticated state
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated || !user || !profileData) {
         return (
             <div className="container mx-auto px-4 pb-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-gray-600">Not authenticated</p>
+                        <p className="text-gray-600">
+                            Not authenticated or no user data
+                        </p>
                         <button
                             onClick={logout}
                             className="mt-3 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
@@ -257,7 +144,6 @@ export default function ProfilePage() {
         <div className="container mx-auto px-4 pb-8">
             <div className="max-w-6xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Profile Card */}
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                             <div className="text-center mb-6">
@@ -275,10 +161,12 @@ export default function ProfilePage() {
                                 </h2>
 
                                 <div
-                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${roleInfo.color}`}
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${roleInfo?.color || 'bg-gray-100 text-gray-800'}`}
                                 >
-                                    <roleInfo.icon className="w-4 h-4 mr-2" />
-                                    {roleInfo.label}
+                                    {roleInfo?.icon && (
+                                        <roleInfo.icon className="w-4 h-4 mr-2" />
+                                    )}
+                                    {roleInfo?.label || 'Пользователь'}
                                 </div>
                             </div>
 
@@ -307,7 +195,7 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center">
+                                {/* <div className="flex items-center">
                                     <Calendar className="w-5 h-5 text-gray-400 mr-3" />
                                     <div>
                                         <p className="text-sm text-gray-500">
@@ -319,7 +207,7 @@ export default function ProfilePage() {
                                             ).toLocaleDateString('ru-RU')}
                                         </p>
                                     </div>
-                                </div>
+                                </div> */}
 
                                 {profileData.grade && (
                                     <div className="flex items-center">
@@ -348,151 +236,102 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Subjects */}
-                        {sampleProfile.subjects && (
+                        {profileData?.role === 'student' &&
+                            profileData.subjects &&
+                            profileData.subjects.length > 0 && (
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                                        Предметы
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        {profileData.subjects.map(
+                                            (subject, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium"
+                                                >
+                                                    {subject}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+
+                        {profileData?.role === 'student' && (
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                                    Предметы
-                                </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    {sampleProfile.subjects.map(
-                                        (subject, index) => (
-                                            <div
-                                                key={index}
-                                                className="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium"
-                                            >
-                                                {subject}
-                                            </div>
-                                        )
-                                    )}
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-semibold text-gray-900">
+                                        Задачи
+                                    </h3>
+                                    <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                        Посмотреть все
+                                    </button>
+                                </div>
+
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>Загрузка заданий...</p>
+                                    <p className="text-sm mt-2">
+                                        Здесь будут отображаться ваши задания
+                                    </p>
                                 </div>
                             </div>
                         )}
 
-                        {/* Tasks */}
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    Задачи
-                                </h3>
-                                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                    Посмотреть все
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                {sampleTasks.map(task => (
-                                    <div
-                                        key={task.id}
-                                        className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
-                                    >
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    {getStatusIcon(task.status)}
-                                                    <h4 className="font-medium text-gray-900">
-                                                        {task.title}
-                                                    </h4>
-                                                    <span
-                                                        className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}
-                                                    >
-                                                        {task.priority ===
-                                                        'high'
-                                                            ? 'Высокий'
-                                                            : task.priority ===
-                                                                'medium'
-                                                              ? 'Средний'
-                                                              : 'Низкий'}
-                                                    </span>
-                                                </div>
-                                                <p className="text-sm text-gray-600 mb-2">
-                                                    {task.description}
-                                                </p>
-                                                <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                    <span>
-                                                        Предмет: {task.subject}
-                                                    </span>
-                                                    <span>
-                                                        Сдать до:{' '}
-                                                        {new Date(
-                                                            task.dueDate
-                                                        ).toLocaleDateString(
-                                                            'ru-RU'
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            </div>
+                        {profileData?.role === 'student' && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                    <div className="flex items-center">
+                                        <div className="p-2 bg-blue-100 rounded-lg">
+                                            <BookOpen className="w-6 h-6 text-blue-600" />
+                                        </div>
+                                        <div className="ml-4">
+                                            <p className="text-sm font-medium text-gray-600">
+                                                Всего предметов
+                                            </p>
+                                            <p className="text-2xl font-bold text-gray-900">
+                                                {profileData.subjects?.length ||
+                                                    0}
+                                            </p>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                </div>
 
-                        {/* Statistics */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-blue-100 rounded-lg">
-                                        <BookOpen className="w-6 h-6 text-blue-600" />
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                    <div className="flex items-center">
+                                        <div className="p-2 bg-green-100 rounded-lg">
+                                            <CheckCircle className="w-6 h-6 text-green-600" />
+                                        </div>
+                                        <div className="ml-4">
+                                            <p className="text-sm font-medium text-gray-600">
+                                                Выполнено задач
+                                            </p>
+                                            <p className="text-2xl font-bold text-gray-900">
+                                                0
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="ml-4">
-                                        <p className="text-sm font-medium text-gray-600">
-                                            Всего предметов
-                                        </p>
-                                        <p className="text-2xl font-bold text-gray-900">
-                                            {sampleProfile.subjects?.length ||
-                                                0}
-                                        </p>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                    <div className="flex items-center">
+                                        <div className="p-2 bg-yellow-100 rounded-lg">
+                                            <Clock className="w-6 h-6 text-yellow-600" />
+                                        </div>
+                                        <div className="ml-4">
+                                            <p className="text-sm font-medium text-gray-600">
+                                                В ожидании
+                                            </p>
+                                            <p className="text-2xl font-bold text-gray-900">
+                                                0
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-green-100 rounded-lg">
-                                        <CheckCircle className="w-6 h-6 text-green-600" />
-                                    </div>
-                                    <div className="ml-4">
-                                        <p className="text-sm font-medium text-gray-600">
-                                            Выполнено задач
-                                        </p>
-                                        <p className="text-2xl font-bold text-gray-900">
-                                            {
-                                                sampleTasks.filter(
-                                                    task =>
-                                                        task.status ===
-                                                        'completed'
-                                                ).length
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-yellow-100 rounded-lg">
-                                        <Clock className="w-6 h-6 text-yellow-600" />
-                                    </div>
-                                    <div className="ml-4">
-                                        <p className="text-sm font-medium text-gray-600">
-                                            В ожидании
-                                        </p>
-                                        <p className="text-2xl font-bold text-gray-900">
-                                            {
-                                                sampleTasks.filter(
-                                                    task =>
-                                                        task.status ===
-                                                        'pending'
-                                                ).length
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>

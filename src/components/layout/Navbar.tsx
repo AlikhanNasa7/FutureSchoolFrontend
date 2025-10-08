@@ -30,7 +30,7 @@ export default function Navbar() {
 
     return (
         <nav className="flex bg-inherit p-10 gap-8 pb-0 sm:flex-row flex-col">
-            <div className="flex-3/4 px-4 sm:px-6 pr-0 sm:pr-0 flex justify-between items-center gap-4">
+            <div className="hidden flex-3/4 px-4 sm:px-6 pr-0 sm:pr-0 min-[576px]:flex justify-between items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-[rgba(0,0,0,0.31)]">
                         Добро пожаловать, {user?.first_name}
@@ -48,21 +48,18 @@ export default function Navbar() {
                     />
                 </div>
             </div>
-            <div className="w-fit bg-white h-[60px] rounded-2xl flex py-2 px-4 gap-6 items-center">
-                {user && user.role == 'student' && user?.student_data?.classrooms[0] && <div className="bg-[rgba(105,76,253,0.1)] px-6 py-2 rounded-xl text-[rgba(105,76,253,1)] font-bold text-md">
+            {user && user.role == 'student' &&<div className="hidden min-[576px]:flex w-fit bg-white h-[60px] rounded-2xl py-2 px-4 gap-6 items-center">
+                {user?.student_data?.classrooms?.[0] && <p className="bg-[rgba(105,76,253,0.1)] px-6 py-2 rounded-xl text-[rgba(105,76,253,1)] font-bold text-md whitespace-nowrap">
                     {`${user?.student_data?.classrooms[0].grade}${user?.student_data?.classrooms[0].letter}`} класс
-                </div>}
-                <div className="font-bold text-md">Школа 14</div>
-            </div>
-            <div
-                className="bg-white w-fit rounded-2xl px-4 py-2 h-[60px] cursor-pointer xs:hidden block"
-                onClick={() => modalController.open('kundelik-integration')}
-            >
+                </p>}
+            </div>}
+            <div className="flex min-[576px]:hidden justify-center items-center">
                 <Image
-                    src="/kundelik.png"
-                    alt="kundelik.kz logo"
-                    width={100}
-                    height={50}
+                    src="/Logo.svg"
+                    alt="logo"
+                    width={160}
+                    height={160}
+                    className='w-full'
                 />
             </div>
         </nav>

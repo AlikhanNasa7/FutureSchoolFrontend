@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUserState } from '@/contexts/UserContext';
+import { useSidebar } from '@/contexts/SidebarContext';
 
 const navigation = [
     {
@@ -57,7 +57,7 @@ const utilityItems = [
 ];
 
 export default function Sidebar() {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { sidebarOpen, setSidebarOpen } = useSidebar();
     const pathname = usePathname();
     const router = useRouter();
 
@@ -85,17 +85,15 @@ export default function Sidebar() {
                 }`}
             >
                 <div className="flex h-full flex-col bg-white">
-                    <div className="p-6">
-                        <div className="flex items-center space-x-3 mb-6">
+                    <div className="p-6 pt-14">
+                        <div className="flex items-center justify-center space-x-3 mb-6">
                             <Image
-                                src="/Logo.png"
+                                src="/Logo.svg"
                                 alt="logo"
-                                width={48}
-                                height={48}
+                                width={160}
+                                height={160}
+                                className='w-full'
                             />
-                            <span className="text-xl font-bold text-gray-900">
-                                Astar
-                            </span>
                         </div>
 
                         <div className="relative">

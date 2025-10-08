@@ -108,9 +108,20 @@ export default function TestCreator() {
     };
 
     const saveTest = async () => {
-        const response = await axiosInstance.post('tests/create-full/', {
-            ...test,
-        });
+        // Create a copy of the test data
+        const testData = { ...test };
+
+        // If scheduled_at exists, subtract 5 hours for backend
+        if (testData.scheduled_at) {
+            const scheduledDate = new Date(testData.scheduled_at);
+            scheduledDate.setHours(scheduledDate.getHours() - 5);
+            testData.scheduled_at = scheduledDate.toISOString();
+        }
+
+        const response = await axiosInstance.post(
+            'tests/create-full/',
+            testData
+        );
         console.log(response.data, 'response');
         alert('Test saved successfully!');
     };

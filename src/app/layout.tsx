@@ -18,9 +18,9 @@ export const metadata: Metadata = {
     title: 'Astar',
     description: "Future School's site",
     icons: {
-        icon: '/Logo.png',
-        shortcut: '/Logo.png',
-        apple: '/Logo.png',
+        icon: '/Logo-without-text.svg',
+        shortcut: '/Logo-without-text.svg',
+        apple: '/Logo-without-text.svg',
     },
 };
 

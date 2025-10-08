@@ -142,15 +142,11 @@ export default function CourseSectionAddItemModal({
                     file: resourceForm.file.name,
                 });
 
-                response = await axiosInstance.post(
-                    '/learning/resources/',
-                    formData,
-                    {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    }
-                );
+                response = await axiosInstance.post('/resources/', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
             } else {
                 // Handle regular resource (link, text, directory without files)
                 const resourceData = {
@@ -163,7 +159,7 @@ export default function CourseSectionAddItemModal({
                 console.log('Creating resource:', resourceData);
 
                 response = await axiosInstance.post(
-                    '/learning/resources/',
+                    '/resources/',
                     resourceData
                 );
             }

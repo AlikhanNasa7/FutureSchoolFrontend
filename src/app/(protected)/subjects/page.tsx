@@ -350,8 +350,8 @@ export default function SubjectsPage() {
 
     return (
         <div className="container mx-auto px-4 pb-8">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4 md:flex-row flex-col">
+            <div className="flex items-center justify-between mb-6 w-full">
+                <div className="flex items-center gap-4 xs:flex-row flex-col w-full">
                     <SubjectSearch onSearchChange={setSearchQuery} />
                     <TeacherPicker
                         teachers={teachers}

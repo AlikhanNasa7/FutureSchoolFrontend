@@ -39,22 +39,64 @@ export function DeleteButton({
     );
 }
 
-function getStatusText(item: WeekItem) {
+function getStatusText(item: WeekItem, isTeacher: boolean) {
+    // For teachers and admins, always show "Посмотреть ответы"
+    if (isTeacher) {
+        return 'Посмотреть ответы';
+    }
+
+    // Debug: Log the actual boolean properties
+    console.log(
+        'getStatusText - item:',
+        item,
+        'is_available:',
+        'is_available' in item ? item.is_available : 'no is_available',
+        'is_deadline_passed:',
+        'is_deadline_passed' in item
+            ? item.is_deadline_passed
+            : 'no is_deadline_passed',
+        'is_submitted:',
+        'is_submitted' in item ? item.is_submitted : 'no is_submitted',
+        'kind:',
+        item.kind
+    );
+
+    // For students, show status-based text using boolean properties
     if (item.kind === 'task') {
-        if (item.status === 'submitted') {
+        const isSubmitted = 'is_submitted' in item ? item.is_submitted : false;
+        const isDeadlinePassed =
+            'is_deadline_passed' in item ? item.is_deadline_passed : false;
+        const isAvailable = 'is_available' in item ? item.is_available : false;
+
+        if (isSubmitted) {
+            const gradeValue = 'grade_value' in item.student_submission ? item.student_submission.grade_value : null;
+            const maxGrade = 'max_grade' in item ? item.max_grade : null;
+
+            if (gradeValue !== null && maxGrade !== null) {
+                return `Сдано (${gradeValue}/${maxGrade})`;
+            }
             return 'Сдано';
-        } else if (item.status === 'in_progress') {
-            return 'В процессе';
-        } else {
+        } else if (isDeadlinePassed && !isSubmitted) {
+            return 'Просрочено';
+        } else if (isAvailable) {
             return 'Начать';
+        } else {
+            return 'Недоступно';
         }
     } else if (item.kind === 'test') {
-        if (item.status === 'completed') {
+        const isSubmitted = 'is_submitted' in item ? item.is_submitted : false;
+        const isDeadlinePassed =
+            'is_deadline_passed' in item ? item.is_deadline_passed : false;
+        const isAvailable = 'is_available' in item ? item.is_available : false;
+
+        if (isSubmitted) {
             return 'Завершено';
-        } else if (item.status === 'in_progress') {
-            return 'В процессе';
-        } else {
+        } else if (isDeadlinePassed && !isSubmitted) {
+            return 'Просрочено';
+        } else if (isAvailable) {
             return 'Начать';
+        } else {
+            return 'Недоступно';
         }
     }
     return 'Начать';
@@ -110,10 +152,35 @@ function TaskItem({
     isTeacher: boolean;
     onDelete?: (itemId: string, itemType: 'resource' | 'assignment') => void;
 }) {
-    console.log(item, 'item inside TaskItem');
+    console.log(
+        'TaskItem - item:',
+        item,
+        'is_available:',
+        'is_available' in item ? item.is_available : 'no is_available',
+        'is_deadline_passed:',
+        'is_deadline_passed' in item
+            ? item.is_deadline_passed
+            : 'no is_deadline_passed',
+        'is_submitted:',
+        'is_submitted' in item ? item.is_submitted : 'no is_submitted',
+        'isTeacher:',
+        isTeacher
+    );
+
+    const getButtonStyling = () => {
+        if (isTeacher) {
+            return 'px-4 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transition-colors';
+        }
+
+        const isSubmitted = 'is_submitted' in item ? item.is_submitted : false;
+        if (isSubmitted) {
+            return 'px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors';
+        }
+
+        return 'px-4 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transition-colors';
+    };
     return (
         <div className="flex items-center justify-between gap-3 py-3">
-            {/* Left side - Icon, label, and status */}
             <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="flex-shrink-0 flex items-center justify-center">
                     <Image
@@ -137,9 +204,9 @@ function TaskItem({
                 <Link
                     target="_blank"
                     href={`/assignments/${item.id}`}
-                    className="px-4 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transition-colors"
+                    className={getButtonStyling()}
                 >
-                    {getStatusText(item)}
+                    {getStatusText(item, isTeacher)}
                 </Link>
 
                 {isTeacher && onDelete && (
@@ -162,13 +229,28 @@ function TestItem({
     isTeacher: boolean;
     onDelete?: (itemId: string, itemType: 'resource' | 'test') => void;
 }) {
-    console.log(item, 'item inside TestItem');
+    console.log(
+        'TestItem - item:',
+        item,
+        'is_available:',
+        'is_available' in item ? item.is_available : 'no is_available',
+        'is_deadline_passed:',
+        'is_deadline_passed' in item
+            ? item.is_deadline_passed
+            : 'no is_deadline_passed',
+        'is_submitted:',
+        'is_submitted' in item ? item.is_submitted : 'no is_submitted',
+        'isTeacher:',
+        isTeacher
+    );
 
-    // Determine navigation path based on user role
+    // Determine navigation path and button text based on user role
     const testHref = isTeacher
         ? `/tests/${item.id}/results`
         : `/tests/${item.id}`;
-    const buttonText = isTeacher ? 'Результаты' : 'Пройти тест';
+    const buttonText = isTeacher
+        ? 'Посмотреть ответы'
+        : getStatusText(item, isTeacher);
 
     return (
         <div className="flex items-center justify-between gap-3 py-3">
@@ -217,7 +299,10 @@ export default function WeekMaterialsPanel({
 }: WeekMaterialsPanelProps) {
     const [isExpanded, setIsExpanded] = useState(true);
     const { user } = useUserState();
-    const isTeacher = user?.role === 'teacher';
+    const isTeacher =
+        user?.role === 'teacher' ||
+        user?.role === 'superadmin' ||
+        user?.role === 'schooladmin';
 
     const toggleExpanded = useCallback(() => {
         setIsExpanded(prev => !prev);
@@ -243,7 +328,21 @@ export default function WeekMaterialsPanel({
         }
     }, [courseSectionId]);
 
-    console.log(data, 'data');
+    console.log('WeekMaterialsPanel data:', data);
+    console.log('Data structure:', JSON.stringify(data, null, 2));
+    console.log('Assignments:', data.assignments);
+    console.log('Tests:', data.tests);
+    console.log('Resources:', data.resources);
+
+    // Check if data has the expected structure
+    if (data.assignments && data.assignments.length > 0) {
+        console.log('First assignment:', data.assignments[0]);
+        console.log('Assignment keys:', Object.keys(data.assignments[0]));
+    }
+    if (data.tests && data.tests.length > 0) {
+        console.log('First test:', data.tests[0]);
+        console.log('Test keys:', Object.keys(data.tests[0]));
+    }
 
     return (
         <section
@@ -292,7 +391,7 @@ export default function WeekMaterialsPanel({
                     isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                 }`}
             >
-                {data.tests.length > 0 && (
+                {data.tests && data.tests.length > 0 && (
                     <div className="space-y-0 w-full overflow-hidden">
                         {data.tests.map((item, index) => {
                             return (
@@ -315,7 +414,7 @@ export default function WeekMaterialsPanel({
                         })}
                     </div>
                 )}
-                {data.resources.length > 0 && (
+                {data.resources && data.resources.length > 0 && (
                     <div className="space-y-0 w-full overflow-hidden">
                         {data.resources.map((item, index) => {
                             return (
@@ -339,7 +438,7 @@ export default function WeekMaterialsPanel({
                         })}
                     </div>
                 )}
-                {data.assignments.length > 0 && (
+                {data.assignments && data.assignments.length > 0 && (
                     <div className="space-y-0 w-full overflow-hidden">
                         {data.assignments.map((item, index) => (
                             <div key={item.id}>

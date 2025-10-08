@@ -5,18 +5,15 @@ import WeekMaterialsSection from '../../_components/WeekMaterialsSection';
 import { useEffect, useState } from 'react';
 import axiosInstance from '@/lib/axios';
 import SubjectOverviewPanel from '../../_components/SubjectOverviewPanel.client';
-import { useUserState } from '@/contexts/UserContext';
-import { Plus } from 'lucide-react';
-import { modalController } from '@/lib/modalController';
+// Removed unused imports
 
 export default function SubjectContents() {
     const { subject, loading, error } = useSubject();
-    const { user } = useUserState();
-    const [overviewData, setOverviewData] = useState(null);
-    const [weekMaterialsData, setWeekMaterialsData] = useState(null);
+    // Removed unused user variable
+    const [overviewData, setOverviewData] = useState<any>(null);
+    const [weekMaterialsData, setWeekMaterialsData] = useState<any[]>([]);
 
-    // Check if user is a teacher
-    const isTeacher = user?.role === 'teacher';
+    // Removed unused variable
 
     console.log(weekMaterialsData, 'weekMaterialsData');
 
@@ -27,54 +24,77 @@ export default function SubjectContents() {
             const response = await axiosInstance.get(
                 `/course-sections/?subject_group=${subject.id}`
             );
-            console.log(response);
+            console.log('API Response:', response);
+            console.log('Response data structure:', response.data);
+            console.log('First item structure:', response.data[0]);
             if (response.data.length > 0) {
                 setOverviewData(response.data[0]);
-                setWeekMaterialsData(response.data.slice(1));
+
+                // Transform API data to match expected format
+                const transformedData = response.data
+                    .slice(1)
+                    .map((section: Record<string, any>) => {
+                        console.log('Transforming section:', section);
+
+                        // Helper function to add kind attribute to items
+                        const addKindToItems = (
+                            items: Record<string, any>[],
+                            kind: string
+                        ) => {
+                            return items.map((item: Record<string, any>) => ({
+                                ...item,
+                                kind: kind,
+                                // Ensure required properties exist
+                                id:
+                                    item.id ||
+                                    item.item_id ||
+                                    Math.random().toString(),
+                                title:
+                                    item.title ||
+                                    item.name ||
+                                    item.label ||
+                                    'Untitled',
+                                actionHref:
+                                    item.actionHref ||
+                                    item.href ||
+                                    `/${kind}s/${item.id}`,
+                                actionLabel: item.actionLabel || 'Открыть',
+                                // Include grade information for assignments
+                                grade_value:
+                                    item.grade_value || item.student_grade,
+                                max_grade: item.max_grade || item.max_points,
+                            }));
+                        };
+
+                        return {
+                            id: section.id || section.section_id || 'unknown',
+                            title:
+                                section.title ||
+                                section.name ||
+                                'Untitled Section',
+                            resources: addKindToItems(
+                                section.resources || section.materials || [],
+                                'link'
+                            ),
+                            assignments: addKindToItems(
+                                section.assignments || section.tasks || [],
+                                'task'
+                            ),
+                            tests: addKindToItems(
+                                section.tests || section.quizzes || [],
+                                'test'
+                            ),
+                        };
+                    });
+
+                console.log('Transformed data:', transformedData);
+                setWeekMaterialsData(transformedData);
             }
         };
         fetchSubject();
     }, [subject]);
 
-    // Function to add a new resource to a section
-    const handleAddResource = async (sectionId: string) => {
-        try {
-            const resourceData = {
-                title: 'New Resource',
-                description: 'Resource description',
-                resource_type: 'link',
-                url: 'https://example.com',
-                course_section: sectionId,
-            };
-
-            const response = await axiosInstance.post(
-                '/resources/',
-                resourceData
-            );
-            console.log('Resource added:', response.data);
-
-            // Refresh the sections data
-            if (!subject) return;
-            const sectionsResponse = await axiosInstance.get(
-                `/course-sections/?subject_group=${subject.id}`
-            );
-            if (sectionsResponse.data.length > 0) {
-                setOverviewData(sectionsResponse.data[0]);
-                setWeekMaterialsData(sectionsResponse.data.slice(1));
-            }
-        } catch (error) {
-            console.error('Error adding resource:', error);
-        }
-    };
-
-    // Function to add a new section
-    const handleAddSection = () => {
-        if (subject?.id) {
-            modalController.open('course-section-create', {
-                subjectId: subject.id,
-            });
-        }
-    };
+    // Removed unused functions
 
     // Show loading state
     if (loading) {
@@ -111,68 +131,7 @@ export default function SubjectContents() {
         );
     }
 
-    // Sample data for fallback
-    const weekMaterialsDataSample = {
-        weekLabel: '6–12 Октября',
-        items: [
-            {
-                id: 'slide-1',
-                kind: 'link' as const,
-                label: `Презентация "${subject.name} - Урок 1"`,
-                href: `/files/${subject.course_code || 'lesson'}-1.pdf`,
-                type: 'document' as const,
-            },
-            {
-                id: 'doc-1',
-                kind: 'link' as const,
-                label: 'Конспект лекции',
-                href: 'https://docs.google.com/document/example',
-                type: 'link' as const,
-            },
-            {
-                id: 'video-1',
-                kind: 'link' as const,
-                label: 'Видео лекции',
-                href: '/videos/lecture-1.mp4',
-                type: 'video' as const,
-            },
-            {
-                id: 'quiz-1',
-                kind: 'task' as const,
-                label: `Тест по ${subject.name}`,
-                actionHref: `/tests/${subject.id}-quiz-1`,
-                actionLabel: 'Начать',
-                type: 'test' as const,
-                status: 'not_started' as const,
-            },
-            {
-                id: 'assignment-1',
-                kind: 'task' as const,
-                label: `Домашнее задание по ${subject.name} №1`,
-                actionHref: `/assignments/${subject.id}-hw-1`,
-                actionLabel: 'Открыть',
-                type: 'document' as const,
-                status: 'in_progress' as const,
-            },
-            {
-                id: 'exam-1',
-                kind: 'task' as const,
-                label: `Контрольная работа по ${subject.name}`,
-                actionHref: `/exams/${subject.id}-exam-1`,
-                actionLabel: 'Просмотреть',
-                type: 'test' as const,
-                status: 'graded' as const,
-                score: '85/100',
-            },
-        ],
-        labels: {
-            copied: 'Скопировано',
-            copy: 'Скопировать',
-            expand: 'Показать',
-            collapse: 'Скрыть',
-            open: 'Открыть',
-        },
-    } satisfies import('../../_components/WeekMaterialsSection').WeekMaterialsData;
+    // Removed unused sample data
 
     return (
         <div className="space-y-6">
@@ -191,10 +150,10 @@ export default function SubjectContents() {
                 <div className="relative flex flex-col gap-4">
                     {weekMaterialsData &&
                         weekMaterialsData.length > 0 &&
-                        weekMaterialsData.map(data => (
-                            <WeekMaterialsSection 
-                                data={data} 
-                                key={data.id} 
+                        weekMaterialsData.map((data: any) => (
+                            <WeekMaterialsSection
+                                data={data}
+                                key={data.id}
                                 courseSectionId={data?.id}
                             />
                         ))}

@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useApi';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const loginSchema = z.object({
     username: z.string().min(1, 'Username is required'),
@@ -26,7 +27,7 @@ export default function LoginPage() {
     }>({});
 
     const { login, loading: isLoading, error: authError } = useAuth();
-
+    const router = useRouter();
     const validateForm = (): boolean => {
         try {
             loginSchema.parse({ username, password });
@@ -60,7 +61,7 @@ export default function LoginPage() {
 
         if (result) {
             if (typeof window !== 'undefined') {
-                window.location.href = '/dashboard';
+                router.push('/dashboard');
             }
         }
     };

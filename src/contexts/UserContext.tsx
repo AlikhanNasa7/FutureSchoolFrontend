@@ -2,17 +2,29 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
-// User type definition
 export interface User {
     id: string;
     username: string;
     email: string;
     role: string;
     name: string;
-    classroom?: string; // For students
+    first_name?: string;
+    last_name?: string;
+    phone_number?: string;
+    is_active?: boolean;
+    created_at?: string;
+    avatar?: string;
+    classroom?: string;
+    student_data?: {
+        classrooms?: Array<{
+            grade: string;
+            letter: string;
+        }>;
+        subjects?: string[];
+    };
+    // Note: Teachers don't have teacher_data in the current API structure
 }
 
-// State interface
 interface UserState {
     user: User | null;
     isAuthenticated: boolean;
@@ -29,11 +41,11 @@ type UserAction =
     | { type: 'CLEAR_ERROR' }
     | { type: 'SET_LOADING'; payload: boolean };
 
-// Initial state
+// Initial state - always start with loading to prevent hydration mismatch
 const initialState: UserState = {
     user: null,
     isAuthenticated: false,
-    isLoading: false,
+    isLoading: true,
     error: null,
 };
 
@@ -63,6 +75,12 @@ function userReducer(state: UserState, action: UserAction): UserState {
                 error: action.payload,
             };
         case 'LOGOUT':
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                localStorage.removeItem('isLoggedIn');
+            }
             return {
                 ...state,
                 user: null,
@@ -85,28 +103,27 @@ function userReducer(state: UserState, action: UserAction): UserState {
     }
 }
 
-// Context
 const UserContext = createContext<{
     state: UserState;
     dispatch: React.Dispatch<UserAction>;
 } | null>(null);
 
-// Provider component
 export function UserProvider({ children }: { children: React.ReactNode }) {
     const [state, dispatch] = useReducer(userReducer, initialState);
 
     useEffect(() => {
+        // This effect runs only on the client side after hydration
         const loadUserFromStorage = () => {
             try {
+                const accessToken = localStorage.getItem('accessToken');
                 const isLoggedIn = localStorage.getItem('isLoggedIn');
-                if (isLoggedIn === 'true') {
-                    // In a real app, you might want to validate the token here
-                    // For now, we'll just check if user data exists
-                    const userData = localStorage.getItem('user');
-                    if (userData) {
-                        const user = JSON.parse(userData);
-                        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-                    }
+                const userData = localStorage.getItem('user');
+
+                if (accessToken && isLoggedIn === 'true' && userData) {
+                    const user = JSON.parse(userData);
+                    dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+                } else {
+                    dispatch({ type: 'LOGOUT' });
                 }
             } catch (error) {
                 console.error('Error loading user from storage:', error);
@@ -114,7 +131,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
         };
 
-        loadUserFromStorage();
+        if (typeof window !== 'undefined') {
+            loadUserFromStorage();
+        }
     }, []);
 
     return (
@@ -124,7 +143,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-// Custom hook to use the context
 export function useUser() {
     const context = useContext(UserContext);
     if (!context) {
@@ -134,7 +152,6 @@ export function useUser() {
     return context;
 }
 
-// Helper hooks for specific state
 export function useUserState() {
     const { state } = useUser();
     return state;

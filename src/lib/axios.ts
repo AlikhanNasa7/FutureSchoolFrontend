@@ -5,6 +5,7 @@ import axios, {
     AxiosError,
     InternalAxiosRequestConfig,
 } from 'axios';
+import { redirect } from 'next/navigation';
 
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
     metadata?: {
@@ -17,7 +18,7 @@ interface CustomInternalAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const axiosInstance: AxiosInstance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
@@ -28,11 +29,7 @@ let isRefreshing = false;
 
 const refreshAccessToken = async (): Promise<string | null> => {
     try {
-        const refreshToken =
-            typeof window !== 'undefined'
-                ? localStorage.getItem('refreshToken') ||
-                  sessionStorage.getItem('refreshToken')
-                : null;
+        const refreshToken = localStorage.getItem('refreshToken')
 
         if (!refreshToken) {
             throw new Error('No refresh token available');
@@ -61,11 +58,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
 axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        const token =
-            typeof window !== 'undefined'
-                ? localStorage.getItem('accessToken') ||
-                  sessionStorage.getItem('accessToken')
-                : null;
+        const token = localStorage.getItem('accessToken');
 
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -137,13 +130,10 @@ axiosInstance.interceptors.response.use(
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && originalRequest) {
-            if (originalRequest.url?.includes('/auth/refresh')) {
-                if (typeof window !== 'undefined') {
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
-                    sessionStorage.removeItem('accessToken');
-                    sessionStorage.removeItem('refreshToken');
-                }
+            if (originalRequest?.url?.includes('/auth/refresh')) {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                
                 return Promise.reject(error);
             }
 
@@ -155,32 +145,23 @@ axiosInstance.interceptors.response.use(
                 const newToken = await refreshAccessToken();
 
                 if (newToken) {
-                    if (originalRequest.headers) {
+                    if (originalRequest?.headers) {
                         originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     }
-
 
                     return axiosInstance(originalRequest);
                 } else {
 
-                    if (typeof window !== 'undefined') {
-                        localStorage.removeItem('accessToken');
-                        localStorage.removeItem('refreshToken');
-                        sessionStorage.removeItem('accessToken');
-                        sessionStorage.removeItem('refreshToken');
-                    }
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
 
                     return Promise.reject(error);
                 }
             } catch (refreshError) {
 
-                if (typeof window !== 'undefined') {
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
-                    sessionStorage.removeItem('accessToken');
-                    sessionStorage.removeItem('refreshToken');
-                    window.location.href = '/login';
-                }
+                    redirect('/login');
 
                 return Promise.reject(error);
             } finally {

@@ -36,7 +36,7 @@ export default function SubjectSearch({ onSearchChange }: SubjectSearchProps) {
                 value={searchQuery}
                 onChange={e => handleSearchChange(e.target.value)}
                 placeholder="Поиск предметов..."
-                className="w-[480px] pl-10 p-3 rounded-md focus:outline-none leading-5 bg-white sm:text-sm text-lg font-semibold text-[#626262]"
+                className="w-full sm:w-[400px] lg:w-[480px] pl-10 p-3 rounded-md focus:outline-none leading-5 bg-white sm:text-sm text-lg font-semibold text-[#626262]"
             />
         </div>
     );
