@@ -29,7 +29,7 @@ let isRefreshing = false;
 
 const refreshAccessToken = async (): Promise<string | null> => {
     try {
-        const refreshToken = localStorage.getItem('refreshToken')
+        const refreshToken = localStorage.getItem('refreshToken');
 
         if (!refreshToken) {
             throw new Error('No refresh token available');
@@ -133,10 +133,9 @@ axiosInstance.interceptors.response.use(
             if (originalRequest?.url?.includes('/auth/refresh')) {
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
-                
+
                 return Promise.reject(error);
             }
-
 
             (originalRequest as CustomInternalAxiosRequestConfig)._retry = true;
             isRefreshing = true;
@@ -151,17 +150,15 @@ axiosInstance.interceptors.response.use(
 
                     return axiosInstance(originalRequest);
                 } else {
-
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
 
                     return Promise.reject(error);
                 }
             } catch (refreshError) {
-
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
-                    redirect('/login');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                redirect('/login');
 
                 return Promise.reject(error);
             } finally {

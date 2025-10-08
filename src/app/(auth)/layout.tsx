@@ -24,7 +24,7 @@ export default function AuthLayout({
             {/* Overlay for better readability */}
             <div className="absolute top-[80px] flex items-center justify-center gap-1">
                 <Image
-                    src="/logo.png"
+                    src="/Logo-without-text.svg"
                     alt="Future School Logo"
                     width={44}
                     height={52.5}
