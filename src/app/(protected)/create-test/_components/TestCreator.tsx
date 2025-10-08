@@ -17,8 +17,10 @@ export interface Question {
 export interface Test {
     title: string;
     description: string;
-    time_limit_minutes: number;
-    scheduled_at: string;
+    start_date: string;
+    end_date: string;
+    scheduled_at?: string;
+    course_section?: number;
     questions: Question[];
 }
 
@@ -26,8 +28,8 @@ export default function TestCreator() {
     const [test, setTest] = useState<Test>({
         title: '',
         description: '',
-        time_limit_minutes: 60,
-        scheduled_at: '',
+        start_date: '',
+        end_date: '',
         questions: [],
     });
 
@@ -111,11 +113,16 @@ export default function TestCreator() {
         // Create a copy of the test data
         const testData = { ...test };
 
-        // If scheduled_at exists, subtract 5 hours for backend
-        if (testData.scheduled_at) {
-            const scheduledDate = new Date(testData.scheduled_at);
-            scheduledDate.setHours(scheduledDate.getHours() - 5);
-            testData.scheduled_at = scheduledDate.toISOString();
+        // Subtract 5 hours from start_date and end_date for backend
+        if (testData.start_date) {
+            const startDate = new Date(testData.start_date);
+            testData.start_date = startDate.toISOString();
+            testData.scheduled_at = testData.start_date;
+        }
+
+        if (testData.end_date) {
+            const endDate = new Date(testData.end_date);
+            testData.end_date = endDate.toISOString();
         }
 
         const response = await axiosInstance.post(
@@ -182,21 +189,19 @@ export default function TestCreator() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label
-                                htmlFor="time-limit"
+                                htmlFor="start-date"
                                 className="block text-sm font-medium text-gray-700"
                             >
-                                Time Limit (minutes)
+                                Start Date & Time
                             </label>
                             <input
-                                id="time-limit"
-                                type="number"
-                                min="1"
-                                max="480"
-                                value={test.time_limit_minutes}
+                                id="start-date"
+                                type="datetime-local"
+                                value={test.start_date}
                                 onChange={e =>
                                     handleTestUpdate(
-                                        'time_limit_minutes',
-                                        parseInt(e.target.value) || 60
+                                        'start_date',
+                                        e.target.value
                                     )
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
@@ -204,20 +209,17 @@ export default function TestCreator() {
                         </div>
                         <div className="space-y-2">
                             <label
-                                htmlFor="scheduled-at"
+                                htmlFor="end-date"
                                 className="block text-sm font-medium text-gray-700"
                             >
-                                Scheduled Date & Time
+                                End Date & Time
                             </label>
                             <input
-                                id="scheduled-at"
+                                id="end-date"
                                 type="datetime-local"
-                                value={test.scheduled_at}
+                                value={test.end_date}
                                 onChange={e =>
-                                    handleTestUpdate(
-                                        'scheduled_at',
-                                        e.target.value
-                                    )
+                                    handleTestUpdate('end_date', e.target.value)
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
                             />
@@ -231,17 +233,35 @@ export default function TestCreator() {
                             </label>
                             <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
                                 <div className="space-y-1">
-                                    <div>
-                                        • Students will have{' '}
-                                        {test.time_limit_minutes} minutes to
-                                        complete this test once they start.
-                                    </div>
-                                    {test.scheduled_at && (
+                                    {test.start_date && (
                                         <div>
-                                            • Test is scheduled for:{' '}
+                                            • Test starts at:{' '}
                                             {new Date(
-                                                test.scheduled_at
+                                                test.start_date
                                             ).toLocaleString()}
+                                        </div>
+                                    )}
+                                    {test.end_date && (
+                                        <div>
+                                            • Test ends at:{' '}
+                                            {new Date(
+                                                test.end_date
+                                            ).toLocaleString()}
+                                        </div>
+                                    )}
+                                    {test.start_date && test.end_date && (
+                                        <div>
+                                            • Duration:{' '}
+                                            {Math.round(
+                                                (new Date(
+                                                    test.end_date
+                                                ).getTime() -
+                                                    new Date(
+                                                        test.start_date
+                                                    ).getTime()) /
+                                                    60000
+                                            )}{' '}
+                                            minutes
                                         </div>
                                     )}
                                 </div>

@@ -24,10 +24,12 @@ export interface EventModalData {
 
 export interface CourseSectionAddItemModalData {
     courseSectionId: number;
+    onItemCreated?: (itemType: 'resource' | 'assignment' | 'test') => void;
 }
 
 export interface CourseSectionCreateModalData {
     subjectId: number;
+    onSectionCreated?: () => void;
 }
 
 export interface FileViewerModalData {
@@ -66,6 +68,7 @@ export interface ConfirmationModalData {
     confirmVariant?: 'danger' | 'primary' | 'secondary';
     loading?: boolean;
     onConfirm: () => void | Promise<void>;
+    onSuccess?: () => void;
 }
 
 export interface FileUploadModalData {

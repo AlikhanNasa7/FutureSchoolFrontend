@@ -25,6 +25,7 @@ export default function ConfirmationModal({
         cancelText = 'Cancel',
         confirmVariant = 'danger',
         onConfirm,
+        onSuccess,
     } = data;
 
     const getConfirmButtonStyles = () => {
@@ -44,6 +45,7 @@ export default function ConfirmationModal({
         setLoading(true);
         try {
             await onConfirm();
+            onSuccess?.();
             onClose();
         } catch (error) {
             console.error('Confirmation action failed:', error);

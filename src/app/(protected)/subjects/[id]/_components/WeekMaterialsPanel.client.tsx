@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import type { WeekMaterialsData, WeekItem } from './WeekMaterialsSection';
 import { useUserState } from '@/contexts/UserContext';
@@ -8,9 +8,12 @@ import { modalController } from '@/lib/modalController';
 import { SharedLinkItem } from './SharedLinkItem';
 import Image from 'next/image';
 import Link from 'next/link';
+import axiosInstance from '@/lib/axios';
+import { useLocale } from '@/contexts/LocaleContext';
 interface WeekMaterialsPanelProps {
     data: WeekMaterialsData;
     courseSectionId?: number;
+    onRefresh?: () => void;
 }
 
 interface DeleteButtonProps {
@@ -39,10 +42,14 @@ export function DeleteButton({
     );
 }
 
-function getStatusText(item: WeekItem, isTeacher: boolean) {
-    // For teachers and admins, always show "Посмотреть ответы"
+function getStatusText(
+    item: WeekItem,
+    isTeacher: boolean,
+    t: (key: string) => string
+) {
+    // For teachers and admins, always show "View Answers"
     if (isTeacher) {
-        return 'Посмотреть ответы';
+        return t('status.viewAnswers');
     }
 
     // Debug: Log the actual boolean properties
@@ -69,19 +76,22 @@ function getStatusText(item: WeekItem, isTeacher: boolean) {
         const isAvailable = 'is_available' in item ? item.is_available : false;
 
         if (isSubmitted) {
-            const gradeValue = 'grade_value' in item.student_submission ? item.student_submission.grade_value : null;
+            const gradeValue =
+                'grade_value' in item.student_submission
+                    ? item.student_submission.grade_value
+                    : null;
             const maxGrade = 'max_grade' in item ? item.max_grade : null;
 
             if (gradeValue !== null && maxGrade !== null) {
-                return `Сдано (${gradeValue}/${maxGrade})`;
+                return `${t('status.submitted')} (${gradeValue}/${maxGrade})`;
             }
-            return 'Сдано';
+            return t('status.submitted');
         } else if (isDeadlinePassed && !isSubmitted) {
-            return 'Просрочено';
+            return t('status.overdue');
         } else if (isAvailable) {
-            return 'Начать';
+            return t('status.start');
         } else {
-            return 'Недоступно';
+            return t('status.unavailable');
         }
     } else if (item.kind === 'test') {
         const isSubmitted = 'is_submitted' in item ? item.is_submitted : false;
@@ -90,16 +100,16 @@ function getStatusText(item: WeekItem, isTeacher: boolean) {
         const isAvailable = 'is_available' in item ? item.is_available : false;
 
         if (isSubmitted) {
-            return 'Завершено';
+            return t('status.completed');
         } else if (isDeadlinePassed && !isSubmitted) {
-            return 'Просрочено';
+            return t('status.overdue');
         } else if (isAvailable) {
-            return 'Начать';
+            return t('status.start');
         } else {
-            return 'Недоступно';
+            return t('status.unavailable');
         }
     }
-    return 'Начать';
+    return t('status.start');
 }
 
 function handleFileView(
@@ -147,10 +157,12 @@ function TaskItem({
     item,
     isTeacher,
     onDelete,
+    t,
 }: {
     item: Extract<WeekItem, { kind: 'task' }>;
     isTeacher: boolean;
     onDelete?: (itemId: string, itemType: 'resource' | 'assignment') => void;
+    t: (key: string) => string;
 }) {
     console.log(
         'TaskItem - item:',
@@ -206,7 +218,7 @@ function TaskItem({
                     href={`/assignments/${item.id}`}
                     className={getButtonStyling()}
                 >
-                    {getStatusText(item, isTeacher)}
+                    {getStatusText(item, isTeacher, t)}
                 </Link>
 
                 {isTeacher && onDelete && (
@@ -224,10 +236,12 @@ function TestItem({
     item,
     isTeacher,
     onDelete,
+    t,
 }: {
     item: Extract<WeekItem, { kind: 'test' }>;
     isTeacher: boolean;
     onDelete?: (itemId: string, itemType: 'resource' | 'test') => void;
+    t: (key: string) => string;
 }) {
     console.log(
         'TestItem - item:',
@@ -244,13 +258,12 @@ function TestItem({
         isTeacher
     );
 
-    // Determine navigation path and button text based on user role
     const testHref = isTeacher
         ? `/tests/${item.id}/results`
         : `/tests/${item.id}`;
     const buttonText = isTeacher
-        ? 'Посмотреть ответы'
-        : getStatusText(item, isTeacher);
+        ? t('status.viewAnswers')
+        : getStatusText(item, isTeacher, t);
 
     return (
         <div className="flex items-center justify-between gap-3 py-3">
@@ -296,9 +309,11 @@ function TestItem({
 export default function WeekMaterialsPanel({
     data,
     courseSectionId,
+    onRefresh,
 }: WeekMaterialsPanelProps) {
     const [isExpanded, setIsExpanded] = useState(true);
     const { user } = useUserState();
+    const { t } = useLocale();
     const isTeacher =
         user?.role === 'teacher' ||
         user?.role === 'superadmin' ||
@@ -309,6 +324,16 @@ export default function WeekMaterialsPanel({
     }, []);
 
     console.log(data, 'data');
+    const sectionRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (data.is_current && sectionRef.current) {
+            sectionRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            });
+        }
+    }, [data.is_current]);
 
     const handleKeyDown = useCallback(
         (event: React.KeyboardEvent) => {
@@ -324,9 +349,52 @@ export default function WeekMaterialsPanel({
         if (courseSectionId) {
             modalController.open('course-section-add-item', {
                 courseSectionId,
+                onItemCreated: (
+                    itemType: 'resource' | 'assignment' | 'test'
+                ) => {
+                    console.log(`${itemType} created, refreshing...`);
+                    onRefresh?.();
+                },
             });
         }
-    }, [courseSectionId]);
+    }, [courseSectionId, onRefresh]);
+
+    const handleDeleteItem = useCallback(
+        async (
+            itemId: string,
+            itemType: 'resource' | 'assignment' | 'test'
+        ) => {
+            const itemTypeLabel =
+                itemType === 'assignment'
+                    ? t('common.assignment')
+                    : itemType === 'test'
+                      ? t('common.testItem')
+                      : t('common.resource');
+
+            modalController.open('confirmation', {
+                title: t('modal.deleteConfirmation'),
+                message: `${t('modal.deleteMessage')} ${itemTypeLabel}? ${t('modal.cannotUndo')}`,
+                confirmText: t('actions.delete'),
+                cancelText: t('actions.cancel'),
+                confirmVariant: 'danger',
+                onConfirm: async () => {
+                    const endpoint =
+                        itemType === 'assignment'
+                            ? `/assignments/${itemId}/`
+                            : itemType === 'test'
+                              ? `/tests/${itemId}/`
+                              : `/resources/${itemId}/`;
+                    await axiosInstance.delete(endpoint);
+                    console.log(`${itemType} deleted successfully`);
+                },
+                onSuccess: () => {
+                    console.log(`${itemType} deleted, refreshing...`);
+                    onRefresh?.();
+                },
+            });
+        },
+        [onRefresh]
+    );
 
     console.log('WeekMaterialsPanel data:', data);
     console.log('Data structure:', JSON.stringify(data, null, 2));
@@ -346,9 +414,13 @@ export default function WeekMaterialsPanel({
 
     return (
         <section
-            className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm w-full max-w-full overflow-hidden"
+            ref={sectionRef}
+            className="relative rounded-2xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm w-full max-w-full overflow-hidden"
             aria-labelledby="week-title"
         >
+            {data.is_current && (
+                <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+            )}
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <h2
@@ -407,7 +479,8 @@ export default function WeekMaterialsPanel({
                                             >
                                         }
                                         isTeacher={isTeacher}
-                                        onDelete={undefined}
+                                        onDelete={handleDeleteItem}
+                                        t={t}
                                     />
                                 </div>
                             );
@@ -432,6 +505,7 @@ export default function WeekMaterialsPanel({
                                                 courseSectionId
                                             )
                                         }
+                                        onDelete={handleDeleteItem}
                                     />
                                 </div>
                             );
@@ -453,7 +527,8 @@ export default function WeekMaterialsPanel({
                                         >
                                     }
                                     isTeacher={isTeacher}
-                                    onDelete={undefined}
+                                    onDelete={handleDeleteItem}
+                                    t={t}
                                 />
                             </div>
                         ))}

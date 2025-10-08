@@ -65,11 +65,13 @@ export type WeekMaterialsData = {
     resources: WeekItem[];
     assignments: WeekItem[];
     tests: WeekItem[];
+    is_current?: boolean;
 };
 
 interface WeekMaterialsSectionProps {
     data: WeekMaterialsData;
     courseSectionId?: number;
+    onRefresh?: () => void;
     onDeleteItem?: (
         itemId: string,
         itemType: 'resource' | 'assignment'
@@ -80,8 +82,15 @@ interface WeekMaterialsSectionProps {
 export default function WeekMaterialsSection({
     data,
     courseSectionId,
+    onRefresh,
 }: WeekMaterialsSectionProps) {
     if (!data?.title) return null;
 
-    return <WeekMaterialsPanel data={data} courseSectionId={courseSectionId} />;
+    return (
+        <WeekMaterialsPanel
+            data={data}
+            courseSectionId={courseSectionId}
+            onRefresh={onRefresh}
+        />
+    );
 }

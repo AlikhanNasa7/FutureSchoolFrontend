@@ -65,6 +65,10 @@ export default function ModalProvider() {
                     }
                     isOpen={modalState.isOpen}
                     onClose={() => modalController.close()}
+                    onItemCreated={
+                        (modalState.data as CourseSectionAddItemModalData)
+                            ?.onItemCreated
+                    }
                 />
             );
         case 'course-section-create':
@@ -76,6 +80,10 @@ export default function ModalProvider() {
                     }
                     isOpen={modalState.isOpen}
                     onClose={() => modalController.close()}
+                    onSectionCreated={
+                        (modalState.data as CourseSectionCreateModalData)
+                            ?.onSectionCreated
+                    }
                 />
             );
         case 'file-viewer':

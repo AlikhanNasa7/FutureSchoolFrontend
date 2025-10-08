@@ -3,6 +3,7 @@ import axiosInstance from '@/lib/axios';
 import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import Question from '../questions/[questionOrder]/_components/Question';
+import { useRouter } from 'next/navigation';
 
 interface TestContentProps {
     testId: string;
@@ -35,10 +36,11 @@ interface TestData {
     description: string;
     is_published: boolean;
     scheduled_at: string;
-    reveal_results_at: string;
-    time_limit_minutes: number;
+    start_date: string;
+    end_date: string;
+    reveal_results_at: string | null;
     allow_multiple_attempts: boolean;
-    max_attempts: number;
+    max_attempts: number | null;
     show_correct_answers: boolean;
     show_feedback: boolean;
     show_score_immediately: boolean;
@@ -52,6 +54,7 @@ interface TestData {
     teacher_username: string;
     teacher_first_name: string;
     teacher_last_name: string;
+    teacher_fullname: string;
     total_points: number;
     attempt_count: number;
     is_available: boolean;
@@ -62,6 +65,7 @@ interface TestData {
     my_active_attempt_id: number | null;
     my_latest_attempt_can_view_results: boolean;
     last_submitted_attempt_id: number | null;
+    created_at: string;
     questions: QuestionData[];
 }
 
@@ -73,6 +77,7 @@ export default function TestContent({ testId }: TestContentProps) {
     const [isTestStarted, setIsTestStarted] = useState(false);
     const [activeAttemptId, setActiveAttemptId] = useState<number | null>(null);
 
+    const router = useRouter();
     useEffect(() => {
         const fetchTestData = async () => {
             setLoading(true);
@@ -141,7 +146,7 @@ export default function TestContent({ testId }: TestContentProps) {
     const handleViewResults = () => {
         console.log('Viewing results for test:', testId);
         if (testData?.last_submitted_attempt_id) {
-            window.location.href = `/tests/${testId}/results?attempt=${testData.last_submitted_attempt_id}`;
+            router.push(`/tests/${testId}/student-results?attempt=${testData.last_submitted_attempt_id}`);
         }
     };
 
@@ -225,7 +230,7 @@ export default function TestContent({ testId }: TestContentProps) {
             console.log('Test submitted successfully:', response.data);
 
             // Navigate to results with the attempt ID
-            window.location.href = `/tests/${testId}/results?attempt=${activeAttemptId}`;
+            router.push(`/tests/${testId}/student-results?attempt=${activeAttemptId}`);
         } catch (error) {
             console.error('Failed to submit test:', error);
         }
@@ -342,22 +347,57 @@ export default function TestContent({ testId }: TestContentProps) {
                 </div>
 
                 {/* Test Information */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-blue-50 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-10 gap-4 mb-8">
+                    <div className="bg-green-50 rounded-lg p-4 md:col-span-3">
                         <div className="flex items-center gap-3">
-                            <Clock className="w-6 h-6 text-blue-600" />
+                            <Clock className="w-6 h-6 text-green-600" />
                             <div>
                                 <p className="text-sm text-gray-600">
-                                    Время на тест
+                                    Начало теста
                                 </p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                    {testData.time_limit_minutes} минут
+                                <p className="text-sm font-semibold text-gray-900">
+                                    {formatDate(testData.start_date)}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-purple-50 rounded-lg p-4">
+                    <div className="bg-red-50 rounded-lg p-4 md:col-span-3">
+                        <div className="flex items-center gap-3">
+                            <Clock className="w-6 h-6 text-red-600" />
+                            <div>
+                                <p className="text-sm text-gray-600">
+                                    Окончание теста
+                                </p>
+                                <p className="text-sm font-semibold text-gray-900">
+                                    {formatDate(testData.end_date)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-blue-50 rounded-lg p-4 md:col-span-2">
+                        <div className="flex items-center gap-3">
+                            <Clock className="w-6 h-6 text-blue-600" />
+                            <div>
+                                <p className="text-sm text-gray-600">
+                                    Длительность
+                                </p>
+                                <p className="text-lg font-semibold text-gray-900">
+                                    {Math.round(
+                                        (new Date(testData.end_date).getTime() -
+                                            new Date(
+                                                testData.start_date
+                                            ).getTime()) /
+                                            60000
+                                    )}{' '}
+                                    мин
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-purple-50 rounded-lg p-4 md:col-span-2">
                         <div className="flex items-center gap-3">
                             <CheckCircle className="w-6 h-6 text-purple-600" />
                             <div>
@@ -366,20 +406,6 @@ export default function TestContent({ testId }: TestContentProps) {
                                 </p>
                                 <p className="text-lg font-semibold text-gray-900">
                                     {testData.total_points}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-green-50 rounded-lg p-4">
-                        <div className="flex items-center gap-3">
-                            <Clock className="w-6 h-6 text-green-600" />
-                            <div>
-                                <p className="text-sm text-gray-600">
-                                    Запланировано на
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                    {formatDate(testData.scheduled_at)}
                                 </p>
                             </div>
                         </div>

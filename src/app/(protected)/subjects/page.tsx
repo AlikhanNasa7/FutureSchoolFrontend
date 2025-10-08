@@ -12,7 +12,8 @@ import axiosInstance from '@/lib/axios';
 interface SubjectData {
     id: string;
     name: string;
-    professor: string;
+    teacher_username: string;
+    teacher_fullname: string;
     bgId: string;
     urlPath: string;
     grade: number;
@@ -47,96 +48,6 @@ const getSubjectTypeFromCourseCode = (courseCode: string): string => {
     return 'Other';
 };
 
-const sampleSubjects: SubjectData[] = [
-    {
-        id: '1',
-        name: 'Математика',
-        urlPath: 'math',
-        professor: 'Толегенова М.',
-        bgId: 'math-bg.png',
-        grade: 11,
-        type: 'Mathematics',
-        course_code: 'MATH-101',
-        description: 'Углубленное изучение математики для 11 класса',
-    },
-    {
-        id: '2',
-        name: 'Физика',
-        urlPath: 'physics',
-        professor: 'Иванов А.',
-        bgId: 'physics-bg.png',
-        grade: 11,
-        type: 'Physics',
-        course_code: 'PHYS-101',
-        description: 'Основы физики и экспериментальная работа',
-    },
-    {
-        id: '3',
-        name: 'Химия',
-        urlPath: 'chemistry',
-        professor: 'Петрова Е.',
-        bgId: 'chemistry-bg.png',
-        grade: 11,
-        type: 'Chemistry',
-        course_code: 'CHEM-101',
-        description: 'Органическая и неорганическая химия',
-    },
-    {
-        id: '4',
-        name: 'Биология',
-        urlPath: 'biology',
-        professor: 'Сидоров В.',
-        bgId: 'biology-bg.png',
-        grade: 11,
-        type: 'Biology',
-        course_code: 'BIO-101',
-        description: 'Изучение живых организмов и их взаимодействий',
-    },
-    {
-        id: '5',
-        name: 'Казахский язык',
-        urlPath: 'kazakh-language',
-        professor: 'Акишева А.',
-        bgId: 'kazakh-language-bg.png',
-        grade: 11,
-        type: 'Foreign Language',
-        course_code: 'KAZ-101',
-        description: 'Изучение казахского языка и литературы',
-    },
-    {
-        id: '6',
-        name: 'Литература',
-        urlPath: 'literature',
-        professor: 'Морозова О.',
-        bgId: 'literature-bg.png',
-        grade: 11,
-        type: 'Literature',
-        course_code: 'LIT-101',
-        description: 'Изучение мировой и казахской литературы',
-    },
-    {
-        id: '7',
-        name: 'География',
-        urlPath: 'geography',
-        professor: 'Волков Д.',
-        bgId: 'geography-bg.png',
-        grade: 11,
-        type: 'Geography',
-        course_code: 'GEO-101',
-        description: 'Физическая и экономическая география',
-    },
-    {
-        id: '8',
-        name: 'Английский язык',
-        urlPath: 'english',
-        professor: 'Толегенова М.',
-        bgId: 'english-bg.png',
-        grade: 11,
-        type: 'English',
-        course_code: 'ENG-101',
-        description: 'Изучение английского языка и литературы',
-    },
-];
 
 export default function SubjectsPage() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -179,7 +90,8 @@ export default function SubjectsPage() {
             return {
                 id: item.id.toString(),
                 name: item.course_name,
-                professor: item.teacher_username || 'Unknown',
+                teacher_username: item.teacher_username || 'Unknown',
+                teacher_fullname: item.teacher_fullname || 'Unknown',
                 bgId: bgIdMap[subjectType] || 'default-bg.png',
                 urlPath: item.id.toString(),
                 grade: parseInt(item.course_code.match(/\d+/)?.[0] || '0'),
@@ -215,14 +127,9 @@ export default function SubjectsPage() {
                     `/subject-groups/?classroom=${userClassroom}`
                 );
                 setSubjects(transformSubjectData(response.data));
-            } else {
-                // Default fallback
-                setSubjects(sampleSubjects);
             }
         } catch (error) {
             console.error('Error fetching subjects:', error);
-            // Fallback to sample data on error
-            setSubjects(sampleSubjects);
         } finally {
             setFetchLoading(false);
         }
@@ -238,14 +145,14 @@ export default function SubjectsPage() {
 
     const teachers = useMemo(() => {
         const uniqueTeachers = [
-            ...new Set(subjects.map(subject => subject.professor)),
+            ...new Set(subjects.map(subject => subject.teacher_username)),
         ];
         return uniqueTeachers.sort();
     }, [subjects]);
 
     // CRUD Functions (only for superadmin/schooladmin)
     const handleCreateSubject = async (
-        subjectData: Omit<SubjectData, 'id'>
+        subjectData: Omit<SubjectData, 'id' | 'teacher_username' | 'teacher_fullname'>
     ) => {
         if (!canEdit) return;
 
@@ -276,7 +183,7 @@ export default function SubjectsPage() {
 
     const handleUpdateSubject = async (
         id: string,
-        subjectData: Partial<SubjectData>
+        subjectData: Partial<SubjectData & { teacher_username: string; teacher_fullname: string }>
     ) => {
         if (!canEdit) return;
 
@@ -329,7 +236,7 @@ export default function SubjectsPage() {
                 .toLowerCase()
                 .includes(searchQuery.toLowerCase());
             const matchesTeacher =
-                !selectedTeacher || subject.professor === selectedTeacher;
+                !selectedTeacher || subject.teacher_username === selectedTeacher;
             return matchesSearch && matchesTeacher;
         });
     }, [subjects, searchQuery, selectedTeacher]);
@@ -373,7 +280,6 @@ export default function SubjectsPage() {
                 subjects={filteredSubjects}
                 searchQuery={searchQuery}
                 canEdit={canEdit}
-                onEdit={setEditingSubject}
                 onDelete={handleDeleteSubject}
                 loading={loading}
             />
@@ -381,7 +287,7 @@ export default function SubjectsPage() {
             {/* Create/Edit Modal */}
             <SubjectModal
                 isOpen={showCreateModal || !!editingSubject}
-                subject={editingSubject}
+                subject={editingSubject || null}
                 onSave={
                     editingSubject
                         ? data => handleUpdateSubject(editingSubject.id, data)

@@ -16,34 +16,35 @@ import {
 import Image from 'next/image';
 import { useUserState } from '@/contexts/UserContext';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { useLocale } from '@/contexts/LocaleContext';
 
 const navigation = [
     {
-        name: 'Главная',
+        key: 'home',
         href: '/dashboard',
         icon: Home,
         roles: ['teacher', 'student', 'superadmin', 'schooladmin'],
     },
     {
-        name: 'Предметы',
+        key: 'subjects',
         href: '/subjects',
         icon: Box,
         roles: ['teacher', 'student'],
     },
+    // {
+    //     key: 'assignments',
+    //     href: '/assignments',
+    //     icon: BookOpen,
+    //     roles: ['teacher', 'student'],
+    // },
     {
-        name: 'Задания',
-        href: '/assignments',
-        icon: BookOpen,
-        roles: ['teacher', 'student'],
-    },
-    {
-        name: 'Дневник',
+        key: 'diary',
         href: '/diary',
         icon: FileText,
         roles: ['teacher', 'student'],
     },
     {
-        name: 'Классы',
+        key: 'classrooms',
         href: '/classrooms',
         icon: Box,
         roles: ['schooladmin', 'superadmin'],
@@ -51,9 +52,9 @@ const navigation = [
 ];
 
 const utilityItems = [
-    { name: 'Уведомления', href: '/notifications', icon: Bell, badge: 12 },
-    { name: 'Поддержка', href: '/support', icon: HelpCircle },
-    { name: 'Настройки', href: '/settings', icon: Settings },
+    { key: 'notifications', href: '/notifications', icon: Bell, badge: 12 },
+    { key: 'support', href: '/support', icon: HelpCircle },
+    { key: 'settings', href: '/settings', icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -62,6 +63,7 @@ export default function Sidebar() {
     const router = useRouter();
 
     const { user } = useUserState();
+    const { t } = useLocale();
 
     const handleProfileClick = () => {
         router.push('/profile');
@@ -80,8 +82,10 @@ export default function Sidebar() {
             )}
 
             <div
-                className={`h-screen fixed inset-y-0 top-0 left-0 z-50 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static hidden min-[576px]:block ${
-                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`h-screen fixed inset-y-0 top-0 left-0 z-50 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out hidden min-[576px]:block ${
+                    sidebarOpen
+                        ? 'translate-x-0'
+                        : '-translate-x-full lg:translate-x-0'
                 }`}
             >
                 <div className="flex h-full flex-col bg-white">
@@ -92,7 +96,7 @@ export default function Sidebar() {
                                 alt="logo"
                                 width={160}
                                 height={160}
-                                className='w-full'
+                                className="w-full"
                             />
                         </div>
 
@@ -100,7 +104,7 @@ export default function Sidebar() {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Поиск"
+                                placeholder={t('nav.search')}
                                 className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg text-sm text-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white"
                             />
                         </div>
@@ -120,7 +124,7 @@ export default function Sidebar() {
                                     }
                                     return (
                                         <Link
-                                            key={item.name}
+                                            key={item.key}
                                             href={item.href}
                                             className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                                 isActive
@@ -138,7 +142,7 @@ export default function Sidebar() {
                                                         : 'text-gray-500'
                                                 }`}
                                             />
-                                            {item.name}
+                                            {t(`nav.${item.key}`)}
                                         </Link>
                                     );
                                 })}
@@ -149,7 +153,7 @@ export default function Sidebar() {
                                 const isActive = pathname === item.href;
                                 return (
                                     <Link
-                                        key={item.name}
+                                        key={item.key}
                                         href={item.href}
                                         className={`group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                             isActive
@@ -160,7 +164,7 @@ export default function Sidebar() {
                                     >
                                         <div className="flex items-center">
                                             <item.icon className="mr-3 h-5 w-5 text-gray-500" />
-                                            {item.name}
+                                            {t(`nav.${item.key}`)}
                                         </div>
                                         {item.badge && (
                                             <span className="bg-purple-600 text-white text-xs font-medium px-2 py-1 rounded-full">

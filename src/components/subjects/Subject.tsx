@@ -4,7 +4,8 @@ import Image from 'next/image';
 
 interface SubjectProps {
     name: string;
-    professor: string;
+    teacher_username: string;
+    teacher_fullname: string;
     bgId: string;
     course_code?: string;
     grade?: number;
@@ -16,7 +17,8 @@ interface SubjectProps {
 
 export default function Subject({
     name,
-    professor,
+    teacher_username,
+    teacher_fullname,
     bgId,
     course_code,
     grade,
@@ -56,7 +58,7 @@ export default function Subject({
                 {/* Professor and Additional Info */}
                 <div className="flex items-center justify-between">
                     <span className="inline-block px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-lg">
-                        {professor}
+                        {teacher_fullname}
                     </span>
                     {classroom_display && (
                         <span className="text-xs text-gray-500">

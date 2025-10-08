@@ -4,28 +4,29 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Box, BookOpen, FileText, User } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
+import { useLocale } from '@/contexts/LocaleContext';
 
 const mobileNavigation = [
     {
-        name: 'Главная',
+        key: 'home',
         href: '/dashboard',
         icon: Home,
         roles: ['teacher', 'student', 'superadmin', 'schooladmin'],
     },
+    // {
+    //     key: 'subjects',
+    //     href: '/subjects',
+    //     icon: Box,
+    //     roles: ['teacher', 'student'],
+    // },
     {
-        name: 'Предметы',
-        href: '/subjects',
-        icon: Box,
-        roles: ['teacher', 'student'],
-    },
-    {
-        name: 'Задания',
+        key: 'assignments',
         href: '/assignments',
         icon: BookOpen,
         roles: ['teacher', 'student'],
     },
     {
-        name: 'Дневник',
+        key: 'diary',
         href: '/diary',
         icon: FileText,
         roles: ['teacher', 'student'],
@@ -36,6 +37,7 @@ export default function MobileBottomNav() {
     const pathname = usePathname();
     const router = useRouter();
     const { user } = useUserState();
+    const { t } = useLocale();
 
     const handleProfileClick = () => {
         router.push('/profile');
@@ -56,7 +58,9 @@ export default function MobileBottomNav() {
                     <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                         <User className="w-5 h-5 text-gray-600" />
                     </div>
-                    <span className="text-xs text-gray-600 mt-1">Профиль</span>
+                    <span className="text-xs text-gray-600 mt-1">
+                        {t('nav.profile')}
+                    </span>
                 </button>
 
                 {/* Navigation Items */}
@@ -64,7 +68,7 @@ export default function MobileBottomNav() {
                     const isActive = pathname === item.href;
                     return (
                         <Link
-                            key={item.name}
+                            key={item.key}
                             href={item.href}
                             className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
                         >
@@ -82,7 +86,7 @@ export default function MobileBottomNav() {
                                         : 'text-gray-600'
                                 }`}
                             >
-                                {item.name}
+                                {t(`nav.${item.key}`)}
                             </span>
                         </Link>
                     );

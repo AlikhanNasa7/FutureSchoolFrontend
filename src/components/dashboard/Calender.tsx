@@ -17,7 +17,8 @@ const currentMonth = now.getMonth() + 1;
 interface Test {
     id: number;
     title: string;
-    scheduled_at: string;
+    start_date: string;
+    end_date: string;
     due_at?: string;
     course_name: string;
     teacher_username: string;
@@ -420,7 +421,7 @@ const Calendar = () => {
             events.push({
                 id: `test-${test.id}`,
                 title: test.title,
-                start: test.scheduled_at.split('T')[0], // Use scheduled_at date
+                start: test.start_date.split('T')[0], // Use scheduled_at date
                 backgroundColor: 'rgb(224, 242, 254)', // Blue for tests
                 borderColor: 'rgb(224, 242, 254)',
                 textColor: '#374151',
@@ -428,7 +429,7 @@ const Calendar = () => {
                 description: test.description || '',
                 subject: test.course_name,
                 teacher: test.teacher_username,
-                time: new Date(test.scheduled_at).toLocaleTimeString('ru-RU', {
+                time: new Date(test.start_date).toLocaleTimeString('ru-RU', {
                     hour: '2-digit',
                     minute: '2-digit',
                 }),

@@ -25,12 +25,17 @@ interface SharedLinkItemProps {
         fileData: { file: string; title: string; type: string; id?: string },
         title: string
     ) => void;
+    onDelete?: (
+        itemId: string,
+        itemType: 'resource' | 'assignment' | 'test'
+    ) => void;
 }
 
 export function SharedLinkItem({
     item,
     isTeacher,
     onFileView,
+    onDelete,
 }: SharedLinkItemProps) {
     const isLink = item.type === 'link' && item.url;
     const isDirectory = item.type === 'directory';
@@ -43,21 +48,26 @@ export function SharedLinkItem({
     const isText = item.type === 'text';
 
     function handleDelete() {
-        modalController.open('confirmation', {
-            title: 'Delete Confirmation',
-            message: `Are you sure you want to delete "${item.title}"? This action cannot be undone.`,
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
-            confirmVariant: 'danger',
-            onConfirm: async () => {
-                try {
-                    await axiosInstance.delete(`/resources/${item.id}/`);
-                    console.log('Resource deleted successfully');
-                } catch (error) {
-                    console.error('Error deleting resource:', error);
-                }
-            },
-        });
+        if (onDelete) {
+            onDelete(item.id, 'resource');
+        } else {
+            // Fallback to old behavior if no onDelete prop
+            modalController.open('confirmation', {
+                title: 'Delete Confirmation',
+                message: `Are you sure you want to delete "${item.title}"? This action cannot be undone.`,
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                confirmVariant: 'danger',
+                onConfirm: async () => {
+                    try {
+                        await axiosInstance.delete(`/resources/${item.id}/`);
+                        console.log('Resource deleted successfully');
+                    } catch (error) {
+                        console.error('Error deleting resource:', error);
+                    }
+                },
+            });
+        }
     }
 
     function handleClick() {

@@ -5,15 +5,17 @@ import Link from 'next/link';
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import axiosInstance from '@/lib/axios';
 import { Plus } from 'lucide-react';
+import { useUserState } from '@/contexts/UserContext';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface SubjectData {
     id: string;
     name: string;
-    professor: string;
+    teacher_username: string;
+    teacher_fullname: string;
     bgId: string;
     urlPath: string;
     course_name: string;
-    teacher_username?: string;
     course_code?: string;
     grade?: number;
     type?: string;
@@ -22,7 +24,6 @@ interface SubjectData {
     teacher_email?: string;
 }
 
-// Create context for subject data
 export const SubjectContext = createContext<{
     subject: SubjectData | null;
     loading: boolean;
@@ -45,10 +46,10 @@ export const useSubject = () => {
 };
 
 const tabs = [
-    { href: 'contents', label: 'Contents' },
-    { href: 'participants', label: 'Participants' },
-    { href: 'grades', label: 'Grades' },
-    { href: 'attendance', label: 'Attendance' },
+    { href: 'contents', key: 'contents' },
+    { href: 'participants', key: 'participants' },
+    { href: 'grades', key: 'grades' },
+    { href: 'attendance', key: 'attendance' },
 ];
 
 function useParentPath() {
@@ -65,6 +66,8 @@ export default function SubjectDetailPage({
     const subjectId = decodeURIComponent(params.id as string);
     const pathName = usePathname();
     const parentPath = useParentPath();
+    const { user } = useUserState();
+    const { t } = useLocale();
     const [subject, setSubject] = useState<SubjectData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -136,21 +139,21 @@ export default function SubjectDetailPage({
                     <h1 className="text-2xl">{subject?.course_name}</h1>
                     <div className="bg-[rgba(15,174,246,1)] rounded-md flex justify-center items-center px-1 self-center">
                         <p className="text-white text-sm">
-                            {subject.teacher_username}
+                            {subject.teacher_fullname}
                         </p>
                     </div>
                 </div>
-                <div className='flex justify-between md:flex-row flex-col'>
+                <div className="flex justify-between md:flex-row flex-col">
                     <ul className="flex gap-2 font-bold">
-                        {tabs.map(t => {
+                        {tabs.map(tab => {
                             const active =
                                 pathName.split('/')[
                                     pathName.split('/').length - 1
-                                ] == t.href;
-                            const url = `${parentPath}/${t.href}`;
+                                ] == tab.href;
+                            const url = `${parentPath}/${tab.href}`;
                             return (
                                 <Link
-                                    key={t.href}
+                                    key={tab.href}
                                     href={url}
                                     className={[
                                         'px-2 py-1 rounded-md transition-colors',
@@ -159,17 +162,24 @@ export default function SubjectDetailPage({
                                             : 'text-[rgba(16,16,16,0.4)] hover:bg-gray-100',
                                     ].join(' ')}
                                 >
-                                    {t.label}
+                                    {t(`subject.${tab.key}`)}
                                 </Link>
                             );
                         })}
                     </ul>
-                    <Link href={`/create-test/?subject=${subjectId}`} className='bg-[#694CFD] flex items-center gap-2 px-4 py-1 rounded-md transition-colors text-white font-bold w-fit'>
-                        Добавить тест
-                    </Link>
+                    {user?.role === 'teacher' && (
+                        <Link
+                            href={`/create-test/?subject=${subjectId}`}
+                            className="bg-[#694CFD] flex items-center gap-2 px-4 py-1 rounded-md transition-colors text-white font-bold w-fit"
+                        >
+                            {t('test.createTest')}
+                        </Link>
+                    )}
                 </div>
             </div>
-            <SubjectContext.Provider value={{ subject, loading, error, subjectGroupMembers }}>
+            <SubjectContext.Provider
+                value={{ subject, loading, error, subjectGroupMembers }}
+            >
                 {children}
             </SubjectContext.Provider>
         </div>

@@ -388,11 +388,8 @@ export default function AssignmentPage() {
                                             <div>
                                                 <p className="font-medium text-blue-900">
                                                     {assignment
-                                                        .student_submission.file
-                                                        ? assignment.student_submission.file
-                                                              .split('/')
-                                                              .pop()
-                                                        : 'Текстовая работа'}
+                                                        .student_submission.file.length > 60 ? assignment.student_submission.file.slice(0, 60) + '...' : assignment.student_submission.file 
+                                                        }
                                                 </p>
                                                 <p className="text-sm text-blue-700">
                                                     Сдано:{' '}
@@ -408,10 +405,7 @@ export default function AssignmentPage() {
                                             <button
                                                 onClick={() => {
                                                     const filename =
-                                                        assignment.student_submission?.file
-                                                            ?.split('/')
-                                                            .pop() ||
-                                                        'submission';
+                                                        assignment.student_submission?.file.length > 60 ? assignment.student_submission?.file.slice(0, 60) + '...' : assignment.student_submission?.file || 'submission';
                                                     downloadFile(
                                                         assignment
                                                             .student_submission!

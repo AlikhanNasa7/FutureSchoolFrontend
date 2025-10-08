@@ -11,6 +11,7 @@ interface CourseSectionAddItemModalProps {
     isOpen: boolean;
     onClose: () => void;
     courseSectionId: number;
+    onItemCreated?: (itemType: 'resource' | 'assignment' | 'test') => void;
 }
 
 type ItemType = 'resource' | 'assignment';
@@ -63,6 +64,7 @@ export default function CourseSectionAddItemModal({
     isOpen,
     onClose,
     courseSectionId,
+    onItemCreated,
 }: CourseSectionAddItemModalProps) {
     const [itemType, setItemType] = useState<ItemType>('resource');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -169,6 +171,7 @@ export default function CourseSectionAddItemModal({
             setTimeout(() => {
                 onClose();
                 resetForms();
+                onItemCreated?.('resource');
             }, 1500);
         } catch (error: unknown) {
             console.error('Error creating resource:', error);
@@ -244,6 +247,7 @@ export default function CourseSectionAddItemModal({
             setTimeout(() => {
                 onClose();
                 resetForms();
+                onItemCreated?.('assignment');
             }, 1500);
         } catch (error: unknown) {
             console.error('Error creating assignment:', error);

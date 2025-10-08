@@ -11,13 +11,12 @@ export default function SubjectContents() {
     const [overviewData, setOverviewData] = useState<any>(null);
     const [weekMaterialsData, setWeekMaterialsData] = useState<any[]>([]);
 
-
     console.log(weekMaterialsData, 'weekMaterialsData');
 
-    useEffect(() => {
+    const fetchSections = async () => {
         if (!subject) return;
 
-        const fetchSubject = async () => {
+        try {
             const response = await axiosInstance.get(
                 `/course-sections/?subject_group=${subject.id}`
             );
@@ -77,16 +76,22 @@ export default function SubjectContents() {
                                 section.tests || section.quizzes || [],
                                 'test'
                             ),
+                            is_current: section.is_current,
                         };
                     });
 
                 console.log('Transformed data:', transformedData);
                 setWeekMaterialsData(transformedData);
             }
-        };
-        fetchSubject();
-    }, [subject]);
+        } catch (error) {
+            console.error('Error fetching sections:', error);
+        }
+    };
 
+    useEffect(() => {
+        fetchSections();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [subject]);
 
     if (loading) {
         return (
@@ -129,6 +134,7 @@ export default function SubjectContents() {
                         <SubjectOverviewPanel
                             data={overviewData}
                             courseSectionId={overviewData?.id}
+                            onRefresh={fetchSections}
                         />
                     )}
                 </div>
@@ -143,6 +149,7 @@ export default function SubjectContents() {
                                 data={data}
                                 key={data.id}
                                 courseSectionId={data?.id}
+                                onRefresh={fetchSections}
                             />
                         ))}
                 </div>

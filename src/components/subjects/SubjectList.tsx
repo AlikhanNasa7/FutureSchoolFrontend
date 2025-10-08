@@ -7,9 +7,9 @@ import Subject from './Subject';
 interface SubjectData {
     id: string;
     name: string;
-    professor: string;
+    teacher_username: string;
+    teacher_fullname: string;
     bgId: string;
-    urlPath: string;
     course_code?: string;
     grade?: number;
     type?: string;
@@ -31,7 +31,6 @@ export default function SubjectList({
     subjects,
     searchQuery = '',
     canEdit = false,
-    onEdit,
     onDelete,
     loading = false,
 }: SubjectListProps) {
@@ -54,7 +53,8 @@ export default function SubjectList({
                         >
                             <Subject
                                 name={subject.name}
-                                professor={subject.professor}
+                                teacher_username={subject.teacher_username}
+                                teacher_fullname={subject.teacher_fullname}
                                 bgId={subject.bgId}
                                 course_code={subject.course_code}
                                 grade={subject.grade}
@@ -67,7 +67,7 @@ export default function SubjectList({
 
                         {canEdit && (
                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
+                                {/* <button
                                     onClick={e => {
                                         e.stopPropagation();
                                         onEdit?.(subject);
@@ -76,7 +76,7 @@ export default function SubjectList({
                                     disabled={loading}
                                 >
                                     <Edit className="w-3 h-3" />
-                                </button>
+                                </button> */}
                                 <button
                                     onClick={e => {
                                         e.stopPropagation();

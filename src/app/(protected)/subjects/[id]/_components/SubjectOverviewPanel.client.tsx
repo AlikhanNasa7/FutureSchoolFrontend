@@ -11,6 +11,7 @@ import axiosInstance from '@/lib/axios';
 interface SubjectOverviewPanelProps {
     data: SubjectOverviewData;
     courseSectionId?: number;
+    onRefresh?: () => void;
 }
 
 export function handleFileView(
@@ -324,6 +325,7 @@ export async function handleDownloadFolder(
 export default function SubjectOverviewPanel({
     data,
     courseSectionId,
+    onRefresh,
 }: SubjectOverviewPanelProps) {
     const [isExpanded, setIsExpanded] = useState(true);
     const { user } = useUserState();
@@ -347,9 +349,58 @@ export default function SubjectOverviewPanel({
         if (courseSectionId) {
             modalController.open('course-section-add-item', {
                 courseSectionId,
+                onItemCreated: (
+                    itemType: 'resource' | 'assignment' | 'test'
+                ) => {
+                    console.log(
+                        `${itemType} created in overview, refreshing...`
+                    );
+                    onRefresh?.();
+                },
             });
         }
-    }, [courseSectionId]);
+    }, [courseSectionId, onRefresh]);
+
+    const handleDeleteItem = useCallback(
+        async (
+            itemId: string,
+            itemType: 'resource' | 'assignment' | 'test'
+        ) => {
+            const itemTypeLabel =
+                itemType === 'assignment'
+                    ? 'задание'
+                    : itemType === 'test'
+                      ? 'тест'
+                      : 'ресурс';
+
+            modalController.open('confirmation', {
+                title: 'Подтверждение удаления',
+                message: `Вы уверены, что хотите удалить этот ${itemTypeLabel}? Это действие нельзя отменить.`,
+                confirmText: 'Удалить',
+                cancelText: 'Отмена',
+                confirmVariant: 'danger',
+                onConfirm: async () => {
+                    const endpoint =
+                        itemType === 'assignment'
+                            ? `/assignments/${itemId}/`
+                            : itemType === 'test'
+                              ? `/tests/${itemId}/`
+                              : `/resources/${itemId}/`;
+                    await axiosInstance.delete(endpoint);
+                    console.log(
+                        `${itemType} deleted successfully from overview`
+                    );
+                },
+                onSuccess: () => {
+                    console.log(
+                        `${itemType} deleted from overview, refreshing...`
+                    );
+                    onRefresh?.();
+                },
+            });
+        },
+        [onRefresh]
+    );
 
     console.log(data, 'data');
 
@@ -426,6 +477,7 @@ export default function SubjectOverviewPanel({
                                             courseSectionId
                                         )
                                     }
+                                    onDelete={handleDeleteItem}
                                 />
                             </div>
                         ))}

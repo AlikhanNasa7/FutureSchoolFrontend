@@ -10,6 +10,7 @@ interface CourseSectionCreateModalProps {
     isOpen: boolean;
     onClose: () => void;
     subjectId: number;
+    onSectionCreated?: () => void;
 }
 
 interface SectionFormData {
@@ -20,6 +21,7 @@ export default function CourseSectionCreateModal({
     isOpen,
     onClose,
     subjectId,
+    onSectionCreated,
 }: CourseSectionCreateModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -49,6 +51,7 @@ export default function CourseSectionCreateModal({
             );
             console.log('Section created successfully:', response.data);
             setSuccess('Section created successfully!');
+            onSectionCreated?.();
             setTimeout(() => {
                 onClose();
                 resetForm();
