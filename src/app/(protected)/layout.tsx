@@ -11,7 +11,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     const { sidebarOpen } = useSidebar();
 
     return (
-        <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen flex bg-gray-50">
             {/* Desktop Sidebar - Hidden on mobile */}
             <div className="hidden min-[576px]:block">
                 <Sidebar />
