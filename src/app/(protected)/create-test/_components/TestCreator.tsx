@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Calendar } from 'lucide-react';
 import { QuestionEditor } from './QuestionEditor';
 import axiosInstance from '@/lib/axios';
+import { useLocale } from '@/contexts/LocaleContext';
 
 export interface Question {
     id: string;
@@ -25,6 +26,7 @@ export interface Test {
 }
 
 export default function TestCreator() {
+    const { t } = useLocale();
     const [test, setTest] = useState<Test>({
         title: '',
         description: '',
@@ -130,7 +132,7 @@ export default function TestCreator() {
             testData
         );
         console.log(response.data, 'response');
-        alert('Test saved successfully!');
+        alert(t('test.testSavedSuccess'));
     };
 
     const getTotalPoints = () => {
@@ -146,7 +148,7 @@ export default function TestCreator() {
                 <div className="bg-gradient-to-r from-[#694CFD]/5 to-[#694CFD]/10 border-b border-[#694CFD]/20 p-6 rounded-t-lg">
                     <h2 className="flex items-center gap-2 text-[#694CFD] font-semibold text-xl">
                         <Calendar className="w-5 h-5" />
-                        Test Information
+                        {t('test.testInformation')}
                     </h2>
                 </div>
                 <div className="p-6 space-y-4">
@@ -156,12 +158,12 @@ export default function TestCreator() {
                                 htmlFor="title"
                                 className="block text-sm font-medium text-gray-700"
                             >
-                                Test Title
+                                {t('test.testTitle')}
                             </label>
                             <input
                                 id="title"
                                 type="text"
-                                placeholder="Enter test title"
+                                placeholder={t('forms.enterTitle')}
                                 value={test.title}
                                 onChange={e =>
                                     handleTestUpdate('title', e.target.value)
@@ -174,7 +176,7 @@ export default function TestCreator() {
                                 htmlFor="total-points"
                                 className="block text-sm font-medium text-gray-700"
                             >
-                                Total Points
+                                {t('test.totalPoints')}
                             </label>
                             <input
                                 id="total-points"
@@ -192,7 +194,7 @@ export default function TestCreator() {
                                 htmlFor="start-date"
                                 className="block text-sm font-medium text-gray-700"
                             >
-                                Start Date & Time
+                                {t('test.startDateAndTime')}
                             </label>
                             <input
                                 id="start-date"
@@ -212,7 +214,7 @@ export default function TestCreator() {
                                 htmlFor="end-date"
                                 className="block text-sm font-medium text-gray-700"
                             >
-                                End Date & Time
+                                {t('test.endDateAndTime')}
                             </label>
                             <input
                                 id="end-date"
@@ -229,13 +231,13 @@ export default function TestCreator() {
                     <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">
-                                Test Information
+                                {t('test.testInfo')}
                             </label>
                             <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
                                 <div className="space-y-1">
                                     {test.start_date && (
                                         <div>
-                                            • Test starts at:{' '}
+                                            • {t('test.startsAt')}:{' '}
                                             {new Date(
                                                 test.start_date
                                             ).toLocaleString()}
@@ -243,7 +245,7 @@ export default function TestCreator() {
                                     )}
                                     {test.end_date && (
                                         <div>
-                                            • Test ends at:{' '}
+                                            • {t('test.endsAt')}:{' '}
                                             {new Date(
                                                 test.end_date
                                             ).toLocaleString()}
@@ -251,7 +253,7 @@ export default function TestCreator() {
                                     )}
                                     {test.start_date && test.end_date && (
                                         <div>
-                                            • Duration:{' '}
+                                            • {t('test.duration')}:{' '}
                                             {Math.round(
                                                 (new Date(
                                                     test.end_date
@@ -261,7 +263,7 @@ export default function TestCreator() {
                                                     ).getTime()) /
                                                     60000
                                             )}{' '}
-                                            minutes
+                                            {t('test.minutes')}
                                         </div>
                                     )}
                                 </div>
@@ -274,11 +276,11 @@ export default function TestCreator() {
                             htmlFor="description"
                             className="block text-sm font-medium text-gray-700"
                         >
-                            Description
+                            {t('test.description')}
                         </label>
                         <textarea
                             id="description"
-                            placeholder="Enter test description and instructions"
+                            placeholder={t('forms.description')}
                             value={test.description}
                             onChange={e =>
                                 handleTestUpdate('description', e.target.value)
@@ -293,7 +295,7 @@ export default function TestCreator() {
             <div className="border border-[#694CFD]/20 shadow-lg shadow-[#694CFD]/5 bg-white rounded-lg mb-2">
                 <div className="bg-gradient-to-r from-[#694CFD]/5 to-[#694CFD]/10 border-b border-[#694CFD]/20 p-6 rounded-t-lg">
                     <h2 className="text-[#694CFD] font-semibold text-xl">
-                        Questions ({test.questions.length})
+                        {t('test.question')} ({test.questions.length})
                     </h2>
                 </div>
                 <div className="p-6 space-y-4">
@@ -303,21 +305,21 @@ export default function TestCreator() {
                             className="flex items-center gap-2 px-4 py-2 border border-[#694CFD]/30 text-[#694CFD] rounded-md hover:bg-[#694CFD]/10 hover:border-[#694CFD]/50 transition-colors"
                         >
                             <Plus className="w-4 h-4" />
-                            Multiple Choice
+                            {t('test.multipleChoice')}
                         </button>
                         <button
                             onClick={() => addQuestion('open_question')}
                             className="flex items-center gap-2 px-4 py-2 border border-[#694CFD]/30 text-[#694CFD] rounded-md hover:bg-[#694CFD]/10 hover:border-[#694CFD]/50 transition-colors"
                         >
                             <Plus className="w-4 h-4" />
-                            Open Question
+                            {t('test.openQuestion')}
                         </button>
                         <button
                             onClick={() => addQuestion('matching')}
                             className="flex items-center gap-2 px-4 py-2 border border-[#694CFD]/30 text-[#694CFD] rounded-md hover:bg-[#694CFD]/10 hover:border-[#694CFD]/50 transition-colors"
                         >
                             <Plus className="w-4 h-4" />
-                            Matching
+                            {t('test.matching')}
                         </button>
                     </div>
 
@@ -364,10 +366,7 @@ export default function TestCreator() {
 
                     {test.questions.length === 0 && (
                         <div className="text-center py-8 text-slate-500">
-                            <p>
-                                No questions added yet. Click the buttons above
-                                to add questions.
-                            </p>
+                            <p>{t('test.noQuestionsYet')}</p>
                         </div>
                     )}
                 </div>
@@ -378,7 +377,7 @@ export default function TestCreator() {
                     onClick={saveTest}
                     className="px-4 py-2 bg-gradient-to-r from-[#694CFD] to-[#694CFD]/90 hover:from-[#694CFD]/90 hover:to-[#694CFD] shadow-lg shadow-[#694CFD]/25 text-white rounded-md transition-all"
                 >
-                    Publish Test
+                    {t('test.saveTest')}
                 </button>
             </div>
         </div>

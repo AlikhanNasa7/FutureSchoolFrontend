@@ -421,7 +421,7 @@ const Calendar = () => {
             events.push({
                 id: `test-${test.id}`,
                 title: test.title,
-                start: test.start_date.split('T')[0], // Use scheduled_at date
+                start: test.start_date?.split('T')[0], // Use scheduled_at date
                 backgroundColor: 'rgb(224, 242, 254)', // Blue for tests
                 borderColor: 'rgb(224, 242, 254)',
                 textColor: '#374151',

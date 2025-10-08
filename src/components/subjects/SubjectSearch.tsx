@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface SubjectSearchProps {
     onSearchChange: (query: string) => void;
@@ -8,6 +9,7 @@ interface SubjectSearchProps {
 
 export default function SubjectSearch({ onSearchChange }: SubjectSearchProps) {
     const [searchQuery, setSearchQuery] = useState('');
+    const { t } = useLocale();
 
     const handleSearchChange = (query: string) => {
         setSearchQuery(query);
@@ -35,7 +37,7 @@ export default function SubjectSearch({ onSearchChange }: SubjectSearchProps) {
                 type="text"
                 value={searchQuery}
                 onChange={e => handleSearchChange(e.target.value)}
-                placeholder="Поиск предметов..."
+                placeholder={t('subject.searchPlaceholder')}
                 className="w-full sm:w-[400px] lg:w-[480px] pl-10 p-3 rounded-md focus:outline-none leading-5 bg-white sm:text-sm text-lg font-semibold text-[#626262]"
             />
         </div>

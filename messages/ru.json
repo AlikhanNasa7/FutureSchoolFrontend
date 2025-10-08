@@ -53,7 +53,23 @@
         "createTest": "Создать тест",
         "testInfo": "Информация о тесте",
         "startsAt": "Тест начинается в",
-        "endsAt": "Тест заканчивается в"
+        "endsAt": "Тест заканчивается в",
+        "addQuestion": "Добавить вопрос",
+        "multipleChoice": "Множественный выбор",
+        "openQuestion": "Открытый вопрос",
+        "matching": "Сопоставление",
+        "questionText": "Текст вопроса",
+        "points": "Баллы",
+        "addOption": "Добавить вариант",
+        "option": "Вариант",
+        "correct": "Правильный",
+        "saveTest": "Сохранить тест",
+        "testSavedSuccess": "Тест успешно сохранен!",
+        "startDateAndTime": "Дата и время начала",
+        "endDateAndTime": "Дата и время окончания",
+        "enterQuestionText": "Введите текст вопроса",
+        "noQuestionsYet": "Вопросы еще не добавлены. Нажмите кнопки выше, чтобы добавить вопросы.",
+        "testInformation": "Информация о тесте"
     },
     "assignment": {
         "title": "Задание",
@@ -120,7 +136,13 @@
         "course": "Предмет",
         "teacher": "Преподаватель",
         "classroom": "Класс",
-        "section": "Раздел"
+        "section": "Раздел",
+        "searchPlaceholder": "Поиск предметов...",
+        "allTeachers": "Все преподаватели",
+        "noSubjectsFound": "Предметы не найдены",
+        "noSubjectsAvailable": "Нет доступных предметов",
+        "noResultsFor": "По запросу \"{query}\" ничего не найдено",
+        "subjectsWillAppear": "Предметы появятся здесь после их добавления"
     },
     "messages": {
         "loading": "Загрузка...",

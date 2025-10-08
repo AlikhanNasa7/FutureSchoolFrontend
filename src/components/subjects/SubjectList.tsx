@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Edit, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import Subject from './Subject';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface SubjectData {
     id: string;
@@ -35,6 +36,7 @@ export default function SubjectList({
     loading = false,
 }: SubjectListProps) {
     const router = useRouter();
+    const { t } = useLocale();
 
     const handleSubjectClick = (subject: SubjectData) => {
         console.log('Subject clicked:', subject);
@@ -112,13 +114,13 @@ export default function SubjectList({
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                         {searchQuery
-                            ? 'Предметы не найдены'
-                            : 'Нет доступных предметов'}
+                            ? t('subject.noSubjectsFound')
+                            : t('subject.noSubjectsAvailable')}
                     </h3>
                     <p className="text-gray-500">
                         {searchQuery
-                            ? `По запросу "${searchQuery}" ничего не найдено`
-                            : 'Предметы появятся здесь после их добавления'}
+                            ? t('subject.noResultsFor', { query: searchQuery })
+                            : t('subject.subjectsWillAppear')}
                     </p>
                 </div>
             )}

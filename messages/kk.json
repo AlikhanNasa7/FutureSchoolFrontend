@@ -53,7 +53,23 @@
         "createTest": "Тест жасау",
         "testInfo": "Тест туралы ақпарат",
         "startsAt": "Тест басталады",
-        "endsAt": "Тест аяқталады"
+        "endsAt": "Тест аяқталады",
+        "addQuestion": "Сұрақ қосу",
+        "multipleChoice": "Көп таңдау",
+        "openQuestion": "Ашық сұрақ",
+        "matching": "Сәйкестендіру",
+        "questionText": "Сұрақ мәтіні",
+        "points": "Ұпай",
+        "addOption": "Нұсқа қосу",
+        "option": "Нұсқа",
+        "correct": "Дұрыс",
+        "saveTest": "Тестті сақтау",
+        "testSavedSuccess": "Тест сәтті сақталды!",
+        "startDateAndTime": "Басталу күні мен уақыты",
+        "endDateAndTime": "Аяқталу күні мен уақыты",
+        "enterQuestionText": "Сұрақ мәтінін енгізіңіз",
+        "noQuestionsYet": "Сұрақтар әлі қосылмаған. Сұрақтарды қосу үшін жоғарыдағы батырмаларды басыңыз.",
+        "testInformation": "Тест туралы ақпарат"
     },
     "assignment": {
         "title": "Тапсырма",
@@ -120,7 +136,13 @@
         "course": "Пән",
         "teacher": "Мұғалім",
         "classroom": "Сынып",
-        "section": "Бөлім"
+        "section": "Бөлім",
+        "searchPlaceholder": "Пәндерді іздеу...",
+        "allTeachers": "Барлық мұғалімдер",
+        "noSubjectsFound": "Пәндер табылмады",
+        "noSubjectsAvailable": "Қолжетімді пәндер жоқ",
+        "noResultsFor": "\"{query}\" сұранысы бойынша ештеңе табылмады",
+        "subjectsWillAppear": "Пәндер қосылғаннан кейін осында пайда болады"
     },
     "messages": {
         "loading": "Жүктелуде...",

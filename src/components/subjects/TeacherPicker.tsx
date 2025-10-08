@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface TeacherPickerProps {
     teachers: string[];
@@ -15,6 +16,7 @@ export default function TeacherPicker({
 }: TeacherPickerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { t } = useLocale();
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -45,7 +47,7 @@ export default function TeacherPicker({
                 className="w-full p-3 rounded-md bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold text-[#626262] flex items-center justify-between"
             >
                 <span className="truncate">
-                    {selectedTeacher || 'Все преподаватели'}
+                    {selectedTeacher || t('subject.allTeachers')}
                 </span>
                 <svg
                     className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
@@ -75,7 +77,7 @@ export default function TeacherPicker({
                                     : 'text-gray-700'
                             }`}
                         >
-                            Все преподаватели
+                            {t('subject.allTeachers')}
                         </button>
                         {teachers.map((teacher, index) => (
                             <button

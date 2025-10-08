@@ -13,7 +13,7 @@ export type Locale = 'ru' | 'en' | 'kk';
 interface LocaleContextType {
     locale: Locale;
     setLocale: (locale: Locale) => void;
-    t: (key: string) => string;
+    t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
@@ -51,7 +51,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
             });
     }, [locale]);
 
-    const t = (key: string): string => {
+    const t = (
+        key: string,
+        params?: Record<string, string | number>
+    ): string => {
         try {
             const keys = key.split('.');
             let value: any = messages;
@@ -64,7 +67,19 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
                 }
             }
 
-            return typeof value === 'string' ? value : key;
+            let result = typeof value === 'string' ? value : key;
+
+            // Replace parameters in the translation string
+            if (params) {
+                Object.entries(params).forEach(([paramKey, paramValue]) => {
+                    result = result.replace(
+                        `{${paramKey}}`,
+                        String(paramValue)
+                    );
+                });
+            }
+
+            return result;
         } catch (error) {
             console.error(`Translation error for key: ${key}`, error);
             return key;

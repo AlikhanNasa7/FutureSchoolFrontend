@@ -53,7 +53,23 @@
         "createTest": "Create Test",
         "testInfo": "Test Information",
         "startsAt": "Test starts at",
-        "endsAt": "Test ends at"
+        "endsAt": "Test ends at",
+        "addQuestion": "Add Question",
+        "multipleChoice": "Multiple Choice",
+        "openQuestion": "Open Question",
+        "matching": "Matching",
+        "questionText": "Question Text",
+        "points": "Points",
+        "addOption": "Add Option",
+        "option": "Option",
+        "correct": "Correct",
+        "saveTest": "Save Test",
+        "testSavedSuccess": "Test saved successfully!",
+        "startDateAndTime": "Start Date & Time",
+        "endDateAndTime": "End Date & Time",
+        "enterQuestionText": "Enter question text",
+        "noQuestionsYet": "No questions added yet. Click the buttons above to add questions.",
+        "testInformation": "Test Information"
     },
     "assignment": {
         "title": "Assignment",
@@ -120,7 +136,13 @@
         "course": "Course",
         "teacher": "Teacher",
         "classroom": "Classroom",
-        "section": "Section"
+        "section": "Section",
+        "searchPlaceholder": "Search subjects...",
+        "allTeachers": "All Teachers",
+        "noSubjectsFound": "No subjects found",
+        "noSubjectsAvailable": "No subjects available",
+        "noResultsFor": "No results found for \"{query}\"",
+        "subjectsWillAppear": "Subjects will appear here after they are added"
     },
     "messages": {
         "loading": "Loading...",

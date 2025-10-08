@@ -32,7 +32,7 @@ export default function Modal({
             onClick={handleBackdropClick}
         >
             <div
-                className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 sm:p-6 w-full ${maxWidth} max-h-[95vh] overflow-hidden flex flex-col`}
+                className={`bg-white rounded-lg shadow-lg p-3 sm:p-6 w-full ${maxWidth} max-h-[95vh] overflow-hidden flex flex-col`}
             >
                 {title && (
                     <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">

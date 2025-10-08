@@ -27,7 +27,7 @@ interface ResourceFormData {
         | 'document'
         | 'image'
         | 'video'
-        | 'meet';
+        | 'google-meet';
     file?: File | null;
     files?: File[]; // For multiple file uploads
 }
@@ -495,18 +495,18 @@ export default function CourseSectionAddItemModal({
                                         onClick={() =>
                                             setResourceForm(prev => ({
                                                 ...prev,
-                                                type: 'meet',
+                                                type: 'google-meet',
                                             }))
                                         }
                                         className={`rounded-md transition-all duration-200 ${
-                                            resourceForm.type === 'meet'
+                                            resourceForm.type === 'google-meet'
                                                 ? 'ring-2 ring-blue-500 bg-blue-50 focus:ring-offset-2'
                                                 : 'hover:bg-gray-50 focus:ring-offset-2'
                                         }`}
                                     >
                                         <Image
-                                            src="/document-icons/meet.png"
-                                            alt="Meet"
+                                            src="/document-icons/google-meet.png"
+                                            alt="Google Meet"
                                             width={40}
                                             height={40}
                                         />
@@ -717,7 +717,7 @@ export default function CourseSectionAddItemModal({
                             </div>
                         )}
                         {(resourceForm.type === 'link' ||
-                            resourceForm.type === 'meet') && (
+                            resourceForm.type === 'google-meet') && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     URL *
