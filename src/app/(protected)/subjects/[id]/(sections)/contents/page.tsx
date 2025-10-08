@@ -5,15 +5,12 @@ import WeekMaterialsSection from '../../_components/WeekMaterialsSection';
 import { useEffect, useState } from 'react';
 import axiosInstance from '@/lib/axios';
 import SubjectOverviewPanel from '../../_components/SubjectOverviewPanel.client';
-// Removed unused imports
 
 export default function SubjectContents() {
     const { subject, loading, error } = useSubject();
-    // Removed unused user variable
     const [overviewData, setOverviewData] = useState<any>(null);
     const [weekMaterialsData, setWeekMaterialsData] = useState<any[]>([]);
 
-    // Removed unused variable
 
     console.log(weekMaterialsData, 'weekMaterialsData');
 
@@ -30,13 +27,11 @@ export default function SubjectContents() {
             if (response.data.length > 0) {
                 setOverviewData(response.data[0]);
 
-                // Transform API data to match expected format
                 const transformedData = response.data
                     .slice(1)
                     .map((section: Record<string, any>) => {
                         console.log('Transforming section:', section);
 
-                        // Helper function to add kind attribute to items
                         const addKindToItems = (
                             items: Record<string, any>[],
                             kind: string
@@ -44,7 +39,6 @@ export default function SubjectContents() {
                             return items.map((item: Record<string, any>) => ({
                                 ...item,
                                 kind: kind,
-                                // Ensure required properties exist
                                 id:
                                     item.id ||
                                     item.item_id ||
@@ -59,7 +53,6 @@ export default function SubjectContents() {
                                     item.href ||
                                     `/${kind}s/${item.id}`,
                                 actionLabel: item.actionLabel || 'Открыть',
-                                // Include grade information for assignments
                                 grade_value:
                                     item.grade_value || item.student_grade,
                                 max_grade: item.max_grade || item.max_points,
@@ -94,9 +87,7 @@ export default function SubjectContents() {
         fetchSubject();
     }, [subject]);
 
-    // Removed unused functions
 
-    // Show loading state
     if (loading) {
         return (
             <div className="space-y-6">
@@ -113,7 +104,6 @@ export default function SubjectContents() {
         );
     }
 
-    // Show error state
     if (error || !subject) {
         return (
             <div className="space-y-6">
@@ -130,8 +120,6 @@ export default function SubjectContents() {
             </div>
         );
     }
-
-    // Removed unused sample data
 
     return (
         <div className="space-y-6">
