@@ -23,7 +23,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 }`}
             >
                 <Navbar />
-                <main className="flex-1 p-4 lg:p-8 pb-20 min-[576px]:pb-4 overflow-y-auto">
+                <main className="flex-1 p-4 lg:p-8 pb-20 min-[576px]:pb-4 overflow-y-auto w-full">
                     {children}
                 </main>
             </div>

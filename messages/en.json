@@ -1,7 +1,11 @@
 {
     "auth": {
         "Invalid username or password": "Invalid username or password",
-        "Login failed": "Login failed"
+        "Login failed": "Login failed",
+        "signingIn": "Signing in...",
+        "login": "Login",
+        "forgotPassword": "Forgot password?",
+        "password": "Enter password"
     },
     "nav": {
         "home": "Home",

@@ -21,18 +21,15 @@ export default function AuthLayout({
                 backgroundRepeat: 'no-repeat',
             }}
         >
-            {/* Overlay for better readability */}
             <div className="absolute top-[80px] flex items-center justify-center gap-1">
                 <Image
-                    src="/Logo-without-text.svg"
+                    src="/Logo.svg"
                     alt="Future School Logo"
-                    width={44}
-                    height={52.5}
+                    width={280}
+                    height={280}
                 />
-                <p className="text-white text-2xl font-bold">Astar</p>
             </div>
 
-            {/* Auth Content */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                 {children}
             </div>

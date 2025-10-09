@@ -1,7 +1,11 @@
 {
     "auth": {
         "Invalid username or password": "Пайдаланушы аты немесе құпия сөз қате",
-        "Login failed": "Кіру сәтсіз аяқталды"
+        "Login failed": "Кіру сәтсіз аяқталды",
+        "signingIn": "Кіру процесі...",
+        "login": "Кіру",
+        "forgotPassword": "Құпия сөзді ұмыттыңыз ба?",
+        "password": "Құпия сөзді енгізіңіз"
     },
     "nav": {
         "home": "Басты бет",

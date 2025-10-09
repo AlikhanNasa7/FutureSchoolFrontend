@@ -27,7 +27,7 @@ interface ResourceFormData {
         | 'document'
         | 'image'
         | 'video'
-        | 'google-meet';
+        | 'lesson_link';
     file?: File | null;
     files?: File[]; // For multiple file uploads
 }
@@ -495,18 +495,18 @@ export default function CourseSectionAddItemModal({
                                         onClick={() =>
                                             setResourceForm(prev => ({
                                                 ...prev,
-                                                type: 'google-meet',
+                                                type: 'lesson_link',
                                             }))
                                         }
                                         className={`rounded-md transition-all duration-200 ${
-                                            resourceForm.type === 'google-meet'
+                                            resourceForm.type === 'lesson_link'
                                                 ? 'ring-2 ring-blue-500 bg-blue-50 focus:ring-offset-2'
                                                 : 'hover:bg-gray-50 focus:ring-offset-2'
                                         }`}
                                     >
                                         <Image
-                                            src="/document-icons/google-meet.png"
-                                            alt="Google Meet"
+                                            src="/document-icons/lesson-link.png"
+                                            alt="Lesson Link"
                                             width={40}
                                             height={40}
                                         />
@@ -717,7 +717,7 @@ export default function CourseSectionAddItemModal({
                             </div>
                         )}
                         {(resourceForm.type === 'link' ||
-                            resourceForm.type === 'google-meet') && (
+                            resourceForm.type === 'lesson_link') && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     URL *
@@ -736,7 +736,7 @@ export default function CourseSectionAddItemModal({
                                         required
                                         className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         placeholder={
-                                            resourceForm.type === 'link'
+                                            resourceForm.type === 'lesson_link'
                                                 ? 'https://example.com'
                                                 : 'https://meet.google.com/example'
                                         }

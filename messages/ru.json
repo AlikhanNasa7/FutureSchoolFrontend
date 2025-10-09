@@ -1,7 +1,11 @@
 {
     "auth": {
         "Invalid username or password": "Неверное имя пользователя или пароль",
-        "Login failed": "Ошибка входа"
+        "Login failed": "Ошибка входа",
+        "signingIn": "Вход в систему...",
+        "login": "Войти",
+        "forgotPassword": "Забыли пароль?",
+        "password": "Введите пароль"
     },
     "nav": {
         "home": "Главная",

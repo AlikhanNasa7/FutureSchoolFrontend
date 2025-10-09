@@ -139,7 +139,7 @@ export default function LoginPage() {
                                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                                         : 'border-gray-300 dark:border-gray-600'
                                 } bg-white dark:bg-gray-800 text-gray-900 dark:text-white`}
-                                placeholder=""
+                                placeholder={t('auth.password')}
                             />
                             <button
                                 type="button"
@@ -164,7 +164,7 @@ export default function LoginPage() {
                                 className="font-medium float-end"
                             >
                                 <u className="font-semibold">
-                                    Я не помню пароль
+                                    {t('auth.forgotPassword')}
                                 </u>
                             </Link>
                         </div>
@@ -179,10 +179,10 @@ export default function LoginPage() {
                     {isLoading ? (
                         <div className="flex items-center">
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                            Signing in...
+                            {t('auth.signingIn')}
                         </div>
                     ) : (
-                        <div className="flex items-center">Войти</div>
+                        <div className="flex items-center">{t('auth.login')}</div>
                     )}
                 </button>
             </form>

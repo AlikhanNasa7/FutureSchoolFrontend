@@ -11,7 +11,7 @@ interface SharedLinkItemProps {
         id: string;
         file?: string;
         url?: string;
-        meet?: string;
+        lesson_link?: string;
         document?: string;
         test?: string;
         video?: string;
@@ -39,7 +39,7 @@ export function SharedLinkItem({
 }: SharedLinkItemProps) {
     const isLink = item.type === 'link' && item.url;
     const isDirectory = item.type === 'directory';
-    const isMeet = item.type === 'meet';
+    const isLessonLink = item.type === 'lesson_link';
     const isDocument = item.type === 'document';
     const isTest = item.type === 'test';
     const isVideo = item.type === 'video';
@@ -82,10 +82,9 @@ export function SharedLinkItem({
                 },
                 item.title
             );
-        } else if (isLink && item.url) {
+        } else if ((isLink || isLessonLink) && item.url) {
             window.open(item.url, '_blank');
         } else if (isDirectory && onFileView) {
-            // Open directory in modal
             onFileView(
                 {
                     file: item.file || '',
@@ -95,43 +94,29 @@ export function SharedLinkItem({
                 },
                 item.title
             );
-        } else if (isMeet && item.meet) {
-            window.open(item.meet, '_blank');
-        } else if (isDocument && item.document) {
-            window.open(item.document, '_blank');
-        } else if (isTest && item.test) {
-            window.open(item.test, '_blank');
-        } else if (isVideo && item.video) {
-            window.open(item.video, '_blank');
-        } else if (isImage && item.image) {
-            window.open(item.image, '_blank');
-        } else if (isRecording && item.recording) {
-            window.open(item.recording, '_blank');
         }
     }
 
     return (
-        <div className="p-2">
-            <div className="flex items-center gap-4 py-3 w-full overflow-hidden">
+        <div className="p-2 w-full max-w-full">
+            <div className="flex items-start gap-4 py-3 w-full max-w-full">
                 <div className="flex-shrink-0 flex items-center justify-center">
                     {getIconByType(item.type as IconType, 32, item.file)}
                 </div>
 
-                <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                     {!isText && (
                         <button
                             onClick={handleClick}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 inline-flex items-center gap-2 w-full max-w-full text-left hover:shadow-sm"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full text-left hover:shadow-sm block max-w-full"
                         >
-                            <span className="truncate block w-full max-w-full overflow-hidden">
+                            <span className="block break-all">
                                 {item.title}
                             </span>
                         </button>
                     )}
                     {isText && (
-                        <span className="truncate block w-full max-w-full overflow-hidden">
-                            {item.title}
-                        </span>
+                        <span className="block break-all">{item.title}</span>
                     )}
                 </div>
 

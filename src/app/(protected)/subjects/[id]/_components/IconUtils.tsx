@@ -1,7 +1,7 @@
 import Image from 'next/image';
 
 export type IconType =
-    | 'meet'
+    | 'lesson_link'
     | 'document'
     | 'directory'
     | 'link'
@@ -70,7 +70,7 @@ export function getIconByType(
     if (!type) return null;
 
     const iconMap: Record<IconType, string> = {
-        meet: '/document-icons/google-meet.png',
+        lesson_link: '/document-icons/lesson-link.png',
         document: '/document-icons/document.png',
         directory: '/document-icons/folder.png',
         link: '/document-icons/link.png',

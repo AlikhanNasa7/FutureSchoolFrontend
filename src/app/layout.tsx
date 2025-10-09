@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'Astar',
+    title: 'Future School',
     description: "Future School's site",
     icons: {
         icon: '/Logo-without-text.svg',
