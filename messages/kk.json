@@ -1,4 +1,8 @@
 {
+    "auth": {
+        "Invalid username or password": "Пайдаланушы аты немесе құпия сөз қате",
+        "Login failed": "Кіру сәтсіз аяқталды"
+    },
     "nav": {
         "home": "Басты бет",
         "subjects": "Пәндер",

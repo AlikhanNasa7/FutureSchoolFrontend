@@ -335,12 +335,12 @@ export function useAuth() {
                 loginSuccess(user);
                 return true;
             } catch (error) {
-                const errorMessage =
-                    error instanceof AxiosError
-                        ? error.response?.data?.error ||
-                          error.response?.data?.message ||
-                          error.message
-                        : 'Login failed';
+                let errorMessage;
+                if (error instanceof AxiosError && error.response?.status === 401) {
+                    errorMessage = 'Invalid username or password';
+                } else {
+                    errorMessage = 'Login failed';
+                }
 
                 loginFailure(errorMessage);
                 return false;

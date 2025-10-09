@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/useApi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocale } from '@/contexts/LocaleContext';
 
 const loginSchema = z.object({
     username: z.string().min(1, 'Username is required'),
@@ -18,6 +19,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+    const { t } = useLocale();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -77,7 +79,7 @@ export default function LoginPage() {
                 {authError && (
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm text-red-600 dark:text-red-400">
-                            {authError}
+                            {t(`auth.${authError}`)}
                         </p>
                     </div>
                 )}
@@ -137,7 +139,7 @@ export default function LoginPage() {
                                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                                         : 'border-gray-300 dark:border-gray-600'
                                 } bg-white dark:bg-gray-800 text-gray-900 dark:text-white`}
-                                placeholder="Enter your password"
+                                placeholder=""
                             />
                             <button
                                 type="button"

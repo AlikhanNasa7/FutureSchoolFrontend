@@ -1,4 +1,8 @@
 {
+    "auth": {
+        "Invalid username or password": "Неверное имя пользователя или пароль",
+        "Login failed": "Ошибка входа"
+    },
     "nav": {
         "home": "Главная",
         "subjects": "Предметы",

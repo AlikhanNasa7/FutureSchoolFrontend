@@ -1,4 +1,8 @@
 {
+    "auth": {
+        "Invalid username or password": "Invalid username or password",
+        "Login failed": "Login failed"
+    },
     "nav": {
         "home": "Home",
         "subjects": "Subjects",
