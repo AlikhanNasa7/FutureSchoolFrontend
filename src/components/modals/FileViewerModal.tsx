@@ -132,17 +132,11 @@ export default function FileViewerModal({
                         }}
                     >
                         {isImage ? (
-                            <div className="flex items-center justify-center p-4 h-full">
+                            <div className="flex items-center justify-center h-full w-full p-4">
                                 <img
                                     src={file.url}
                                     alt={file.title}
-                                    className="max-w-full max-h-full object-contain"
-                                    style={{
-                                        maxWidth: '100%',
-                                        maxHeight: '100%',
-                                        width: 'auto',
-                                        height: 'auto',
-                                    }}
+                                    className="w-full h-full object-contain"
                                     onError={e => {
                                         console.error(
                                             'Image failed to load:',
