@@ -209,7 +209,7 @@
     width: 100% !important;
 }
 
-@media (max-width: 575px) {
+@media (max-width: 768px) {
     .fc-toolbar {
         flex-direction: column !important;
         gap: 0.5rem !important;
