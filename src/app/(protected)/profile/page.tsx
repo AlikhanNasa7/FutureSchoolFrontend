@@ -11,40 +11,40 @@ import {
     Edit,
     CheckCircle,
     Clock,
+    LogOut,
 } from 'lucide-react';
 import { useUserState, useUserActions } from '@/contexts/UserContext';
+import { useLocale } from '@/contexts/LocaleContext';
 
-
-
-const getRoleInfo = (role: string) => {
+const getRoleInfo = (role: string, t: (key: string) => string) => {
     switch (role) {
         case 'student':
             return {
-                label: 'Ученик',
+                label: t('profile.student'),
                 color: 'bg-blue-100 text-blue-800',
                 icon: BookOpen,
             };
         case 'teacher':
             return {
-                label: 'Учитель',
+                label: t('profile.teacher'),
                 color: 'bg-green-100 text-green-800',
                 icon: Award,
             };
         case 'admin':
             return {
-                label: 'Администратор',
+                label: t('profile.admin'),
                 color: 'bg-purple-100 text-purple-800',
                 icon: Settings,
             };
         case 'superadmin':
             return {
-                label: 'Супер Администратор',
+                label: t('profile.superadmin'),
                 color: 'bg-red-100 text-red-800',
                 icon: Settings,
             };
         default:
             return {
-                label: 'Пользователь',
+                label: t('profile.userBio'),
                 color: 'bg-gray-100 text-gray-800',
                 icon: User,
             };
@@ -54,6 +54,7 @@ const getRoleInfo = (role: string) => {
 export default function ProfilePage() {
     const { user, isAuthenticated, isLoading, error } = useUserState();
     const { logout, clearError } = useUserActions();
+    const { t } = useLocale();
 
     const profileData = user
         ? {
@@ -64,38 +65,40 @@ export default function ProfilePage() {
                       : user.name,
               username: user.username,
               email: user.email,
-              phone: user.phone_number || 'Не указан',
+              phone: user.phone_number || t('profile.notSpecified'),
               role: user.role as 'student' | 'teacher' | 'admin' | 'superadmin',
               ...(user.role === 'student' && {
                   grade:
-                      user.student_data?.classrooms?.[0]?.grade || 'Не указан',
+                      user.student_data?.classrooms?.[0]?.grade ||
+                      t('profile.notSpecified'),
                   class:
-                      user.student_data?.classrooms?.[0]?.letter || 'Не указан',
+                      user.student_data?.classrooms?.[0]?.letter ||
+                      t('profile.notSpecified'),
                   subjects: user.student_data?.subjects || [],
-                  bio: `Студент ${user.student_data?.classrooms?.[0]?.grade || ''} класса`,
+                  bio: `${t('profile.studentBio')} ${user.student_data?.classrooms?.[0]?.grade || ''} ${t('profile.class').toLowerCase()}`,
               }),
               ...(user.role === 'teacher' && {
-                  subjects: [], // Teachers don't have subjects in their data structure
-                  bio: 'Преподаватель',
+                  subjects: [],
+                  bio: t('profile.teacherBio'),
               }),
               ...(user.role === 'admin' && {
-                  bio: 'Администратор системы',
+                  bio: t('profile.adminBio'),
               }),
               ...(user.role === 'superadmin' && {
-                  bio: 'Супер администратор системы',
+                  bio: t('profile.superadminBio'),
               }),
               avatar: user.avatar || '/avatars/default.jpg',
           }
         : null;
 
-    const roleInfo = profileData ? getRoleInfo(profileData.role) : null;
+    const roleInfo = profileData ? getRoleInfo(profileData.role, t) : null;
 
     if (isLoading) {
         return (
             <div className="container mx-auto px-4 pb-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="p-4 bg-blue-50 rounded-lg">
-                        <p className="text-blue-600">Loading profile data...</p>
+                        <p className="text-blue-600">{t('profile.loading')}</p>
                     </div>
                 </div>
             </div>
@@ -107,12 +110,14 @@ export default function ProfilePage() {
             <div className="container mx-auto px-4 pb-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="p-4 bg-red-50 rounded-lg">
-                        <p className="text-red-600 mb-2">Error: {error}</p>
+                        <p className="text-red-600 mb-2">
+                            {t('profile.error')}: {error}
+                        </p>
                         <button
                             onClick={clearError}
                             className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
                         >
-                            Clear Error
+                            {t('profile.clearError')}
                         </button>
                     </div>
                 </div>
@@ -126,13 +131,13 @@ export default function ProfilePage() {
                 <div className="max-w-6xl mx-auto">
                     <div className="p-4 bg-gray-50 rounded-lg">
                         <p className="text-gray-600">
-                            Not authenticated or no user data
+                            {t('profile.notAuthenticated')}
                         </p>
                         <button
                             onClick={logout}
                             className="mt-3 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                         >
-                            Logout
+                            {t('profile.logout')}
                         </button>
                     </div>
                 </div>
@@ -175,7 +180,7 @@ export default function ProfilePage() {
                                     <Mail className="w-5 h-5 text-gray-400 mr-3" />
                                     <div>
                                         <p className="text-sm text-gray-500">
-                                            Email
+                                            {t('profile.email')}
                                         </p>
                                         <p className="text-sm font-medium text-gray-900">
                                             {profileData.email}
@@ -187,7 +192,7 @@ export default function ProfilePage() {
                                     <Phone className="w-5 h-5 text-gray-400 mr-3" />
                                     <div>
                                         <p className="text-sm text-gray-500">
-                                            Телефон
+                                            {t('profile.phone')}
                                         </p>
                                         <p className="text-sm font-medium text-gray-900">
                                             {profileData.phone}
@@ -214,11 +219,14 @@ export default function ProfilePage() {
                                         <BookOpen className="w-5 h-5 text-gray-400 mr-3" />
                                         <div>
                                             <p className="text-sm text-gray-500">
-                                                Класс
+                                                {t('profile.class')}
                                             </p>
                                             <p className="text-sm font-medium text-gray-900">
-                                                {profileData.grade} класс (
-                                                {profileData.class})
+                                                {profileData.grade}{' '}
+                                                {t(
+                                                    'profile.class'
+                                                ).toLowerCase()}{' '}
+                                                ({profileData.class})
                                             </p>
                                         </div>
                                     </div>
@@ -227,11 +235,22 @@ export default function ProfilePage() {
 
                             <div className="mt-6 pt-6 border-t border-gray-200">
                                 <h3 className="text-sm font-medium text-gray-900 mb-3">
-                                    О себе
+                                    {t('profile.aboutMe')}
                                 </h3>
                                 <p className="text-sm text-gray-600">
                                     {profileData.bio}
                                 </p>
+                            </div>
+
+                            {/* Logout Button - Mobile Only */}
+                            <div className="mt-6 pt-6 border-t border-gray-200 block min-[576px]:hidden">
+                                <button
+                                    onClick={logout}
+                                    className="w-full flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                                >
+                                    <LogOut className="w-5 h-5 mr-2" />
+                                    {t('profile.logout')}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -242,7 +261,7 @@ export default function ProfilePage() {
                             profileData.subjects.length > 0 && (
                                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                                        Предметы
+                                        {t('profile.subjects')}
                                     </h3>
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         {profileData.subjects.map(
@@ -259,22 +278,21 @@ export default function ProfilePage() {
                                 </div>
                             )}
 
-
                         {profileData?.role === 'student' && (
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-lg font-semibold text-gray-900">
-                                        Задачи
+                                        {t('profile.tasks')}
                                     </h3>
                                     <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                        Посмотреть все
+                                        {t('profile.viewAll')}
                                     </button>
                                 </div>
 
                                 <div className="text-center py-8 text-gray-500">
-                                    <p>Загрузка заданий...</p>
+                                    <p>{t('profile.loadingAssignments')}</p>
                                     <p className="text-sm mt-2">
-                                        Здесь будут отображаться ваши задания
+                                        {t('profile.assignmentsWillAppear')}
                                     </p>
                                 </div>
                             </div>
@@ -289,7 +307,7 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="ml-4">
                                             <p className="text-sm font-medium text-gray-600">
-                                                Всего предметов
+                                                {t('profile.totalSubjects')}
                                             </p>
                                             <p className="text-2xl font-bold text-gray-900">
                                                 {profileData.subjects?.length ||
@@ -306,7 +324,7 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="ml-4">
                                             <p className="text-sm font-medium text-gray-600">
-                                                Выполнено задач
+                                                {t('profile.completedTasks')}
                                             </p>
                                             <p className="text-2xl font-bold text-gray-900">
                                                 0
@@ -322,7 +340,7 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="ml-4">
                                             <p className="text-sm font-medium text-gray-600">
-                                                В ожидании
+                                                {t('profile.pendingTasks')}
                                             </p>
                                             <p className="text-2xl font-bold text-gray-900">
                                                 0

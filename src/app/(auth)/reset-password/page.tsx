@@ -58,10 +58,10 @@ export default function ResetPasswordPage() {
     };
 
     return (
-        <div className="space-y-6 w-sm p-3">
+        <div className="space-y-6 w-full">
             {/* Header */}
             <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                     Сброс пароля
                 </h2>
                 {/* Error Display */}
@@ -75,7 +75,7 @@ export default function ResetPasswordPage() {
             </div>
 
             {/* Form */}
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
                 {/* Username Field */}
                 <div className="space-y-2">
                     <label
@@ -85,8 +85,8 @@ export default function ResetPasswordPage() {
                         Имя пользователя
                     </label>
                     <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <User className="h-5 w-5 text-gray-400" />
+                        <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                            <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                         </div>
                         <input
                             id="username"
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
                             required
                             value={username}
                             onChange={e => setUsername(e.target.value)}
-                            className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                            className={`block w-full pl-8 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                                 errors.username
                                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                                     : 'border-gray-300 dark:border-gray-600'
@@ -105,7 +105,7 @@ export default function ResetPasswordPage() {
                         />
                     </div>
                     {errors.username && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        <p className="mt-1 text-xs sm:text-sm text-red-600 dark:text-red-400">
                             {errors.username}
                         </p>
                     )}
@@ -116,11 +116,11 @@ export default function ResetPasswordPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r main-button to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+                        className="group relative w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white bg-gradient-to-r main-button to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
                     >
                         {isLoading ? (
                             <div className="flex items-center">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
                                 Отправка
                             </div>
                         ) : (
@@ -132,7 +132,7 @@ export default function ResetPasswordPage() {
                 {/* Resend message info (shown after submit) */}
                 {isSubmitted && (
                     <div className="text-center mt-4">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                             Сообщение сброса пароля было отправлено на почту
                             yeszhan@gmail.com
                         </p>
@@ -143,9 +143,9 @@ export default function ResetPasswordPage() {
                 <div className="text-center">
                     <a
                         href="/login"
-                        className="inline-flex items-center text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                        className="inline-flex items-center text-xs sm:text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                     >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                         Назад
                     </a>
                 </div>

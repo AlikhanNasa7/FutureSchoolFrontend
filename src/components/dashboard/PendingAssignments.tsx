@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { modalController } from '@/lib/modalController';
 import type { EventModalData } from '@/lib/modalController';
 import axiosInstance from '@/lib/axios';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface ApiAssignment {
     id: number;
@@ -35,6 +36,7 @@ interface PendingAssignmentsProps {
 export default function PendingAssignments({
     assignments: propAssignments,
 }: PendingAssignmentsProps) {
+    const { t, locale } = useLocale();
     const [rawAssignments, setRawAssignments] = useState<ApiAssignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -90,6 +92,8 @@ export default function PendingAssignments({
 
     const assignments = propAssignments || transformedAssignments;
 
+    console.log(assignments, 'assignments');
+
     const pendingAssignments = useMemo(() => {
         return assignments
             .filter(
@@ -108,15 +112,21 @@ export default function PendingAssignments({
     }, [assignments]);
 
     const handleAssignmentClick = (assignment: Assignment) => {
+        const time = new Date(assignment.dueDate).toLocaleTimeString(
+            locale === 'en' ? 'en-US' : 'ru-RU',
+            {
+                hour: locale === 'en' ? 'numeric' : '2-digit',
+                minute: '2-digit',
+                hour12: locale === 'en',
+            }
+        );
+
         const eventData: EventModalData = {
             title: assignment.title,
             start: assignment.dueDate,
             subject: assignment.subject,
             teacher: assignment.teacher,
-            time: new Date(assignment.dueDate).toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit',
-            }),
+            time: time,
             description: assignment.description,
             url: `/assignments/${assignment.id}`,
             type: 'assignment',
@@ -131,9 +141,9 @@ export default function PendingAssignments({
     };
 
     const getStatusText = (status: string) => {
-        if (status === 'overdue') return 'Просрочено';
-        if (status === 'completed') return 'Выполнено';
-        return 'В ожидании';
+        if (status === 'overdue') return t('pendingAssignments.overdue');
+        if (status === 'completed') return t('pendingAssignments.completed');
+        return t('pendingAssignments.pending');
     };
 
     const formatDueDate = (dueDate: string) => {
@@ -143,13 +153,15 @@ export default function PendingAssignments({
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays < 0) {
-            return `${Math.abs(diffDays)} дн. назад`;
+            return t('pendingAssignments.daysAgo', {
+                days: Math.abs(diffDays),
+            });
         } else if (diffDays === 0) {
-            return 'Сегодня';
+            return t('pendingAssignments.today');
         } else if (diffDays === 1) {
-            return 'Завтра';
+            return t('pendingAssignments.tomorrow');
         } else {
-            return `через ${diffDays} дн.`;
+            return t('pendingAssignments.dueIn', { days: diffDays });
         }
     };
 
@@ -158,12 +170,14 @@ export default function PendingAssignments({
             <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900">
-                        Ожидающие задания
+                        {t('pendingAssignments.title')}
                     </h2>
                 </div>
                 <div className="p-6">
                     <div className="flex items-center justify-center h-32">
-                        <div className="text-gray-500">Загрузка заданий...</div>
+                        <div className="text-gray-500">
+                            {t('pendingAssignments.loading')}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -175,7 +189,7 @@ export default function PendingAssignments({
             <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900">
-                        Ожидающие задания
+                        {t('pendingAssignments.title')}
                     </h2>
                 </div>
                 <div className="p-6">
@@ -191,7 +205,7 @@ export default function PendingAssignments({
         <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
-                    Ожидающие задания
+                    {t('pendingAssignments.title')}
                 </h2>
             </div>
 
@@ -214,9 +228,11 @@ export default function PendingAssignments({
                             </svg>
                         </div>
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            Нет заданий
+                            {t('pendingAssignments.noAssignments')}
                         </h3>
-                        <p className="text-gray-500">Все задания выполнены</p>
+                        <p className="text-gray-500">
+                            {t('pendingAssignments.allCompleted')}
+                        </p>
                     </div>
                 ) : (
                     <div className="space-y-2">
@@ -238,7 +254,7 @@ export default function PendingAssignments({
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
                                         <div className="text-sm font-semibold text-gray-900 min-w-[60px]">
-                                            {assignment.subject}
+                                            {assignment.title}
                                         </div>
                                         <div
                                             className={`text-xs font-medium ${getStatusColor(assignment.status)}`}
@@ -249,7 +265,7 @@ export default function PendingAssignments({
 
                                     <div className="text-right">
                                         <div className="text-xs text-gray-500">
-                                            Сдать{' '}
+                                            {t('pendingAssignments.submit')}{' '}
                                             {formatDueDate(assignment.dueDate)}
                                         </div>
                                     </div>

@@ -48,7 +48,6 @@ const getSubjectTypeFromCourseCode = (courseCode: string): string => {
     return 'Other';
 };
 
-
 export default function SubjectsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTeacher, setSelectedTeacher] = useState('');
@@ -152,7 +151,10 @@ export default function SubjectsPage() {
 
     // CRUD Functions (only for superadmin/schooladmin)
     const handleCreateSubject = async (
-        subjectData: Omit<SubjectData, 'id' | 'teacher_username' | 'teacher_fullname'>
+        subjectData: Omit<
+            SubjectData,
+            'id' | 'teacher_username' | 'teacher_fullname'
+        >
     ) => {
         if (!canEdit) return;
 
@@ -183,7 +185,9 @@ export default function SubjectsPage() {
 
     const handleUpdateSubject = async (
         id: string,
-        subjectData: Partial<SubjectData & { teacher_username: string; teacher_fullname: string }>
+        subjectData: Partial<
+            SubjectData & { teacher_username: string; teacher_fullname: string }
+        >
     ) => {
         if (!canEdit) return;
 
@@ -236,7 +240,8 @@ export default function SubjectsPage() {
                 .toLowerCase()
                 .includes(searchQuery.toLowerCase());
             const matchesTeacher =
-                !selectedTeacher || subject.teacher_username === selectedTeacher;
+                !selectedTeacher ||
+                subject.teacher_username === selectedTeacher;
             return matchesSearch && matchesTeacher;
         });
     }, [subjects, searchQuery, selectedTeacher]);

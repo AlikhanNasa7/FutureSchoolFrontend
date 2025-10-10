@@ -11,10 +11,10 @@ import {
     HelpCircle,
     Settings,
     MoreVertical,
-    BookOpen,
+    LogOut,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useUserState } from '@/contexts/UserContext';
+import { useUserState, useUserActions } from '@/contexts/UserContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useLocale } from '@/contexts/LocaleContext';
 
@@ -63,6 +63,7 @@ export default function Sidebar() {
     const router = useRouter();
 
     const { user } = useUserState();
+    const { logout } = useUserActions();
     const { t } = useLocale();
 
     const handleProfileClick = () => {
@@ -110,7 +111,7 @@ export default function Sidebar() {
                         </div>
                     </div>
 
-                    <nav className="flex-1 px-6">
+                    <nav className="flex-1 px-6 overflow-y-auto">
                         <div className="space-y-2">
                             {user?.role &&
                                 navigation.map(item => {
@@ -177,7 +178,7 @@ export default function Sidebar() {
                         </div>
                     </nav>
 
-                    <div className="p-6">
+                    <div className="p-6 space-y-3">
                         <div
                             className="bg-gray-100 rounded-lg p-3 cursor-pointer hover:bg-gray-200 transition-colors"
                             onClick={handleProfileClick}
@@ -209,13 +210,22 @@ export default function Sidebar() {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Logout Button */}
+                        <button
+                            onClick={logout}
+                            className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                            <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
+                            {t('nav.logout')}
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div className="lg:hidden">
                 <button
-                    onClick={() => setSidebarOpen(prev => !prev)}
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
                     className="fixed top-4 left-4 z-50 p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 bg-white shadow-lg"
                 >
                     <svg

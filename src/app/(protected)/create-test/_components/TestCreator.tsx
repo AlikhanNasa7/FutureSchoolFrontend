@@ -26,7 +26,7 @@ export interface Test {
 }
 
 export default function TestCreator() {
-    const { t } = useLocale();
+    const { t, locale } = useLocale();
     const [test, setTest] = useState<Test>({
         title: '',
         description: '',
@@ -36,6 +36,62 @@ export default function TestCreator() {
     });
 
     console.log(test, 'test');
+
+    // Format date/time based on locale
+    const formatDateTime = (dateString: string) => {
+        const date = new Date(dateString);
+
+        if (locale === 'en') {
+            // English: 12-hour format with AM/PM
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+            });
+        } else {
+            // Russian/Kazakh: 24-hour format
+            return date.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            });
+        }
+    };
+
+    const formatDuration = (startDate: string, endDate: string) => {
+        const totalMinutes = Math.round(
+            (new Date(endDate).getTime() - new Date(startDate).getTime()) /
+                60000
+        );
+
+        if (totalMinutes < 60) {
+            // Less than 1 hour: show only minutes
+            return `${totalMinutes} ${t('test.minutes')}`;
+        } else if (totalMinutes < 1440) {
+            // Less than 24 hours: show hours and minutes
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            if (minutes === 0) {
+                return `${hours} ${t('test.hours')}`;
+            }
+            return `${hours} ${t('test.hours')} ${minutes} ${t('test.minutes')}`;
+        } else {
+            // 24 hours or more: show days and hours
+            const days = Math.floor(totalMinutes / 1440);
+            const remainingMinutes = totalMinutes % 1440;
+            const hours = Math.floor(remainingMinutes / 60);
+            if (hours === 0) {
+                return `${days} ${t('test.days')}`;
+            }
+            return `${days} ${t('test.days')} ${hours} ${t('test.hours')} ${remainingMinutes % 60} ${t('test.minutes')}`;
+        }
+    };
 
     const addQuestion = (type: Question['type']) => {
         const newQuestion: Question = {
@@ -238,32 +294,22 @@ export default function TestCreator() {
                                     {test.start_date && (
                                         <div>
                                             • {t('test.startsAt')}:{' '}
-                                            {new Date(
-                                                test.start_date
-                                            ).toLocaleString()}
+                                            {formatDateTime(test.start_date)}
                                         </div>
                                     )}
                                     {test.end_date && (
                                         <div>
                                             • {t('test.endsAt')}:{' '}
-                                            {new Date(
-                                                test.end_date
-                                            ).toLocaleString()}
+                                            {formatDateTime(test.end_date)}
                                         </div>
                                     )}
                                     {test.start_date && test.end_date && (
                                         <div>
                                             • {t('test.duration')}:{' '}
-                                            {Math.round(
-                                                (new Date(
-                                                    test.end_date
-                                                ).getTime() -
-                                                    new Date(
-                                                        test.start_date
-                                                    ).getTime()) /
-                                                    60000
-                                            )}{' '}
-                                            {t('test.minutes')}
+                                            {formatDuration(
+                                                test.start_date,
+                                                test.end_date
+                                            )}
                                         </div>
                                     )}
                                 </div>

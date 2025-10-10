@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { modalController } from '@/lib/modalController';
 import type { EventModalData } from '@/lib/modalController';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface Event {
     id: string;
@@ -102,6 +103,8 @@ export default function DaySchedule({
     date = new Date(),
     events = sampleEvents,
 }: DayScheduleProps) {
+    const { t, locale } = useLocale();
+
     const dayEvents = useMemo(() => {
         const dateString = date.toISOString().split('T')[0];
         return events
@@ -139,23 +142,31 @@ export default function DaySchedule({
     };
 
     const getEventTypeText = (title: string) => {
-        if (title === 'Домашнее Задание') return 'ДЗ';
-        if (title === 'Экзамен') return 'Экз';
-        if (title === 'Тест') return 'Тест';
-        if (title === 'Урок') return 'Урок';
+        if (title === 'Домашнее Задание' || title === t('daySchedule.homework'))
+            return t('daySchedule.homeworkShort');
+        if (title === 'Экзамен' || title === t('daySchedule.exam'))
+            return t('daySchedule.examShort');
+        if (title === 'Тест' || title === t('daySchedule.test'))
+            return t('daySchedule.testShort');
+        if (title === 'Урок' || title === t('daySchedule.lesson'))
+            return t('daySchedule.lessonShort');
         return title;
+    };
+
+    const formatDate = (date: Date) => {
+        const localeCode = locale === 'en' ? 'en-US' : 'ru-RU';
+        return date.toLocaleDateString(localeCode, {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
     };
 
     return (
         <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">    
+            <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
-                    Расписание на{' '}
-                    {date.toLocaleDateString('ru-RU', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                    })}
+                    {t('daySchedule.title')} {formatDate(date)}
                 </h2>
             </div>
 
@@ -178,10 +189,10 @@ export default function DaySchedule({
                             </svg>
                         </div>
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            Нет событий
+                            {t('daySchedule.noEvents')}
                         </h3>
                         <p className="text-gray-500">
-                            На этот день не запланировано никаких событий
+                            {t('daySchedule.noEventsPlanned')}
                         </p>
                     </div>
                 ) : (
