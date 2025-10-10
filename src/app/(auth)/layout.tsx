@@ -33,7 +33,7 @@ export default function AuthLayout({
             </div>
 
             {/* Modal - responsive padding and max-width */}
-            <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 md:p-8 mt-24 sm:mt-32 md:mt-0">
+            <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 mt-24 sm:mt-32 md:mt-0">
                 {children}
             </div>
         </div>
