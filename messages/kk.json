@@ -336,5 +336,115 @@
             "instructionsTitle": "Нұсқаулар:",
             "instructionsText": "Студенттер сол жақ бағаннан элементтерді оң жақ бағандағы элементтермен сәйкестендіруі керек. Жоғарыдағы әр жұп студенттер анықтауы керек дұрыс сәйкестікті білдіреді."
         }
+    },
+    "modals": {
+        "confirmation": {
+            "processing": "Өңдеу..."
+        },
+        "fileViewer": {
+            "documentViewer": "Құжатты қарау",
+            "fileType": "{type} файл",
+            "open": "Ашу",
+            "download": "Жүктеп алу",
+            "downloading": "Жүктелуде...",
+            "previewNotAvailable": "Алдын ала қарау қол жетімді емес",
+            "cannotPreview": "Бұл файл түрін алдын ала қарау мүмкін емес",
+            "openInNewTab": "Жаңа қойындыда ашу",
+            "close": "Жабу"
+        },
+        "courseSection": {
+            "createTitle": "Жаңа курс бөлімін құру",
+            "sectionName": "Бөлім атауы",
+            "enterSectionName": "Бөлім атауын енгізіңіз",
+            "cancel": "Болдырмау",
+            "creating": "Құрылуда...",
+            "createSection": "Бөлім құру",
+            "successMessage": "Бөлім сәтті құрылды!"
+        },
+        "addFileToDirectory": {
+            "title": "\"{directory}\" қалтасына файлдарды қосу",
+            "selectFiles": "Файлдарды таңдау ({count}/10)",
+            "clickToSelect": "Каталогқа қосу үшін файлдарды таңдау үшін басыңыз",
+            "dragAndDrop": "немесе файлдарды апарыңыз (Максимум 10 файл)",
+            "maxFilesError": "Максимум 10 файл",
+            "selectOneFileError": "Кем дегенде бір файл таңдаңыз",
+            "selectedFiles": "Таңдалған файлдар:",
+            "cancel": "Болдырмау",
+            "addingFiles": "Файлдар қосылуда...",
+            "addFiles": "{count} файл(дар) қосу",
+            "successMessage": "{count} файл(дар) сәтті қосылды!"
+        },
+        "directory": {
+            "filesCount": "{count} файл",
+            "filesCountPlural": "{count} файлдар",
+            "addFile": "Файл қосу",
+            "emptyFolder": "Қалта бос",
+            "downloadFile": "Файлды жүктеп алу",
+            "downloadFolder": "Қалтаны жүктеп алу"
+        },
+        "event": {
+            "subject": "Пән:",
+            "teacher": "Мұғалім:",
+            "time": "Уақыт:",
+            "date": "Күні:",
+            "description": "Сипаттама:",
+            "navigate": "Өту",
+            "close": "Жабу"
+        },
+        "classroom": {
+            "editTitle": "Сыныпты өңдеу",
+            "createTitle": "Сынып құру",
+            "grade": "Сынып",
+            "letter": "Әріп",
+            "letterPlaceholder": "А",
+            "cancel": "Болдырмау",
+            "saving": "Сақталуда...",
+            "update": "Жаңарту",
+            "create": "Құру"
+        },
+        "addStudent": {
+            "title": "{className} сыныбына оқушы қосу",
+            "searchPlaceholder": "Оқушыларды іздеу...",
+            "loading": "Жүктелуде...",
+            "add": "Қосу",
+            "noStudentsFound": "Оқушылар табылмады",
+            "noAvailableStudents": "Қол жетімді оқушылар жоқ",
+            "noSearchResults": "\"{query}\" сұрауы бойынша ештеңе табылмады",
+            "allStudentsAssigned": "Барлық оқушылар сыныптарға тағайындалған",
+            "close": "Жабу"
+        },
+        "fileUpload": {
+            "defaultTitle": "Файл жүктеу",
+            "dragFilesHere": "Файлдарды осында апарыңыз",
+            "orSelectFromComputer": "немесе компьютерден файл таңдаңыз",
+            "selectFromComputer": "Компьютерден таңдау",
+            "upload": "Жүктеу",
+            "cancel": "Болдырмау",
+            "selectAnotherFile": "Басқа файл таңдау"
+        },
+        "subject": {
+            "editTitle": "Пәнді өңдеу",
+            "createTitle": "Пән құру",
+            "subjectName": "Пән атауы",
+            "grade": "Сынып",
+            "type": "Түрі",
+            "selectType": "Түрін таңдау",
+            "courseCode": "Курс коды",
+            "description": "Сипаттама",
+            "professor": "Оқытушы",
+            "backgroundImage": "Фон суреті",
+            "cancel": "Болдырмау",
+            "saving": "Сақталуда...",
+            "update": "Жаңарту",
+            "create": "Құру"
+        },
+        "kundelik": {
+            "title": "Kundelik.kz интеграциясы",
+            "username": "Пайдаланушы аты",
+            "password": "Құпия сөз",
+            "passwordPlaceholder": "Құпия сөзді енгізіңіз",
+            "connecting": "Қосылуда...",
+            "connect": "Қосу"
+        }
     }
 }

@@ -336,5 +336,115 @@
             "instructionsTitle": "Инструкции:",
             "instructionsText": "Студенты должны сопоставить элементы из левой колонки с элементами из правой колонки. Каждая пара выше представляет правильное соответствие, которое студенты должны найти."
         }
+    },
+    "modals": {
+        "confirmation": {
+            "processing": "Обработка..."
+        },
+        "fileViewer": {
+            "documentViewer": "Просмотр документа",
+            "fileType": "Файл {type}",
+            "open": "Открыть",
+            "download": "Скачать",
+            "downloading": "Скачивание...",
+            "previewNotAvailable": "Предпросмотр недоступен",
+            "cannotPreview": "Этот тип файла не может быть просмотрен",
+            "openInNewTab": "Открыть в новой вкладке",
+            "close": "Закрыть"
+        },
+        "courseSection": {
+            "createTitle": "Создать новый раздел курса",
+            "sectionName": "Название раздела",
+            "enterSectionName": "Введите название раздела",
+            "cancel": "Отмена",
+            "creating": "Создание...",
+            "createSection": "Создать раздел",
+            "successMessage": "Раздел успешно создан!"
+        },
+        "addFileToDirectory": {
+            "title": "Добавить файлы в \"{directory}\"",
+            "selectFiles": "Выбрать файлы ({count}/10)",
+            "clickToSelect": "Нажмите, чтобы выбрать файлы для добавления в каталог",
+            "dragAndDrop": "или перетащите файлы (Максимум 10 файлов)",
+            "maxFilesError": "Максимум 10 файлов",
+            "selectOneFileError": "Пожалуйста, выберите хотя бы один файл",
+            "selectedFiles": "Выбранные файлы:",
+            "cancel": "Отмена",
+            "addingFiles": "Добавление файлов...",
+            "addFiles": "Добавить {count} файл(ов)",
+            "successMessage": "{count} файл(ов) успешно добавлено!"
+        },
+        "directory": {
+            "filesCount": "{count} файл",
+            "filesCountPlural": "{count} файлов",
+            "addFile": "Добавить файл",
+            "emptyFolder": "Папка пуста",
+            "downloadFile": "Скачать файл",
+            "downloadFolder": "Скачать папку"
+        },
+        "event": {
+            "subject": "Предмет:",
+            "teacher": "Учитель:",
+            "time": "Время:",
+            "date": "Дата:",
+            "description": "Описание:",
+            "navigate": "Перейти",
+            "close": "Закрыть"
+        },
+        "classroom": {
+            "editTitle": "Редактировать класс",
+            "createTitle": "Создать класс",
+            "grade": "Класс",
+            "letter": "Буква",
+            "letterPlaceholder": "А",
+            "cancel": "Отмена",
+            "saving": "Сохранение...",
+            "update": "Обновить",
+            "create": "Создать"
+        },
+        "addStudent": {
+            "title": "Добавить ученика в класс {className}",
+            "searchPlaceholder": "Поиск учеников...",
+            "loading": "Загрузка...",
+            "add": "Добавить",
+            "noStudentsFound": "Ученики не найдены",
+            "noAvailableStudents": "Нет доступных учеников",
+            "noSearchResults": "По запросу \"{query}\" ничего не найдено",
+            "allStudentsAssigned": "Все ученики уже распределены по классам",
+            "close": "Закрыть"
+        },
+        "fileUpload": {
+            "defaultTitle": "Загрузка файла",
+            "dragFilesHere": "Перетащите файлы сюда",
+            "orSelectFromComputer": "или выберите файл с компьютера",
+            "selectFromComputer": "Выбрать с компьютера",
+            "upload": "Загрузить",
+            "cancel": "Отмена",
+            "selectAnotherFile": "Выбрать другой файл"
+        },
+        "subject": {
+            "editTitle": "Редактировать предмет",
+            "createTitle": "Создать предмет",
+            "subjectName": "Название предмета",
+            "grade": "Класс",
+            "type": "Тип",
+            "selectType": "Выбрать тип",
+            "courseCode": "Код курса",
+            "description": "Описание",
+            "professor": "Преподаватель",
+            "backgroundImage": "Фоновое изображение",
+            "cancel": "Отмена",
+            "saving": "Сохранение...",
+            "update": "Обновить",
+            "create": "Создать"
+        },
+        "kundelik": {
+            "title": "Интеграция с Kundelik.kz",
+            "username": "Имя пользователя",
+            "password": "Пароль",
+            "passwordPlaceholder": "Введите пароль",
+            "connecting": "Подключение...",
+            "connect": "Подключить"
+        }
     }
 }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import type { ConfirmationModalData } from '@/lib/modalController';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface ConfirmationModalProps {
     data: ConfirmationModalData;
@@ -16,13 +17,14 @@ export default function ConfirmationModal({
     isOpen,
     onClose,
 }: ConfirmationModalProps) {
+    const { t } = useLocale();
     const [loading, setLoading] = useState(false);
 
     const {
         title,
         message,
-        confirmText = 'Confirm',
-        cancelText = 'Cancel',
+        confirmText = t('actions.confirm'),
+        cancelText = t('actions.cancel'),
         confirmVariant = 'danger',
         onConfirm,
         onSuccess,
@@ -89,7 +91,9 @@ export default function ConfirmationModal({
                         {loading ? (
                             <div className="flex items-center justify-center">
                                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                <span className="ml-2">Processing...</span>
+                                <span className="ml-2">
+                                    {t('modals.confirmation.processing')}
+                                </span>
                             </div>
                         ) : (
                             confirmText

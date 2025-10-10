@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { UserPlus } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import axiosInstance from '@/lib/axios';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface Student {
     id: number;
@@ -28,6 +29,7 @@ export default function AddStudentModal({
     onClose,
     onStudentAdded,
 }: AddStudentModalProps) {
+    const { t } = useLocale();
     const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(false);
     const [adding, setAdding] = useState(false);
@@ -89,28 +91,28 @@ export default function AddStudentModal({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={`Добавить ученика в класс ${classroomName}`}
+            title={t('modals.addStudent.title', { className: classroomName })}
             maxWidth="max-w-2xl"
         >
             <div className="flex flex-col max-h-[70vh]">
-                {/* Search */}
                 <div className="mb-4">
                     <input
                         type="text"
-                        placeholder="Поиск учеников..."
+                        placeholder={t('modals.addStudent.searchPlaceholder')}
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 
-                {/* Students List */}
                 <div className="flex-1 overflow-y-auto">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <div className="text-center">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                <p className="text-gray-600">Загрузка...</p>
+                                <p className="text-gray-600">
+                                    {t('modals.addStudent.loading')}
+                                </p>
                             </div>
                         </div>
                     ) : filteredStudents.length > 0 ? (
@@ -142,7 +144,9 @@ export default function AddStudentModal({
                                         className="flex items-center gap-2 px-4 py-2 bg-[#694CFD] hover:bg-[#5a3fe6] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <UserPlus className="w-4 h-4" />
-                                        <span>Добавить</span>
+                                        <span>
+                                            {t('modals.addStudent.add')}
+                                        </span>
                                     </button>
                                 </div>
                             ))}
@@ -154,25 +158,30 @@ export default function AddStudentModal({
                             </div>
                             <h3 className="text-lg font-medium text-gray-900 mb-2">
                                 {searchQuery
-                                    ? 'Ученики не найдены'
-                                    : 'Нет доступных учеников'}
+                                    ? t('modals.addStudent.noStudentsFound')
+                                    : t(
+                                          'modals.addStudent.noAvailableStudents'
+                                      )}
                             </h3>
                             <p className="text-gray-500">
                                 {searchQuery
-                                    ? `По запросу "${searchQuery}" ничего не найдено`
-                                    : 'Все ученики уже распределены по классам'}
+                                    ? t('modals.addStudent.noSearchResults', {
+                                          query: searchQuery,
+                                      })
+                                    : t(
+                                          'modals.addStudent.allStudentsAssigned'
+                                      )}
                             </p>
                         </div>
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className="mt-6 pt-4 border-t border-gray-200">
                     <button
                         onClick={onClose}
                         className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
                     >
-                        Закрыть
+                        {t('modals.addStudent.close')}
                     </button>
                 </div>
             </div>

@@ -8,6 +8,7 @@ import {
     Image as ImageIcon,
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface FileViewerModalProps {
     isOpen: boolean;
@@ -25,6 +26,7 @@ export default function FileViewerModal({
     onClose,
     file,
 }: FileViewerModalProps) {
+    const { t } = useLocale();
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleDownload = async () => {
@@ -75,7 +77,7 @@ export default function FileViewerModal({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={file?.title || 'Document Viewer'}
+            title={file?.title || t('modals.fileViewer.documentViewer')}
             maxWidth="max-w-7xl"
         >
             <div className="space-y-4">
@@ -91,7 +93,9 @@ export default function FileViewerModal({
                                 {file?.title}
                             </h3>
                             <p className="text-xs sm:text-sm text-gray-500">
-                                {fileType.toUpperCase()} file
+                                {t('modals.fileViewer.fileType', {
+                                    type: fileType.toUpperCase(),
+                                })}
                                 {file?.size &&
                                     ` • ${(file.size / 1024 / 1024).toFixed(1)} MB`}
                             </p>
@@ -103,7 +107,9 @@ export default function FileViewerModal({
                             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
                         >
                             <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span className="hidden sm:inline">Open</span>
+                            <span className="hidden sm:inline">
+                                {t('modals.fileViewer.open')}
+                            </span>
                         </button>
                         <button
                             onClick={handleDownload}
@@ -116,7 +122,9 @@ export default function FileViewerModal({
                                 <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                             )}
                             <span className="hidden sm:inline">
-                                {isDownloading ? 'Downloading...' : 'Download'}
+                                {isDownloading
+                                    ? t('modals.fileViewer.downloading')
+                                    : t('modals.fileViewer.download')}
                             </span>
                         </button>
                     </div>
@@ -173,23 +181,27 @@ export default function FileViewerModal({
                                 <div className="text-center">
                                     <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-400" />
                                     <p className="text-base sm:text-lg font-medium">
-                                        Preview not available
+                                        {t(
+                                            'modals.fileViewer.previewNotAvailable'
+                                        )}
                                     </p>
                                     <p className="text-sm">
-                                        This file type cannot be previewed
+                                        {t('modals.fileViewer.cannotPreview')}
                                     </p>
                                     <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
                                         <button
                                             onClick={handleOpenInNewTab}
                                             className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
                                         >
-                                            Open in new tab
+                                            {t(
+                                                'modals.fileViewer.openInNewTab'
+                                            )}
                                         </button>
                                         <button
                                             onClick={handleDownload}
                                             className="px-3 sm:px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
                                         >
-                                            Download
+                                            {t('modals.fileViewer.download')}
                                         </button>
                                     </div>
                                 </div>
@@ -203,7 +215,7 @@ export default function FileViewerModal({
                         onClick={onClose}
                         className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors text-sm sm:text-base"
                     >
-                        Close
+                        {t('modals.fileViewer.close')}
                     </button>
                 </div>
             </div>

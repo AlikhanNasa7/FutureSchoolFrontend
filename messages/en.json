@@ -336,5 +336,115 @@
             "instructionsTitle": "Instructions:",
             "instructionsText": "Students will match items from the left column with items from the right column. Each pair above represents a correct match that students need to identify."
         }
+    },
+    "modals": {
+        "confirmation": {
+            "processing": "Processing..."
+        },
+        "fileViewer": {
+            "documentViewer": "Document Viewer",
+            "fileType": "{type} file",
+            "open": "Open",
+            "download": "Download",
+            "downloading": "Downloading...",
+            "previewNotAvailable": "Preview not available",
+            "cannotPreview": "This file type cannot be previewed",
+            "openInNewTab": "Open in new tab",
+            "close": "Close"
+        },
+        "courseSection": {
+            "createTitle": "Create New Course Section",
+            "sectionName": "Section Name",
+            "enterSectionName": "Enter section name",
+            "cancel": "Cancel",
+            "creating": "Creating...",
+            "createSection": "Create Section",
+            "successMessage": "Section created successfully!"
+        },
+        "addFileToDirectory": {
+            "title": "Add Files to \"{directory}\"",
+            "selectFiles": "Select Files ({count}/10)",
+            "clickToSelect": "Click to select files to add to directory",
+            "dragAndDrop": "or drag and drop (Max 10 files)",
+            "maxFilesError": "Maximum 10 files allowed",
+            "selectOneFileError": "Please select at least one file",
+            "selectedFiles": "Selected Files:",
+            "cancel": "Cancel",
+            "addingFiles": "Adding Files...",
+            "addFiles": "Add {count} File(s)",
+            "successMessage": "{count} file(s) added successfully!"
+        },
+        "directory": {
+            "filesCount": "{count} file",
+            "filesCountPlural": "{count} files",
+            "addFile": "Add File",
+            "emptyFolder": "Folder is empty",
+            "downloadFile": "Download file",
+            "downloadFolder": "Download Folder"
+        },
+        "event": {
+            "subject": "Subject:",
+            "teacher": "Teacher:",
+            "time": "Time:",
+            "date": "Date:",
+            "description": "Description:",
+            "navigate": "Go to",
+            "close": "Close"
+        },
+        "classroom": {
+            "editTitle": "Edit Classroom",
+            "createTitle": "Create Classroom",
+            "grade": "Grade",
+            "letter": "Letter",
+            "letterPlaceholder": "A",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "update": "Update",
+            "create": "Create"
+        },
+        "addStudent": {
+            "title": "Add Student to Class {className}",
+            "searchPlaceholder": "Search students...",
+            "loading": "Loading...",
+            "add": "Add",
+            "noStudentsFound": "Students not found",
+            "noAvailableStudents": "No available students",
+            "noSearchResults": "Nothing found for \"{query}\"",
+            "allStudentsAssigned": "All students are already assigned to classes",
+            "close": "Close"
+        },
+        "fileUpload": {
+            "defaultTitle": "Upload File",
+            "dragFilesHere": "Drag files here",
+            "orSelectFromComputer": "or select file from computer",
+            "selectFromComputer": "Select from Computer",
+            "upload": "Upload",
+            "cancel": "Cancel",
+            "selectAnotherFile": "Select another file"
+        },
+        "subject": {
+            "editTitle": "Edit Subject",
+            "createTitle": "Create Subject",
+            "subjectName": "Subject Name",
+            "grade": "Grade",
+            "type": "Type",
+            "selectType": "Select Type",
+            "courseCode": "Course Code",
+            "description": "Description",
+            "professor": "Professor",
+            "backgroundImage": "Background Image",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "update": "Update",
+            "create": "Create"
+        },
+        "kundelik": {
+            "title": "Kundelik.kz Integration",
+            "username": "Username",
+            "password": "Password",
+            "passwordPlaceholder": "Enter your password",
+            "connecting": "Connecting...",
+            "connect": "Connect"
+        }
     }
 }

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/ui/Modal';
 import type { EventModalData } from '@/lib/modalController';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface EventModalProps {
     event: EventModalData | null;
@@ -16,6 +17,7 @@ export default function EventModal({
     onClose,
 }: EventModalProps) {
     const router = useRouter();
+    const { t, locale } = useLocale();
 
     if (!isOpen || !event) return null;
 
@@ -60,35 +62,46 @@ export default function EventModal({
 
             <div className="space-y-3">
                 <div className="flex items-center">
-                    <span className="text-gray-500 w-20">Предмет:</span>
+                    <span className="text-gray-500 w-20">
+                        {t('modals.event.subject')}
+                    </span>
                     <span className="font-medium">{event.subject}</span>
                 </div>
 
                 <div className="flex items-center">
-                    <span className="text-gray-500 w-20">Учитель:</span>
+                    <span className="text-gray-500 w-20">
+                        {t('modals.event.teacher')}
+                    </span>
                     <span className="font-medium">{event.teacher}</span>
                 </div>
 
                 <div className="flex items-center">
-                    <span className="text-gray-500 w-20">Время:</span>
+                    <span className="text-gray-500 w-20">
+                        {t('modals.event.time')}
+                    </span>
                     <span className="font-medium">{event.time}</span>
                 </div>
 
                 <div className="flex items-center">
-                    <span className="text-gray-500 w-20">Дата:</span>
+                    <span className="text-gray-500 w-20">
+                        {t('modals.event.date')}
+                    </span>
                     <span className="font-medium">
-                        {new Date(event.start).toLocaleDateString('ru-RU', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                        })}
+                        {new Date(event.start).toLocaleDateString(
+                            locale === 'en' ? 'en-US' : 'ru-RU',
+                            {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                            }
+                        )}
                     </span>
                 </div>
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-200">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    Описание:
+                    {t('modals.event.description')}
                 </h4>
                 <p className="text-gray-600 text-sm">{event.description}</p>
             </div>
@@ -99,14 +112,14 @@ export default function EventModal({
                         onClick={handleNavigate}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        Перейти
+                        {t('modals.event.navigate')}
                     </button>
                 )}
                 <button
                     onClick={onClose}
                     className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                    Закрыть
+                    {t('modals.event.close')}
                 </button>
             </div>
         </Modal>

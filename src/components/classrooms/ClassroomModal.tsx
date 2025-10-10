@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface ClassroomData {
     id: number;
@@ -30,6 +31,7 @@ export default function ClassroomModal({
     onClose,
     loading = false,
 }: ClassroomModalProps) {
+    const { t } = useLocale();
     const [formData, setFormData] = useState({
         grade: 1,
         letter: '',
@@ -71,14 +73,17 @@ export default function ClassroomModal({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={isEditing ? 'Edit Classroom' : 'Create Classroom'}
+            title={
+                isEditing
+                    ? t('modals.classroom.editTitle')
+                    : t('modals.classroom.createTitle')
+            }
         >
             <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Only show Grade and Letter fields - these are the only editable fields */}
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Grade
+                            {t('modals.classroom.grade')}
                         </label>
                         <select
                             name="grade"
@@ -98,7 +103,7 @@ export default function ClassroomModal({
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Letter
+                            {t('modals.classroom.letter')}
                         </label>
                         <input
                             type="text"
@@ -108,7 +113,9 @@ export default function ClassroomModal({
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             maxLength={1}
                             required
-                            placeholder="A"
+                            placeholder={t(
+                                'modals.classroom.letterPlaceholder'
+                            )}
                         />
                     </div>
                 </div>
@@ -119,7 +126,7 @@ export default function ClassroomModal({
                         onClick={onClose}
                         className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                     >
-                        Cancel
+                        {t('modals.classroom.cancel')}
                     </button>
                     <button
                         type="submit"
@@ -127,10 +134,10 @@ export default function ClassroomModal({
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                     >
                         {loading
-                            ? 'Saving...'
+                            ? t('modals.classroom.saving')
                             : isEditing
-                              ? 'Update'
-                              : 'Create'}
+                              ? t('modals.classroom.update')
+                              : t('modals.classroom.create')}
                     </button>
                 </div>
             </form>

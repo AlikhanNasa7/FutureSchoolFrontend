@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface SubjectData {
     id: string;
@@ -30,6 +31,7 @@ export default function SubjectModal({
     onClose,
     loading = false,
 }: SubjectModalProps) {
+    const { t } = useLocale();
     const [formData, setFormData] = useState({
         name: '',
         professor: '',
@@ -103,12 +105,16 @@ export default function SubjectModal({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={subject ? 'Edit Subject' : 'Create Subject'}
+            title={
+                subject
+                    ? t('modals.subject.editTitle')
+                    : t('modals.subject.createTitle')
+            }
         >
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Subject Name
+                        {t('modals.subject.subjectName')}
                     </label>
                     <input
                         type="text"
@@ -123,7 +129,7 @@ export default function SubjectModal({
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Grade
+                            {t('modals.subject.grade')}
                         </label>
                         <select
                             name="grade"
@@ -144,7 +150,7 @@ export default function SubjectModal({
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Type
+                            {t('modals.subject.type')}
                         </label>
                         <select
                             name="type"
@@ -153,7 +159,9 @@ export default function SubjectModal({
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
                         >
-                            <option value="">Select Type</option>
+                            <option value="">
+                                {t('modals.subject.selectType')}
+                            </option>
                             {subjectTypes.map(type => (
                                 <option key={type} value={type}>
                                     {type}
@@ -165,7 +173,7 @@ export default function SubjectModal({
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Course Code
+                        {t('modals.subject.courseCode')}
                     </label>
                     <input
                         type="text"
@@ -179,7 +187,7 @@ export default function SubjectModal({
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Description
+                        {t('modals.subject.description')}
                     </label>
                     <textarea
                         name="description"
@@ -193,7 +201,7 @@ export default function SubjectModal({
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Professor
+                        {t('modals.subject.professor')}
                     </label>
                     <input
                         type="text"
@@ -207,7 +215,7 @@ export default function SubjectModal({
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Background Image
+                        {t('modals.subject.backgroundImage')}
                     </label>
                     <input
                         type="text"
@@ -224,14 +232,18 @@ export default function SubjectModal({
                         onClick={onClose}
                         className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                     >
-                        Cancel
+                        {t('modals.subject.cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={loading}
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                     >
-                        {loading ? 'Saving...' : subject ? 'Update' : 'Create'}
+                        {loading
+                            ? t('modals.subject.saving')
+                            : subject
+                              ? t('modals.subject.update')
+                              : t('modals.subject.create')}
                     </button>
                 </div>
             </form>

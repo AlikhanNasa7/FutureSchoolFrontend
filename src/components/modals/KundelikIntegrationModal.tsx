@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Modal from '@/components/ui/Modal';
 import z from 'zod';
 import Link from 'next/link';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface KundelikIntegrationModalProps {
     onClose: () => void;
@@ -12,12 +13,13 @@ interface KundelikIntegrationModalProps {
 
 const kundelikLoginSchema = z.object({
     username: z.string().min(1, 'Username is required').includes('_'),
-    password: z.string()
+    password: z.string(),
 });
 
 export default function KundelikIntegrationModal({
     onClose,
 }: KundelikIntegrationModalProps) {
+    const { t } = useLocale();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -50,18 +52,18 @@ export default function KundelikIntegrationModal({
                     height={20}
                 />
                 <h2 className="text-xl font-bold text-gray-800">
-                    Интеграция с Kundelik.kz
+                    {t('modals.kundelik.title')}
                 </h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-6">
-                    <div className='space-y-2'>
+                <div className="space-y-6">
+                    <div className="space-y-2">
                         <label
                             htmlFor="username"
                             className="block text-sm text-gray-700 dark:text-gray-300 font-bold mb-1"
                         >
-                            Имя пользователя
+                            {t('modals.kundelik.username')}
                         </label>
                         <div className="relative">
                             <input
@@ -91,7 +93,7 @@ export default function KundelikIntegrationModal({
                             htmlFor="password"
                             className="block text-sm text-gray-700 dark:text-gray-300 font-bold mb-1"
                         >
-                            Пароль
+                            {t('modals.kundelik.password')}
                         </label>
                         <div className="relative">
                             <input
@@ -107,7 +109,9 @@ export default function KundelikIntegrationModal({
                                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                                         : 'border-gray-300 dark:border-gray-600'
                                 } bg-white dark:bg-gray-800 text-gray-900 dark:text-white`}
-                                placeholder="Enter your password"
+                                placeholder={t(
+                                    'modals.kundelik.passwordPlaceholder'
+                                )}
                             />
                         </div>
                         {errors.password && (
@@ -124,7 +128,9 @@ export default function KundelikIntegrationModal({
                         disabled={isLoading}
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                        {isLoading ? 'Подключение...' : 'Подключить'}
+                        {isLoading
+                            ? t('modals.kundelik.connecting')
+                            : t('modals.kundelik.connect')}
                     </button>
                 </div>
             </form>

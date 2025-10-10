@@ -9,11 +9,6 @@ import type { EventModalData } from '@/lib/modalController';
 import axiosInstance from '@/lib/axios';
 import './calendar.css';
 
-const now = new Date();
-const currentYear = now.getFullYear();
-const currentMonth = now.getMonth() + 1;
-
-// Interfaces for API data
 interface Test {
     id: number;
     title: string;
@@ -34,353 +29,23 @@ interface Assignment {
     description?: string;
 }
 
-const sampleEvents = [
-    {
-        id: '1',
-        title: 'Домашнее Задание',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`,
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Выполнить упражнения 1-10 из учебника по математике',
-        subject: 'Математика',
-        teacher: 'Иванова А.П.',
-        time: '14:00',
-    },
-    {
-        id: '2',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-03`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Итоговый экзамен по русскому языку',
-        subject: 'Русский язык',
-        teacher: 'Петрова М.С.',
-        time: '09:00',
-    },
-    {
-        id: '3',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-05`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Контрольная работа по физике',
-        subject: 'Физика',
-        teacher: 'Сидоров В.К.',
-        time: '11:30',
-    },
-    {
-        id: '4',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-07`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по истории России',
-        subject: 'История',
-        teacher: 'Козлова Е.В.',
-        time: '10:00',
-    },
-    {
-        id: '5',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-08`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по английскому языку',
-        subject: 'Английский язык',
-        teacher: 'Морозова Т.А.',
-        time: '13:00',
-    },
-    {
-        id: '6',
-        title: 'Домашнее Задание',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-08`,
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Подготовить доклад по биологии',
-        subject: 'Биология',
-        teacher: 'Волкова Л.Н.',
-        time: '15:30',
-    },
-    {
-        id: '7',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-10`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Тест по химии',
-        subject: 'Химия',
-        teacher: 'Новиков А.И.',
-        time: '12:00',
-    },
-    {
-        id: '8',
-        title: 'Домашнее Задание',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-11`,
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Решить задачи по геометрии',
-        subject: 'Математика',
-        teacher: 'Иванова А.П.',
-        time: '16:00',
-    },
-    {
-        id: '9',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-12`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по литературе',
-        subject: 'Литература',
-        teacher: 'Петрова М.С.',
-        time: '09:30',
-    },
-    {
-        id: '10',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-13`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Тест по географии',
-        subject: 'География',
-        teacher: 'Смирнов П.О.',
-        time: '11:00',
-    },
-    {
-        id: '11',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-13`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Тест по информатике',
-        subject: 'Информатика',
-        teacher: 'Кузнецов Д.В.',
-        time: '14:30',
-    },
-    {
-        id: '12',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-13`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по обществознанию',
-        subject: 'Обществознание',
-        teacher: 'Лебедева О.М.',
-        time: '16:00',
-    },
-    {
-        id: '13',
-        title: 'Домашнее Задание',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-15`,
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Написать сочинение по русскому языку',
-        subject: 'Русский язык',
-        teacher: 'Петрова М.С.',
-        time: '17:00',
-    },
-    {
-        id: '14',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-15`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Тест по алгебре',
-        subject: 'Математика',
-        teacher: 'Иванова А.П.',
-        time: '10:30',
-    },
-    {
-        id: '15',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-17`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по физике',
-        subject: 'Физика',
-        teacher: 'Сидоров В.К.',
-        time: '09:00',
-    },
-    {
-        id: '16',
-        title: 'Домашнее Задание',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-18`,
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Подготовить презентацию по биологии',
-        subject: 'Биология',
-        teacher: 'Волкова Л.Н.',
-        time: '15:00',
-    },
-    {
-        id: '17',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-19`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Тест по химии',
-        subject: 'Химия',
-        teacher: 'Новиков А.И.',
-        time: '12:30',
-    },
-    {
-        id: '18',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-22`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по географии',
-        subject: 'География',
-        teacher: 'Смирнов П.О.',
-        time: '10:00',
-    },
-    {
-        id: '19',
-        title: 'Домашнее Задание',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-23`,
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Решить задачи по физике',
-        subject: 'Физика',
-        teacher: 'Сидоров В.К.',
-        time: '16:30',
-    },
-    {
-        id: '20',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-24`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Тест по истории',
-        subject: 'История',
-        teacher: 'Козлова Е.В.',
-        time: '11:00',
-    },
-    {
-        id: '21',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-25`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по информатике',
-        subject: 'Информатика',
-        teacher: 'Кузнецов Д.В.',
-        time: '13:30',
-    },
-    {
-        id: '22',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-26`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Тест по литературе',
-        subject: 'Литература',
-        teacher: 'Петрова М.С.',
-        time: '10:30',
-    },
-    {
-        id: '23',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-26`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по обществознанию',
-        subject: 'Обществознание',
-        teacher: 'Лебедева О.М.',
-        time: '14:00',
-    },
-    {
-        id: '24',
-        title: 'Тест',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-26`,
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Тест по английскому языку',
-        subject: 'Английский язык',
-        teacher: 'Морозова Т.А.',
-        time: '15:30',
-    },
-    {
-        id: '25',
-        title: 'Домашнее Задание',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-29`,
-        backgroundColor: 'rgb(255, 237, 213)',
-        borderColor: 'rgb(255, 237, 213)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Подготовить проект по географии',
-        subject: 'География',
-        teacher: 'Смирнов П.О.',
-        time: '17:00',
-    },
-    {
-        id: '26',
-        title: 'Экзамен',
-        start: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-30`,
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        display: 'block',
-        description: 'Экзамен по биологии',
-        subject: 'Биология',
-        teacher: 'Волкова Л.Н.',
-        time: '09:30',
-    },
-];
-
 const Calendar = () => {
-    // State for fetched data
     const [tests, setTests] = useState<Test[]>([]);
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 576);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     console.log(tests, 'tests');
     console.log(assignments, 'assignments');
     // Fetch tests and assignments data
@@ -412,48 +77,67 @@ const Calendar = () => {
         fetchCalendarData();
     }, [fetchCalendarData]);
 
-    // Transform API data to calendar events
     const calendarEvents = useMemo(() => {
-        const events: any[] = [];
+        const events: Array<{
+            id: string;
+            title: string;
+            start: string;
+            backgroundColor: string;
+            borderColor: string;
+            textColor: string;
+            display: string;
+            description?: string;
+            subject?: string;
+            teacher?: string;
+            time?: string;
+            type?: string;
+        }> = [];
 
-        // Add tests as events
         tests.forEach(test => {
+            const testTime = new Date(test.start_date).toLocaleTimeString(
+                'ru-RU',
+                {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }
+            );
+
             events.push({
                 id: `test-${test.id}`,
-                title: test.title,
-                start: test.start_date?.split('T')[0], // Use scheduled_at date
-                backgroundColor: 'rgb(224, 242, 254)', // Blue for tests
+                title: `${testTime} - ${test.title}`,
+                start: test.start_date.split('T')[0],
+                backgroundColor: 'rgb(224, 242, 254)',
                 borderColor: 'rgb(224, 242, 254)',
                 textColor: '#374151',
                 display: 'block',
                 description: test.description || '',
                 subject: test.course_name,
                 teacher: test.teacher_username,
-                time: new Date(test.start_date).toLocaleTimeString('ru-RU', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                }),
+                time: testTime,
                 type: 'test',
             });
         });
 
-        // Add assignments as events
         assignments.forEach(assignment => {
+            const assignmentTime = new Date(
+                assignment.due_at
+            ).toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+
             events.push({
                 id: `assignment-${assignment.id}`,
-                title: assignment.title,
-                start: assignment.due_at.split('T')[0], // Use due_at date
-                backgroundColor: 'rgb(255, 237, 213)', // Orange for assignments
+                title: `${assignmentTime} - ${assignment.title}`,
+                start: assignment.due_at.split('T')[0],
+                backgroundColor: 'rgb(255, 237, 213)',
                 borderColor: 'rgb(255, 237, 213)',
                 textColor: '#374151',
                 display: 'block',
                 description: assignment.description || '',
                 subject: assignment.course_name,
                 teacher: assignment.teacher_username,
-                time: new Date(assignment.due_at).toLocaleTimeString('ru-RU', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                }),
+                time: assignmentTime,
                 type: 'assignment',
             });
         });
@@ -464,17 +148,18 @@ const Calendar = () => {
     const calendarOptions = useMemo(
         () => ({
             plugins: [dayGridPlugin, interactionPlugin],
-            initialView: 'dayGridMonth',
+            initialView: isMobile ? 'dayGridWeek' : 'dayGridMonth',
             headerToolbar: {
                 left: 'title',
                 center: '',
                 right: 'prev,next',
             },
             height: 'auto',
-            aspectRatio: 1.35,
-            dayMaxEvents: 5,
+            aspectRatio: isMobile ? 1.2 : 1.35,
+            dayMaxEvents: isMobile ? false : 5,
             moreLinkClick: 'popover',
             events: calendarEvents,
+            eventOrder: 'time,title',
             eventDisplay: 'block',
             dayHeaderFormat: {
                 weekday: 'short' as const,
@@ -519,14 +204,11 @@ const Calendar = () => {
                     modalController.open('event-modal', eventData);
                 }
             },
-            dateClick: function (info: any) {
+            dateClick: function (info: { dateStr: string }) {
                 console.log('Date clicked:', info.dateStr);
             },
-            datesSet: function (dateInfo: any) {
-                // Handle date changes if needed
-            },
         }),
-        [calendarEvents]
+        [calendarEvents, isMobile]
     );
 
     // Show loading state
@@ -561,7 +243,10 @@ const Calendar = () => {
         <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="pl-8 pr-6 pt-6">
                 <div className="calendar-container">
-                    <FullCalendar {...calendarOptions} />
+                    <FullCalendar
+                        key={isMobile ? 'mobile-week' : 'desktop-month'}
+                        {...calendarOptions}
+                    />
                 </div>
             </div>
         </div>

@@ -5,6 +5,7 @@ import { BookOpen } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import axiosInstance from '@/lib/axios';
 import { AxiosError } from 'axios';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface CourseSectionCreateModalProps {
     isOpen: boolean;
@@ -23,6 +24,7 @@ export default function CourseSectionCreateModal({
     subjectId,
     onSectionCreated,
 }: CourseSectionCreateModalProps) {
+    const { t } = useLocale();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export default function CourseSectionCreateModal({
                 sectionData
             );
             console.log('Section created successfully:', response.data);
-            setSuccess('Section created successfully!');
+            setSuccess(t('modals.courseSection.successMessage'));
             onSectionCreated?.();
             setTimeout(() => {
                 onClose();
@@ -87,11 +89,10 @@ export default function CourseSectionCreateModal({
         <Modal
             isOpen={isOpen}
             onClose={handleClose}
-            title="Create New Course Section"
+            title={t('modals.courseSection.createTitle')}
             maxWidth="max-w-2xl"
         >
             <div className="space-y-6">
-                {/* Error and Success Messages */}
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-md p-3">
                         <p className="text-sm text-red-600">{error}</p>
@@ -103,11 +104,10 @@ export default function CourseSectionCreateModal({
                     </div>
                 )}
 
-                {/* Section Form */}
                 <form onSubmit={handleSectionSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Section Name *
+                            {t('modals.courseSection.sectionName')} *
                         </label>
                         <div className="relative">
                             <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -122,7 +122,9 @@ export default function CourseSectionCreateModal({
                                 }
                                 required
                                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter section name"
+                                placeholder={t(
+                                    'modals.courseSection.enterSectionName'
+                                )}
                             />
                         </div>
                     </div>
@@ -133,14 +135,16 @@ export default function CourseSectionCreateModal({
                             onClick={handleClose}
                             className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                         >
-                            Cancel
+                            {t('modals.courseSection.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
                             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            {isSubmitting ? 'Creating...' : 'Create Section'}
+                            {isSubmitting
+                                ? t('modals.courseSection.creating')
+                                : t('modals.courseSection.createSection')}
                         </button>
                     </div>
                 </form>

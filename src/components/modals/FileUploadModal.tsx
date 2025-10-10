@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Upload, Cloud, X } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface FileUploadModalProps {
     isOpen: boolean;
@@ -15,8 +16,9 @@ export default function FileUploadModal({
     isOpen,
     onClose,
     onFileSelect,
-    title = 'Загрузка файла',
+    title,
 }: FileUploadModalProps) {
+    const { t } = useLocale();
     const [dragActive, setDragActive] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,25 +68,25 @@ export default function FileUploadModal({
         onClose();
     };
 
+    const modalTitle = title || t('modals.fileUpload.defaultTitle');
+
     return (
         <Modal
             isOpen={isOpen}
             onClose={handleClose}
-            title={title}
+            title={modalTitle}
             maxWidth="max-w-md"
         >
             <div className="space-y-6">
-                {/* Header with icon and title */}
                 <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
                         <Upload className="w-5 h-5 text-white" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                        {title}
+                        {modalTitle}
                     </h3>
                 </div>
 
-                {/* Upload Area */}
                 <div
                     className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                         dragActive
@@ -121,7 +123,7 @@ export default function FileUploadModal({
                                 onClick={() => setSelectedFile(null)}
                                 className="text-sm text-gray-500 hover:text-gray-700"
                             >
-                                Выбрать другой файл
+                                {t('modals.fileUpload.selectAnotherFile')}
                             </button>
                         </div>
                     ) : (
@@ -131,41 +133,41 @@ export default function FileUploadModal({
                             </div>
                             <div>
                                 <p className="text-purple-600 font-medium">
-                                    Перетащите файлы сюда
+                                    {t('modals.fileUpload.dragFilesHere')}
                                 </p>
                                 <p className="text-sm text-gray-500 mt-1">
-                                    или выберите файл с компьютера
+                                    {t(
+                                        'modals.fileUpload.orSelectFromComputer'
+                                    )}
                                 </p>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex space-x-3">
                     <button
                         onClick={handleSelectFile}
                         className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium"
                     >
-                        Выбрать с компьютера
+                        {t('modals.fileUpload.selectFromComputer')}
                     </button>
                     {selectedFile && (
                         <button
                             onClick={handleSubmit}
                             className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
                         >
-                            Загрузить
+                            {t('modals.fileUpload.upload')}
                         </button>
                     )}
                 </div>
 
-                {/* Cancel Button */}
                 <div className="text-center">
                     <button
                         onClick={handleClose}
                         className="text-gray-500 hover:text-gray-700 text-sm"
                     >
-                        Отмена
+                        {t('modals.fileUpload.cancel')}
                     </button>
                 </div>
             </div>

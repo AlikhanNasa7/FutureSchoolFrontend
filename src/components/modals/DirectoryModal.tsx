@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Download, FileText, Folder, Plus, X, FolderOpen } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { useUserState } from '@/contexts/UserContext';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface DirectoryFile {
     id: number;
@@ -37,6 +38,7 @@ export default function DirectoryModal({
     onDownloadFolder,
 }: DirectoryModalProps) {
     const { user } = useUserState();
+    const { t } = useLocale();
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleFileClick = (file: DirectoryFile) => {
@@ -108,7 +110,6 @@ export default function DirectoryModal({
             maxWidth="max-w-2xl"
         >
             <div className="space-y-4">
-                {/* Header with folder icon and title */}
                 <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                     <Folder className="w-6 h-6 text-green-500" />
                     <div className="flex-1">
@@ -116,8 +117,13 @@ export default function DirectoryModal({
                             {directory.title}
                         </h3>
                         <p className="text-sm text-gray-500">
-                            {directory.files.length} файл
-                            {directory.files.length !== 1 ? 'ов' : ''}
+                            {directory.files.length === 1
+                                ? t('modals.directory.filesCount', {
+                                      count: directory.files.length,
+                                  })
+                                : t('modals.directory.filesCountPlural', {
+                                      count: directory.files.length,
+                                  })}
                         </p>
                     </div>
                     {user?.role === 'teacher' && (
@@ -128,17 +134,16 @@ export default function DirectoryModal({
                             className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             <Plus className="w-4 h-4" />
-                            Добавить файл
+                            {t('modals.directory.addFile')}
                         </button>
                     )}
                 </div>
 
-                {/* File list */}
                 <div className="max-h-96 overflow-y-auto">
                     {directory.files.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                             <Folder className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                            <p>Папка пуста</p>
+                            <p>{t('modals.directory.emptyFolder')}</p>
                         </div>
                     ) : (
                         <div className="space-y-1">
@@ -164,7 +169,6 @@ export default function DirectoryModal({
                                         </button>
                                     </div>
 
-                                    {/* Download button */}
                                     {(file.file_url || file.file) && (
                                         <button
                                             onClick={() =>
@@ -172,7 +176,9 @@ export default function DirectoryModal({
                                             }
                                             disabled={isDownloading}
                                             className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-gray-700 transition-all"
-                                            title="Скачать файл"
+                                            title={t(
+                                                'modals.directory.downloadFile'
+                                            )}
                                         >
                                             <Download className="w-4 h-4" />
                                         </button>
@@ -183,7 +189,6 @@ export default function DirectoryModal({
                     )}
                 </div>
 
-                {/* Download folder button */}
                 {directory.files.length > 0 && (
                     <div className="flex justify-end pt-4 border-t">
                         <button
@@ -196,7 +201,7 @@ export default function DirectoryModal({
                             ) : (
                                 <Download className="w-4 h-4" />
                             )}
-                            Скачать папку
+                            {t('modals.directory.downloadFolder')}
                         </button>
                     </div>
                 )}

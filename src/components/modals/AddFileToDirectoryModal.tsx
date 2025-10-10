@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import axiosInstance from '@/lib/axios';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface AddFileToDirectoryModalProps {
     isOpen: boolean;
@@ -22,6 +23,7 @@ export default function AddFileToDirectoryModal({
     courseSectionId,
     onSuccess,
 }: AddFileToDirectoryModalProps) {
+    const { t } = useLocale();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,7 @@ export default function AddFileToDirectoryModal({
         const totalFiles = selectedFiles.length + files.length;
 
         if (totalFiles > 10) {
-            setError('Maximum 10 files allowed');
+            setError(t('modals.addFileToDirectory.maxFilesError'));
             return;
         }
 
@@ -48,7 +50,7 @@ export default function AddFileToDirectoryModal({
         e.preventDefault();
 
         if (selectedFiles.length === 0) {
-            setError('Please select at least one file');
+            setError(t('modals.addFileToDirectory.selectOneFileError'));
             return;
         }
 
@@ -60,7 +62,6 @@ export default function AddFileToDirectoryModal({
             formData.append('directory_id', directoryId.toString());
             formData.append('course_section', courseSectionId.toString());
 
-            // Append all files
             selectedFiles.forEach(file => {
                 formData.append('files', file);
             });
@@ -82,7 +83,11 @@ export default function AddFileToDirectoryModal({
             );
 
             console.log('Files added successfully:', response.data);
-            setSuccess(`${selectedFiles.length} file(s) added successfully!`);
+            setSuccess(
+                t('modals.addFileToDirectory.successMessage', {
+                    count: selectedFiles.length,
+                })
+            );
 
             // Reset form and close modal after success
             setTimeout(() => {
@@ -112,13 +117,17 @@ export default function AddFileToDirectoryModal({
         <Modal
             isOpen={isOpen}
             onClose={handleClose}
-            title={`Add Files to "${directoryTitle}"`}
+            title={t('modals.addFileToDirectory.title', {
+                directory: directoryTitle,
+            })}
             maxWidth="max-w-2xl"
         >
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Files ({selectedFiles.length}/10)
+                        {t('modals.addFileToDirectory.selectFiles', {
+                            count: selectedFiles.length,
+                        })}
                     </label>
 
                     <div className="relative">
@@ -133,10 +142,12 @@ export default function AddFileToDirectoryModal({
                             <div className="text-center">
                                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                                 <p className="text-sm text-gray-500">
-                                    Click to select files to add to directory
+                                    {t(
+                                        'modals.addFileToDirectory.clickToSelect'
+                                    )}
                                 </p>
                                 <p className="text-xs text-gray-400">
-                                    or drag and drop (Max 10 files)
+                                    {t('modals.addFileToDirectory.dragAndDrop')}
                                 </p>
                             </div>
                         </div>
@@ -155,11 +166,10 @@ export default function AddFileToDirectoryModal({
                     </div>
                 )}
 
-                {/* Display selected files */}
                 {selectedFiles.length > 0 && (
                     <div>
                         <p className="text-sm font-medium text-gray-700 mb-2">
-                            Selected Files:
+                            {t('modals.addFileToDirectory.selectedFiles')}
                         </p>
                         <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
                             {selectedFiles.map((file, index) => (
@@ -195,7 +205,7 @@ export default function AddFileToDirectoryModal({
                         onClick={handleClose}
                         className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
-                        Cancel
+                        {t('modals.addFileToDirectory.cancel')}
                     </button>
                     <button
                         type="submit"
@@ -203,8 +213,10 @@ export default function AddFileToDirectoryModal({
                         className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isSubmitting
-                            ? 'Adding Files...'
-                            : `Add ${selectedFiles.length} File(s)`}
+                            ? t('modals.addFileToDirectory.addingFiles')
+                            : t('modals.addFileToDirectory.addFiles', {
+                                  count: selectedFiles.length,
+                              })}
                     </button>
                 </div>
             </form>
