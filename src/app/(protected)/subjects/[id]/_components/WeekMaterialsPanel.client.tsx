@@ -266,7 +266,7 @@ function TestItem({
         : getStatusText(item, isTeacher, t);
 
     return (
-        <div className="flex items-center justify-between gap-3 py-3">
+        <div className="flex items-start justify-between gap-3 p-2 flex-col xs:flex-row xs:items-center">
             {/* Left side - Icon, label, and status */}
             <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="flex-shrink-0 flex items-center justify-center">
@@ -278,12 +278,10 @@ function TestItem({
                     />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-900 truncate">
-                            {item.title}
-                        </span>
-                    </div>
+                <div className="flex-1 min-w-0 px-2 py-1">
+                    <span className="text-gray-900 truncate">
+                        {item.title}
+                    </span>
                 </div>
             </div>
 

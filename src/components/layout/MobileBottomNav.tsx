@@ -13,18 +13,18 @@ const mobileNavigation = [
         icon: Home,
         roles: ['teacher', 'student', 'superadmin', 'schooladmin'],
     },
-    // {
-    //     key: 'subjects',
-    //     href: '/subjects',
-    //     icon: Box,
-    //     roles: ['teacher', 'student'],
-    // },
     {
-        key: 'assignments',
-        href: '/assignments',
-        icon: BookOpen,
+        key: 'subjects',
+        href: '/subjects',
+        icon: Box,
         roles: ['teacher', 'student'],
     },
+    // {
+    //     key: 'assignments',
+    //     href: '/assignments',
+    //     icon: BookOpen,
+    //     roles: ['teacher', 'student'],
+    // },
     {
         key: 'diary',
         href: '/diary',

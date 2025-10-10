@@ -249,7 +249,7 @@ export default function SubjectsPage() {
     // Show loading state while fetching subjects
     if (fetchLoading) {
         return (
-            <div className="container mx-auto px-4 pb-8">
+            <div className="mx-auto px-4 pb-8">
                 <div className="flex items-center justify-center py-12">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -261,7 +261,7 @@ export default function SubjectsPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 pb-8">
+        <div className="mx-auto px-4 pb-8">
             <div className="flex items-center justify-between mb-6 w-full">
                 <div className="flex items-center gap-4 xs:flex-row flex-col w-full">
                     <SubjectSearch onSearchChange={setSearchQuery} />

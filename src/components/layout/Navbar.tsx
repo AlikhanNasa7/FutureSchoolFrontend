@@ -21,16 +21,6 @@ export default function Navbar() {
     const { user } = useUserState();
     const { locale, setLocale, t } = useLocale();
 
-    const handleLogout = () => {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('refreshToken');
-            window.location.href = '/login';
-        }
-    };
-
     return (
         <nav className="flex bg-inherit p-10 gap-8 pb-0 sm:flex-row flex-col">
             <div className="hidden flex-3/4 px-4 sm:px-6 pr-0 sm:pr-0 min-[576px]:flex justify-between items-center gap-4">
@@ -64,6 +54,7 @@ export default function Navbar() {
                             alt="kundelik.kz logo"
                             width={100}
                             height={50}
+                            className="w-full"
                         />
                     </div>
                 </div>

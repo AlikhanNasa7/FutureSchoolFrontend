@@ -3,6 +3,7 @@ import { Question } from './TestCreator';
 import { MultipleChoiceEditor } from './MultipleChoiceEditor';
 import { OpenQuestionEditor } from './OpenQuestionEditor';
 import { MatchingEditor } from './MatchingEditor';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface QuestionEditorProps {
     question: Question;
@@ -10,6 +11,8 @@ interface QuestionEditorProps {
 }
 
 export function QuestionEditor({ question, onUpdate }: QuestionEditorProps) {
+    const { t } = useLocale();
+
     const handleTextChange = (text: string) => {
         onUpdate({ text });
     };
@@ -18,14 +21,8 @@ export function QuestionEditor({ question, onUpdate }: QuestionEditorProps) {
         onUpdate({ points });
     };
 
-    const handleDataChange = (data: any) => {
-      if (question.type === 'multiple_choice') {
-        onUpdate({ options: data.options });
-      } else if (question.type === 'open_question') {
-        onUpdate({ correct_answer_text: data.correct_answer_text });
-      } else if (question.type === 'matching') {
-        onUpdate({ matching_pairs_json: data.matching_pairs_json });
-      }
+    const handleDataChange = (data: Partial<Question>) => {
+        onUpdate(data);
     };
 
     return (
@@ -37,12 +34,14 @@ export function QuestionEditor({ question, onUpdate }: QuestionEditorProps) {
                         htmlFor={`question-text-${question.id}`}
                         className="block text-sm font-medium text-gray-700"
                     >
-                        Question Text
+                        {t('questionEditor.questionTextLabel')}
                     </label>
                     <input
                         id={`question-text-${question.id}`}
                         type="text"
-                        placeholder="Enter your question here"
+                        placeholder={t(
+                            'questionEditor.questionTextPlaceholder'
+                        )}
                         value={question.text}
                         onChange={e => handleTextChange(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
@@ -53,7 +52,7 @@ export function QuestionEditor({ question, onUpdate }: QuestionEditorProps) {
                         htmlFor={`question-points-${question.id}`}
                         className="block text-sm font-medium text-gray-700"
                     >
-                        Points
+                        {t('questionEditor.pointsLabel')}
                     </label>
                     <input
                         id={`question-points-${question.id}`}
@@ -70,9 +69,9 @@ export function QuestionEditor({ question, onUpdate }: QuestionEditorProps) {
             </div>
 
             {/* Question Type Specific Editor */}
-            {question.type === 'multiple_choice' && (
+            {question.type === 'multiple_choice' && question.options && (
                 <MultipleChoiceEditor
-                    data={question}
+                    data={{ options: question.options }}
                     questionId={question.id}
                     onChange={handleDataChange}
                 />
@@ -80,15 +79,18 @@ export function QuestionEditor({ question, onUpdate }: QuestionEditorProps) {
 
             {question.type === 'open_question' && (
                 <OpenQuestionEditor
-                    data={question}
+                    data={{
+                        correct_answer_text: question.correct_answer_text,
+                        key_words: question.key_words,
+                    }}
                     questionId={question.id}
                     onChange={handleDataChange}
                 />
             )}
 
-            {question.type === 'matching' && (
+            {question.type === 'matching' && question.matching_pairs_json && (
                 <MatchingEditor
-                    data={question}
+                    data={{ matching_pairs_json: question.matching_pairs_json }}
                     onChange={handleDataChange}
                 />
             )}

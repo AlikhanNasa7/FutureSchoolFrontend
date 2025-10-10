@@ -295,5 +295,46 @@
         "examShort": "Exam",
         "testShort": "Test",
         "homeworkShort": "HW"
+    },
+    "questionEditor": {
+        "questionLabel": "Question",
+        "questionTextLabel": "Question Text",
+        "questionTextPlaceholder": "Enter your question here",
+        "pointsLabel": "Points",
+        "questionTypes": {
+            "multiple_choice": "Multiple Choice",
+            "open_question": "Open Question",
+            "matching": "Matching"
+        },
+        "openQuestion": {
+            "infoMessage": "Provide the correct answer text and/or keywords for automatic grading. Keywords enable automatic scoring when students include any of them in their answer.",
+            "correctAnswerLabel": "Correct Answer (Optional)",
+            "correctAnswerPlaceholder": "Enter the correct answer for reference...",
+            "keywordsLabel": "Keywords for Automatic Grading",
+            "addKeyword": "Add Keyword",
+            "keywordPlaceholder": "Keyword {number}",
+            "noKeywordsMessage": "No keywords added. Click \"Add Keyword\" to enable automatic grading based on keywords.",
+            "gradingMethodTitle": "Grading Method:",
+            "automaticGrading": "Automatic:",
+            "automaticGradingDesc": "Student gets full points if their answer contains any of the keywords.",
+            "manualGrading": "Manual:",
+            "manualGradingDesc": "This question will require manual grading by the teacher.",
+            "referenceNote": "The correct answer text serves as a reference for grading."
+        },
+        "multipleChoice": {
+            "answerOptionsLabel": "Answer Options",
+            "optionLabel": "Option {number}",
+            "optionPlaceholder": "Option {number}",
+            "addOption": "Add Option",
+            "selectCorrectHint": "Select the correct answer by clicking the radio button"
+        },
+        "matching": {
+            "matchingPairsLabel": "Matching Pairs",
+            "leftItemPlaceholder": "Left item {number}",
+            "rightItemPlaceholder": "Right item {number}",
+            "addPair": "Add Matching Pair",
+            "instructionsTitle": "Instructions:",
+            "instructionsText": "Students will match items from the left column with items from the right column. Each pair above represents a correct match that students need to identify."
+        }
     }
 }

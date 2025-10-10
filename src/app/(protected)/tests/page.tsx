@@ -1,6 +1,6 @@
 export default function TestsPage() {
     return (
-        <div className="container mx-auto">
+        <div className="mx-auto">
             <div className="max-w-4xl mx-auto">
                 <h1 className="text-3xl font-bold text-gray-900 mb-8">Тесты</h1>
 

@@ -91,7 +91,7 @@ export default function ClassroomDetailPage() {
 
     if (loading) {
         return (
-            <div className="container mx-auto px-4 py-8">
+            <div className="mx-auto px-4 py-8">
                 <div className="flex items-center justify-center py-12">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -104,7 +104,7 @@ export default function ClassroomDetailPage() {
 
     if (!classroom) {
         return (
-            <div className="container mx-auto px-4 py-8">
+            <div className="mx-auto px-4 py-8">
                 <div className="text-center py-12">
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                         Classroom not found
@@ -121,7 +121,7 @@ export default function ClassroomDetailPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto px-4 py-8">
             {/* Back Button */}
             <button
                 onClick={() => router.push('/classrooms')}

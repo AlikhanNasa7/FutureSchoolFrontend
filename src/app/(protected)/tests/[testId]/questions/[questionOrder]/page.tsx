@@ -14,7 +14,7 @@ export default async function QuestionPage({ params }: QuestionPageProps) {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <div className="container mx-auto px-4 py-8">
+            <div className="mx-auto px-4 py-8">
                 <Suspense fallback={<QuestionSkeleton />}>
                     <Question testId={testId} questionOrder={questionOrder} />
                 </Suspense>

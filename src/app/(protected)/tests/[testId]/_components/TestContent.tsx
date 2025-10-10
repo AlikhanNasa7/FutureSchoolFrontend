@@ -26,7 +26,7 @@ interface QuestionData {
     }>;
 }
 
-type AnswerValue = number[] | string | number[][];
+type AnswerValue = number[] | string | Array<{ left: string; right: string }>;
 
 interface TestData {
     id: number;
@@ -76,6 +76,7 @@ export default function TestContent({ testId }: TestContentProps) {
     const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
     const [isTestStarted, setIsTestStarted] = useState(false);
     const [activeAttemptId, setActiveAttemptId] = useState<number | null>(null);
+    const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
     const router = useRouter();
     useEffect(() => {
@@ -98,6 +99,41 @@ export default function TestContent({ testId }: TestContentProps) {
         fetchTestData();
     }, [testId]);
 
+    useEffect(() => {
+        if (!testData || !isTestStarted) return;
+
+        const calculateTimeRemaining = () => {
+            const now = new Date().getTime();
+            const endTime = new Date(testData.end_date).getTime();
+            const remaining = Math.max(0, endTime - now);
+            setTimeRemaining(remaining);
+
+            if (remaining === 0 && activeAttemptId) {
+                handleSubmitTest();
+            }
+        };
+
+        calculateTimeRemaining();
+        const interval = setInterval(calculateTimeRemaining, 1000);
+
+        return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [testData, isTestStarted, activeAttemptId]);
+
+    const formatTimeRemaining = (ms: number | null): string => {
+        if (ms === null) return '--:--';
+
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
     const handleStartTest = async () => {
         try {
             console.log('Starting test:', testId);
@@ -117,7 +153,10 @@ export default function TestContent({ testId }: TestContentProps) {
                         question_id: number;
                         selected_option_ids?: number[];
                         text_answer?: string;
-                        matching_answers_json?: number[][];
+                        matching_answers_json?: Array<{
+                            left: string;
+                            right: string;
+                        }>;
                     }) => {
                         if (answer.question_id) {
                             if (answer.selected_option_ids) {
@@ -146,7 +185,9 @@ export default function TestContent({ testId }: TestContentProps) {
     const handleViewResults = () => {
         console.log('Viewing results for test:', testId);
         if (testData?.last_submitted_attempt_id) {
-            router.push(`/tests/${testId}/student-results?attempt=${testData.last_submitted_attempt_id}`);
+            router.push(
+                `/tests/${testId}/student-results?attempt=${testData.last_submitted_attempt_id}`
+            );
         }
     };
 
@@ -173,7 +214,7 @@ export default function TestContent({ testId }: TestContentProps) {
                 question_id: string;
                 selected_option_ids?: number[];
                 text_answer?: string;
-                matching_answers_json?: number[][];
+                matching_answers_json?: Array<{ left: string; right: string }>;
             } = {
                 question_id: currentQuestion.id,
             };
@@ -186,7 +227,10 @@ export default function TestContent({ testId }: TestContentProps) {
             } else if (currentQuestion.type === 'open_question') {
                 submitData.text_answer = currentAnswer as string;
             } else if (currentQuestion.type === 'matching') {
-                submitData.matching_answers_json = currentAnswer as number[][];
+                submitData.matching_answers_json = currentAnswer as Array<{
+                    left: string;
+                    right: string;
+                }>;
             }
 
             await axiosInstance.post(
@@ -230,7 +274,9 @@ export default function TestContent({ testId }: TestContentProps) {
             console.log('Test submitted successfully:', response.data);
 
             // Navigate to results with the attempt ID
-            router.push(`/tests/${testId}/student-results?attempt=${activeAttemptId}`);
+            router.push(
+                `/tests/${testId}/student-results?attempt=${activeAttemptId}`
+            );
         } catch (error) {
             console.error('Failed to submit test:', error);
         }
@@ -286,47 +332,107 @@ export default function TestContent({ testId }: TestContentProps) {
             currentQuestionIndex === testData.questions.length - 1;
         const isFirstQuestion = currentQuestionIndex === 0;
 
+        const isTimeRunningOut =
+            timeRemaining !== null && timeRemaining < 300000;
+
         return (
-            <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-2xl font-bold text-gray-900">
-                                Вопрос {currentQuestionIndex + 1} из{' '}
-                                {testData.questions.length}
-                            </h1>
-                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                                {currentQuestion.type === 'multiple_choice'
-                                    ? 'Выбор ответа'
-                                    : currentQuestion.type === 'open_question'
-                                      ? 'Открытый вопрос'
-                                      : 'Сопоставление'}
-                            </span>
+            <div className="max-w-6xl mx-auto">
+                <div className="flex gap-6">
+                    <div
+                        className={`hidden lg:block sticky top-6 self-start transition-colors ${
+                            isTimeRunningOut
+                                ? 'bg-red-50 border-red-500'
+                                : 'bg-blue-50 border-blue-500'
+                        } rounded-lg border-2 p-6 shadow-md`}
+                        style={{ width: '200px' }}
+                    >
+                        <div className="text-center">
+                            <Clock
+                                className={`w-8 h-8 mx-auto mb-3 ${
+                                    isTimeRunningOut
+                                        ? 'text-red-600'
+                                        : 'text-blue-600'
+                                }`}
+                            />
+                            <p className="text-sm text-gray-600 mb-2">
+                                Осталось времени
+                            </p>
+                            <div
+                                className={`text-2xl font-mono font-bold ${
+                                    isTimeRunningOut
+                                        ? 'text-red-700'
+                                        : 'text-blue-700'
+                                }`}
+                            >
+                                {formatTimeRemaining(timeRemaining)}
+                            </div>
+                            {isTimeRunningOut && (
+                                <p className="text-xs text-red-600 mt-2 font-medium">
+                                    Торопитесь!
+                                </p>
+                            )}
                         </div>
                     </div>
-                </div>
 
-                <div className="bg-white rounded-lg shadow-md p-8">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-8">
-                        {currentQuestion.text}
-                    </h2>
+                    <div className="flex-1">
+                        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <h1 className="text-2xl font-bold text-gray-900">
+                                        Вопрос {currentQuestionIndex + 1} из{' '}
+                                        {testData.questions.length}
+                                    </h1>
+                                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        {currentQuestion.type ===
+                                        'multiple_choice'
+                                            ? 'Выбор ответа'
+                                            : currentQuestion.type ===
+                                                'open_question'
+                                              ? 'Открытый вопрос'
+                                              : 'Сопоставление'}
+                                    </span>
+                                </div>
 
-                    {/* Question Content */}
-                    <div className="mb-8">
-                        <Question
-                            questionData={currentQuestion}
-                            selectedAnswers={
-                                answers[currentQuestionIndex] || []
-                            }
-                            onAnswerChange={answer =>
-                                handleAnswerChange(currentQuestionIndex, answer)
-                            }
-                            onNext={handleNextQuestion}
-                            onPrevious={handlePreviousQuestion}
-                            onSubmit={handleSubmitTest}
-                            isFirstQuestion={isFirstQuestion}
-                            isLastQuestion={isLastQuestion}
-                        />
+                                <div
+                                    className={`lg:hidden flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 ${
+                                        isTimeRunningOut
+                                            ? 'bg-red-50 border-red-500 text-red-700'
+                                            : 'bg-blue-50 border-blue-500 text-blue-700'
+                                    }`}
+                                >
+                                    <Clock className="w-4 h-4" />
+                                    <span className="text-sm font-mono font-semibold">
+                                        {formatTimeRemaining(timeRemaining)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-md p-8">
+                            <h2 className="text-xl font-semibold text-gray-900 mb-8">
+                                {currentQuestion.text}
+                            </h2>
+
+                            <div className="mb-8">
+                                <Question
+                                    questionData={currentQuestion}
+                                    selectedAnswers={
+                                        answers[currentQuestionIndex] || []
+                                    }
+                                    onAnswerChange={answer =>
+                                        handleAnswerChange(
+                                            currentQuestionIndex,
+                                            answer
+                                        )
+                                    }
+                                    onNext={handleNextQuestion}
+                                    onPrevious={handlePreviousQuestion}
+                                    onSubmit={handleSubmitTest}
+                                    isFirstQuestion={isFirstQuestion}
+                                    isLastQuestion={isLastQuestion}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

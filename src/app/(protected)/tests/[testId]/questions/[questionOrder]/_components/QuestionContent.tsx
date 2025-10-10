@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface QuestionData {
     id: string;
@@ -20,7 +20,7 @@ interface QuestionData {
     }>;
 }
 
-type AnswerValue = number[] | string | number[][];
+type AnswerValue = number[] | string | Array<{ left: string; right: string }>;
 
 interface QuestionContentProps {
     questionData: QuestionData;
@@ -35,9 +35,50 @@ export default function QuestionContent({
 }: QuestionContentProps) {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
+    const shuffleArray = <T,>(array: T[]): T[] => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
+
+    useEffect(() => {
+        if (
+            questionData.type === 'matching' &&
+            questionData.matching_pairs_json &&
+            questionData.matching_pairs_json.length > 0
+        ) {
+            const hasAnswer =
+                selectedAnswers &&
+                Array.isArray(selectedAnswers) &&
+                selectedAnswers.length > 0;
+
+            if (!hasAnswer) {
+                const matchingPairs = questionData.matching_pairs_json;
+
+                if (matchingPairs.length < 2) {
+                    onAnswerChange([matchingPairs[0]]);
+                    return;
+                }
+
+                const originalIndices = matchingPairs.map((_, index) => index);
+                const shuffledIndices = shuffleArray([...originalIndices]);
+
+                const initialAnswer = matchingPairs.map((pair, index) => ({
+                    left: pair.left,
+                    right: matchingPairs[shuffledIndices[index]].right,
+                }));
+
+                onAnswerChange(initialAnswer);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [questionData.id]);
+
     const handleMultipleChoiceSelect = (optionId: number) => {
         if (questionData.options) {
-            // For multiple choice, only allow one selection
             onAnswerChange([optionId]);
         }
     };
@@ -61,32 +102,53 @@ export default function QuestionContent({
         e.preventDefault();
         const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
 
-        if (dragIndex !== dropIndex) {
-            const matchingPairs = questionData.matching_pairs_json || [];
-
-            // Get current order of right items (indices)
-            const defaultOrder = matchingPairs.map((_, index) => index);
-            const currentOrder =
-                selectedAnswers &&
-                Array.isArray(selectedAnswers) &&
-                selectedAnswers.length > 0 &&
-                Array.isArray(selectedAnswers[0])
-                    ? (selectedAnswers as number[][])[0] || defaultOrder
-                    : defaultOrder;
-
-            const newOrder = [...currentOrder];
-
-            // Swap the items at dragIndex and dropIndex
-            if (dragIndex < newOrder.length && dropIndex < newOrder.length) {
-                [newOrder[dragIndex], newOrder[dropIndex]] = [
-                    newOrder[dropIndex],
-                    newOrder[dragIndex],
-                ];
-
-                // Store the new order as an array of indices (what backend expects)
-                onAnswerChange([newOrder] as AnswerValue);
-            }
+        if (
+            isNaN(dragIndex) ||
+            dragIndex === dropIndex ||
+            !selectedAnswers ||
+            !Array.isArray(selectedAnswers)
+        ) {
+            setDraggedIndex(null);
+            return;
         }
+
+        const matchingPairs = questionData.matching_pairs_json || [];
+        let currentAnswer: Array<{ left: string; right: string }>;
+
+        if (
+            selectedAnswers.length > 0 &&
+            typeof selectedAnswers[0] === 'object' &&
+            'left' in selectedAnswers[0]
+        ) {
+            currentAnswer = selectedAnswers as Array<{
+                left: string;
+                right: string;
+            }>;
+        } else {
+            const indices = selectedAnswers as number[];
+            currentAnswer = matchingPairs.map((pair, index) => ({
+                left: pair.left,
+                right: matchingPairs[indices[index] || index].right,
+            }));
+        }
+
+        if (
+            dragIndex < 0 ||
+            dropIndex < 0 ||
+            dragIndex >= currentAnswer.length ||
+            dropIndex >= currentAnswer.length
+        ) {
+            setDraggedIndex(null);
+            return;
+        }
+
+        const newAnswer = [...currentAnswer];
+        [newAnswer[dragIndex].right, newAnswer[dropIndex].right] = [
+            newAnswer[dropIndex].right,
+            newAnswer[dragIndex].right,
+        ];
+
+        onAnswerChange(newAnswer);
         setDraggedIndex(null);
     };
 
@@ -149,24 +211,23 @@ export default function QuestionContent({
     }
 
     if (questionData.type === 'matching') {
-        const leftItems =
-            questionData.matching_pairs_json?.map(pair => pair.left) || [];
-        const rightItems =
-            questionData.matching_pairs_json?.map(pair => pair.right) || [];
-
-        // Get current order or use default
-        const defaultOrder = rightItems.map((_, index) => index);
-        const currentOrder =
+        const matchingPairs = questionData.matching_pairs_json || [];
+        const currentAnswer =
             selectedAnswers &&
             Array.isArray(selectedAnswers) &&
             selectedAnswers.length > 0 &&
-            Array.isArray(selectedAnswers[0])
-                ? (selectedAnswers as number[][])[0] || defaultOrder
-                : defaultOrder;
+            typeof selectedAnswers[0] === 'object' &&
+            'left' in selectedAnswers[0]
+                ? (selectedAnswers as Array<{ left: string; right: string }>)
+                : matchingPairs;
 
-        console.log('Debug - rightItems:', rightItems);
-        console.log('Debug - currentOrder:', currentOrder);
-        console.log('Debug - selectedAnswers:', selectedAnswers);
+        if (currentAnswer.length === 0) {
+            return (
+                <div className="flex items-center justify-center py-8">
+                    <div className="text-gray-500">Loading...</div>
+                </div>
+            );
+        }
 
         return (
             <div className="space-y-6">
@@ -178,124 +239,72 @@ export default function QuestionContent({
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
-                    {/* Left column - Fixed items */}
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
                             Элементы
                         </h3>
                         <div className="space-y-2">
-                            {leftItems.map((item, index) => (
+                            {currentAnswer.map((pair, index) => (
                                 <div
                                     key={index}
                                     className="p-3 bg-gray-50 rounded border"
                                 >
-                                    <span className="font-medium">{item}</span>
+                                    <span className="font-medium">
+                                        {pair.left}
+                                    </span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Right column - Draggable items */}
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
                             Ответы
                         </h3>
                         <div className="space-y-2">
-                            {currentOrder && currentOrder.length > 0
-                                ? currentOrder.map(
-                                      (originalIndex, displayIndex) => {
-                                          const item =
-                                              rightItems[
-                                                  originalIndex as number
-                                              ];
-                                          const isDragging =
-                                              draggedIndex === displayIndex;
+                            {currentAnswer.map((pair, index) => {
+                                const isDragging = draggedIndex === index;
 
-                                          return (
-                                              <div
-                                                  key={`${originalIndex}-${displayIndex}`}
-                                                  draggable
-                                                  onDragStart={e =>
-                                                      handleDragStart(
-                                                          e,
-                                                          displayIndex
-                                                      )
-                                                  }
-                                                  onDragOver={handleDragOver}
-                                                  onDrop={e =>
-                                                      handleDrop(
-                                                          e,
-                                                          displayIndex
-                                                      )
-                                                  }
-                                                  onDragEnd={handleDragEnd}
-                                                  className={`p-3 rounded border cursor-move transition-colors ${
-                                                      isDragging
-                                                          ? 'bg-yellow-100 border-yellow-400'
-                                                          : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                                                  }`}
-                                              >
-                                                  <div className="flex items-center justify-between">
-                                                      <span>{item}</span>
-                                                      <span className="text-sm text-gray-500">
-                                                          #{displayIndex + 1}
-                                                      </span>
-                                                  </div>
-                                              </div>
-                                          );
-                                      }
-                                  )
-                                : // Fallback: show right items in original order
-                                  rightItems.map((item, index) => (
-                                      <div
-                                          key={`fallback-${item}`}
-                                          draggable
-                                          onDragStart={e =>
-                                              handleDragStart(e, index)
-                                          }
-                                          onDragOver={handleDragOver}
-                                          onDrop={e => handleDrop(e, index)}
-                                          onDragEnd={handleDragEnd}
-                                          className="p-3 rounded border cursor-move transition-colors bg-blue-50 border-blue-200 hover:bg-blue-100"
-                                      >
-                                          <div className="flex items-center justify-between">
-                                              <span>{item}</span>
-                                              <span className="text-sm text-gray-500">
-                                                  #{index + 1}
-                                              </span>
-                                          </div>
-                                      </div>
-                                  ))}
+                                return (
+                                    <div
+                                        key={`${pair.right}-${index}`}
+                                        draggable
+                                        onDragStart={e =>
+                                            handleDragStart(e, index)
+                                        }
+                                        onDragOver={handleDragOver}
+                                        onDrop={e => handleDrop(e, index)}
+                                        onDragEnd={handleDragEnd}
+                                        className={`p-3 rounded border cursor-move transition-colors ${
+                                            isDragging
+                                                ? 'bg-yellow-100 border-yellow-400'
+                                                : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span>{pair.right}</span>
+                                            <span className="text-sm text-gray-500">
+                                                #{index + 1}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
 
-                {/* Show current order */}
                 <div className="mt-6">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">
                         Текущий порядок:
                     </h4>
                     <div className="text-sm text-gray-600">
-                        {currentOrder && currentOrder.length > 0
-                            ? currentOrder.map(
-                                  (originalIndex, displayIndex) => (
-                                      <span
-                                          key={`display-${originalIndex}-${displayIndex}`}
-                                          className="mr-2"
-                                      >
-                                          {displayIndex + 1}.{' '}
-                                          {rightItems[originalIndex as number]}
-                                          {displayIndex <
-                                              currentOrder.length - 1 && ', '}
-                                      </span>
-                                  )
-                              )
-                            : rightItems.map((item, index) => (
-                                  <span key={index} className="mr-2">
-                                      {index + 1}. {item}
-                                      {index < rightItems.length - 1 && ', '}
-                                  </span>
-                              ))}
+                        {currentAnswer.map((pair, index) => (
+                            <span key={`display-${index}`} className="mr-2">
+                                {index + 1}. {pair.right}
+                                {index < currentAnswer.length - 1 && ', '}
+                            </span>
+                        ))}
                     </div>
                 </div>
             </div>

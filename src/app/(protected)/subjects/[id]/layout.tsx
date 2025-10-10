@@ -100,7 +100,7 @@ export default function SubjectDetailPage({
     // Show loading state
     if (loading) {
         return (
-            <div className="container mx-auto px-4 py-8">
+            <div className="mx-auto px-4 py-8">
                 <div className="mb-8 bg-white p-8">
                     <div className="animate-pulse">
                         <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
@@ -119,7 +119,7 @@ export default function SubjectDetailPage({
     // Show error state
     if (error || !subject) {
         return (
-            <div className="container mx-auto px-4 py-8">
+            <div className="mx-auto px-4 py-8">
                 <div className="text-center py-12">
                     <h1 className="text-2xl font-bold text-gray-900 mb-4">
                         Предмет не найден
@@ -133,9 +133,9 @@ export default function SubjectDetailPage({
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto sm:px-4 sm:py-8 p-0">
             <div className="mb-8 bg-white p-8">
-                <div className="flex gap-4 font-bold mb-2">
+                <div className="flex gap-4 font-bold mb-2 flex-wrap">
                     <h1 className="text-2xl">{subject?.course_name}</h1>
                     <div className="bg-[rgba(15,174,246,1)] rounded-md flex justify-center items-center px-1 self-center">
                         <p className="text-white text-sm">
@@ -144,7 +144,7 @@ export default function SubjectDetailPage({
                     </div>
                 </div>
                 <div className="flex justify-between md:flex-row flex-col">
-                    <ul className="flex gap-2 font-bold">
+                    <ul className="flex gap-2 font-bold flex-wrap">
                         {tabs.map(tab => {
                             const active =
                                 pathName.split('/')[

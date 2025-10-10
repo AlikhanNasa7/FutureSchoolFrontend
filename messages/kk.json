@@ -295,5 +295,46 @@
         "examShort": "Емт",
         "testShort": "Тест",
         "homeworkShort": "ҮТ"
+    },
+    "questionEditor": {
+        "questionLabel": "Сұрақ",
+        "questionTextLabel": "Сұрақ мәтіні",
+        "questionTextPlaceholder": "Сұрақ мәтінін енгізіңіз",
+        "pointsLabel": "Ұпайлар",
+        "questionTypes": {
+            "multiple_choice": "Бірнеше нұсқа",
+            "open_question": "Ашық сұрақ",
+            "matching": "Сәйкестендіру"
+        },
+        "openQuestion": {
+            "infoMessage": "Автоматты бағалау үшін дұрыс жауап мәтінін және/немесе кілт сөздерді көрсетіңіз. Кілт сөздер студент жауабында олардың кез келгені болса, автоматты түрде ұпай беруге мүмкіндік береді.",
+            "correctAnswerLabel": "Дұрыс жауап (міндетті емес)",
+            "correctAnswerPlaceholder": "Анықтама үшін дұрыс жауапты енгізіңіз...",
+            "keywordsLabel": "Автоматты бағалауға арналған кілт сөздер",
+            "addKeyword": "Кілт сөз қосу",
+            "keywordPlaceholder": "Кілт сөз {number}",
+            "noKeywordsMessage": "Кілт сөздер қосылмаған. Кілт сөздерге негізделген автоматты бағалауды қосу үшін \"Кілт сөз қосу\" батырмасын басыңыз.",
+            "gradingMethodTitle": "Бағалау әдісі:",
+            "automaticGrading": "Автоматты:",
+            "automaticGradingDesc": "Егер студент жауабында кілт сөздердің кез келгені болса, толық ұпай алады.",
+            "manualGrading": "Қолмен:",
+            "manualGradingDesc": "Бұл сұрақ оқытушы тарапынан қолмен бағалауды қажет етеді.",
+            "referenceNote": "Дұрыс жауап мәтіні бағалау үшін анықтама ретінде қызмет етеді."
+        },
+        "multipleChoice": {
+            "answerOptionsLabel": "Жауап нұсқалары",
+            "optionLabel": "Нұсқа {number}",
+            "optionPlaceholder": "Нұсқа {number}",
+            "addOption": "Нұсқа қосу",
+            "selectCorrectHint": "Дұрыс жауапты радиобатырманы басу арқылы таңдаңыз"
+        },
+        "matching": {
+            "matchingPairsLabel": "Сәйкестік жұптары",
+            "leftItemPlaceholder": "Сол жақ элемент {number}",
+            "rightItemPlaceholder": "Оң жақ элемент {number}",
+            "addPair": "Жұп қосу",
+            "instructionsTitle": "Нұсқаулар:",
+            "instructionsText": "Студенттер сол жақ бағаннан элементтерді оң жақ бағандағы элементтермен сәйкестендіруі керек. Жоғарыдағы әр жұп студенттер анықтауы керек дұрыс сәйкестікті білдіреді."
+        }
     }
 }

@@ -295,5 +295,46 @@
         "examShort": "Экз",
         "testShort": "Тест",
         "homeworkShort": "ДЗ"
+    },
+    "questionEditor": {
+        "questionLabel": "Вопрос",
+        "questionTextLabel": "Текст вопроса",
+        "questionTextPlaceholder": "Введите текст вопроса",
+        "pointsLabel": "Баллы",
+        "questionTypes": {
+            "multiple_choice": "Один из вариантов",
+            "open_question": "Открытый вопрос",
+            "matching": "Сопоставление"
+        },
+        "openQuestion": {
+            "infoMessage": "Укажите правильный ответ и/или ключевые слова для автоматической оценки. Ключевые слова позволяют автоматически выставлять баллы, если ответ студента содержит любое из них.",
+            "correctAnswerLabel": "Правильный ответ (необязательно)",
+            "correctAnswerPlaceholder": "Введите правильный ответ для справки...",
+            "keywordsLabel": "Ключевые слова для автоматической оценки",
+            "addKeyword": "Добавить ключевое слово",
+            "keywordPlaceholder": "Ключевое слово {number}",
+            "noKeywordsMessage": "Ключевые слова не добавлены. Нажмите \"Добавить ключевое слово\", чтобы включить автоматическую оценку на основе ключевых слов.",
+            "gradingMethodTitle": "Метод оценки:",
+            "automaticGrading": "Автоматическая:",
+            "automaticGradingDesc": "Студент получает полный балл, если его ответ содержит любое из ключевых слов.",
+            "manualGrading": "Ручная:",
+            "manualGradingDesc": "Этот вопрос потребует ручной оценки преподавателем.",
+            "referenceNote": "Правильный ответ служит справочным материалом для оценки."
+        },
+        "multipleChoice": {
+            "answerOptionsLabel": "Варианты ответов",
+            "optionLabel": "Вариант {number}",
+            "optionPlaceholder": "Вариант {number}",
+            "addOption": "Добавить вариант",
+            "selectCorrectHint": "Выберите правильный ответ, нажав на радиокнопку"
+        },
+        "matching": {
+            "matchingPairsLabel": "Пары для сопоставления",
+            "leftItemPlaceholder": "Левый элемент {number}",
+            "rightItemPlaceholder": "Правый элемент {number}",
+            "addPair": "Добавить пару",
+            "instructionsTitle": "Инструкции:",
+            "instructionsText": "Студенты должны сопоставить элементы из левой колонки с элементами из правой колонки. Каждая пара выше представляет правильное соответствие, которое студенты должны найти."
+        }
     }
 }

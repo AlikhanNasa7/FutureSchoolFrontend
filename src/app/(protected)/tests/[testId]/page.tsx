@@ -11,7 +11,7 @@ export default async function TestPage({ params }: TestPageProps) {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <div className="container mx-auto">
+            <div className="mx-auto">
                 <Suspense fallback={<TestSkeleton />}>
                     <TestContent testId={testId} />
                 </Suspense>

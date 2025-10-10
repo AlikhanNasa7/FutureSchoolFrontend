@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, Trash2, ArrowRight } from 'lucide-react';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface MatchingPair {
     left: string;
@@ -16,6 +17,7 @@ interface MatchingEditorProps {
 }
 
 export function MatchingEditor({ data, onChange }: MatchingEditorProps) {
+    const { t } = useLocale();
     const updatePair = (
         index: number,
         side: 'left' | 'right',
@@ -46,7 +48,7 @@ export function MatchingEditor({ data, onChange }: MatchingEditorProps) {
             {/* Matching Pairs Section */}
             <div className="space-y-3">
                 <label className="block text-sm font-medium text-gray-700">
-                    Matching Pairs
+                    {t('questionEditor.matching.matchingPairsLabel')}
                 </label>
                 <div className="space-y-3">
                     {data.matching_pairs_json.map((pair, index) => (
@@ -56,7 +58,10 @@ export function MatchingEditor({ data, onChange }: MatchingEditorProps) {
                         >
                             <input
                                 type="text"
-                                placeholder={`Left item ${index + 1}`}
+                                placeholder={t(
+                                    'questionEditor.matching.leftItemPlaceholder',
+                                    { number: index + 1 }
+                                )}
                                 value={pair.left}
                                 onChange={e =>
                                     updatePair(index, 'left', e.target.value)
@@ -68,7 +73,10 @@ export function MatchingEditor({ data, onChange }: MatchingEditorProps) {
 
                             <input
                                 type="text"
-                                placeholder={`Right item ${index + 1}`}
+                                placeholder={t(
+                                    'questionEditor.matching.rightItemPlaceholder',
+                                    { number: index + 1 }
+                                )}
                                 value={pair.right}
                                 onChange={e =>
                                     updatePair(index, 'right', e.target.value)
@@ -95,16 +103,16 @@ export function MatchingEditor({ data, onChange }: MatchingEditorProps) {
                     className="flex items-center gap-2 px-3 py-2 border border-[#694CFD]/30 text-[#694CFD] rounded-md hover:bg-[#694CFD]/10 text-sm"
                 >
                     <Plus className="w-4 h-4" />
-                    Add Matching Pair
+                    {t('questionEditor.matching.addPair')}
                 </button>
             </div>
 
             {/* Instructions */}
             <div className="text-sm text-slate-600 p-3 bg-[#694CFD]/5 rounded-md border border-[#694CFD]/10">
-                <strong className="text-[#694CFD]">Instructions:</strong>{' '}
-                Students will match items from the left column with items from
-                the right column. Each pair above represents a correct match
-                that students need to identify.
+                <strong className="text-[#694CFD]">
+                    {t('questionEditor.matching.instructionsTitle')}
+                </strong>{' '}
+                {t('questionEditor.matching.instructionsText')}
             </div>
         </div>
     );

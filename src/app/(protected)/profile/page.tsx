@@ -95,7 +95,7 @@ export default function ProfilePage() {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto px-4 pb-8">
+            <div className="mx-auto px-4 pb-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="p-4 bg-blue-50 rounded-lg">
                         <p className="text-blue-600">{t('profile.loading')}</p>
@@ -107,7 +107,7 @@ export default function ProfilePage() {
 
     if (error) {
         return (
-            <div className="container mx-auto px-4 pb-8">
+            <div className="mx-auto px-4 pb-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="p-4 bg-red-50 rounded-lg">
                         <p className="text-red-600 mb-2">
@@ -127,7 +127,7 @@ export default function ProfilePage() {
 
     if (!isAuthenticated || !user || !profileData) {
         return (
-            <div className="container mx-auto px-4 pb-8">
+            <div className="mx-auto px-4 pb-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="p-4 bg-gray-50 rounded-lg">
                         <p className="text-gray-600">
@@ -146,7 +146,7 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="container mx-auto px-4 pb-8">
+        <div className="mx-auto px-4 pb-8">
             <div className="max-w-6xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface MultipleChoiceOption {
     text: string;
@@ -22,6 +23,7 @@ export function MultipleChoiceEditor({
     onChange,
     questionId,
 }: MultipleChoiceEditorProps) {
+    const { t } = useLocale();
     const updateOption = (index: number, value: string) => {
         const newOptions = [...data.options];
         newOptions[index] = { ...newOptions[index], text: value };
@@ -64,7 +66,7 @@ export function MultipleChoiceEditor({
     return (
         <div className="space-y-4">
             <p className="block text-sm font-medium text-gray-700">
-                Answer Options
+                {t('questionEditor.multipleChoice.answerOptionsLabel')}
             </p>
 
             <div className="space-y-3">
@@ -83,11 +85,17 @@ export function MultipleChoiceEditor({
                         />
                         <div className="flex-1 flex items-center gap-2">
                             <label className="sr-only">
-                                Option {index + 1}
+                                {t(
+                                    'questionEditor.multipleChoice.optionLabel',
+                                    { number: index + 1 }
+                                )}
                             </label>
                             <input
                                 type="text"
-                                placeholder={`Option ${index + 1}`}
+                                placeholder={t(
+                                    'questionEditor.multipleChoice.optionPlaceholder',
+                                    { number: index + 1 }
+                                )}
                                 value={option.text}
                                 onChange={e =>
                                     updateOption(index, e.target.value)
@@ -115,10 +123,10 @@ export function MultipleChoiceEditor({
                     className="flex items-center gap-2 px-3 py-2 border border-[#694CFD]/30 text-[#694CFD] rounded-md hover:bg-[#694CFD]/10 text-sm"
                 >
                     <Plus className="w-4 h-4" />
-                    Add Option
+                    {t('questionEditor.multipleChoice.addOption')}
                 </button>
                 <span className="text-sm text-slate-600">
-                    Select the correct answer by clicking the radio button
+                    {t('questionEditor.multipleChoice.selectCorrectHint')}
                 </span>
             </div>
         </div>

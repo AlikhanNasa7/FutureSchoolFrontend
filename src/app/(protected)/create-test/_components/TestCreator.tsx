@@ -11,8 +11,14 @@ export interface Question {
     text: string;
     position: number;
     points: number;
-    data: any;
     test: string;
+    // Multiple choice properties
+    options?: { text: string; is_correct: boolean; position: number }[];
+    // Open question properties
+    correct_answer_text?: string;
+    key_words?: string;
+    // Matching question properties
+    matching_pairs_json?: { left: string; right: string }[];
 }
 
 export interface Test {
@@ -100,6 +106,7 @@ export default function TestCreator() {
             text: '',
             position: test.questions.length + 1,
             points: 1,
+            test: '',
             ...getDefaultQuestionData(type),
         };
 
@@ -123,6 +130,7 @@ export default function TestCreator() {
             case 'open_question':
                 return {
                     correct_answer_text: '',
+                    key_words: '',
                 };
             case 'matching':
                 return {
@@ -199,7 +207,7 @@ export default function TestCreator() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="mx-auto p-6">
             <div className="border border-[#694CFD]/20 shadow-lg shadow-[#694CFD]/5 bg-white rounded-lg">
                 <div className="bg-gradient-to-r from-[#694CFD]/5 to-[#694CFD]/10 border-b border-[#694CFD]/20 p-6 rounded-t-lg">
                     <h2 className="flex items-center gap-2 text-[#694CFD] font-semibold text-xl">
@@ -370,7 +378,7 @@ export default function TestCreator() {
                     </div>
 
                     <div className="space-y-4">
-                        {test.questions.map((question, index) => (
+                        {test.questions.map(question => (
                             <div
                                 key={question.id}
                                 className="border-l-4 border-l-[#694CFD] shadow-md hover:shadow-lg transition-shadow bg-white rounded-lg border border-gray-200"
@@ -379,12 +387,14 @@ export default function TestCreator() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm text-[#694CFD] font-semibold">
-                                                Question {question.position}
+                                                {t(
+                                                    'questionEditor.questionLabel'
+                                                )}{' '}
+                                                {question.position}
                                             </span>
-                                            <span className="px-2 py-1 bg-[#694CFD]/10 text-[#694CFD] rounded text-xs capitalize border border-[#694CFD]/20 font-medium">
-                                                {question.type.replace(
-                                                    '-',
-                                                    ' '
+                                            <span className="px-2 py-1 bg-[#694CFD]/10 text-[#694CFD] rounded text-xs border border-[#694CFD]/20 font-medium">
+                                                {t(
+                                                    `questionEditor.questionTypes.${question.type}`
                                                 )}
                                             </span>
                                         </div>

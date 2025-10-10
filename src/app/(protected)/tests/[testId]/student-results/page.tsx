@@ -1,9 +1,9 @@
 'use client';
 
-import { useParams, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import axiosInstance from '@/lib/axios';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, ArrowRight, Check, X } from 'lucide-react';
 
 interface QuestionOption {
     id: number;
@@ -37,7 +37,7 @@ interface AnswerResult {
     is_correct: boolean;
     selected_options?: QuestionOption[];
     text_answer: string | null;
-    matching_answers_json: number[][] | null;
+    matching_answers_json: Array<{ left: string; right: string }> | null;
     auto_feedback: string | null;
     teacher_feedback: string | null;
     student_id: number;
@@ -74,7 +74,6 @@ interface AttemptResult {
 }
 
 export default function StudentResultsPage() {
-    const params = useParams();
     const searchParams = useSearchParams();
     const attemptId = searchParams.get('attempt');
 
@@ -138,6 +137,17 @@ export default function StudentResultsPage() {
         } else {
             return 'bg-red-100 border-red-600 text-red-800';
         }
+    };
+
+    const isMatchCorrect = (
+        studentPair: { left: string; right: string },
+        correctPairs: Array<{ left: string; right: string }>
+    ): boolean => {
+        return correctPairs.some(
+            correctPair =>
+                correctPair.left === studentPair.left &&
+                correctPair.right === studentPair.right
+        );
     };
 
     if (loading) {
@@ -310,27 +320,115 @@ export default function StudentResultsPage() {
                                     </div>
                                 )}
 
-                                {/* Matching Question Answer */}
                                 {answer.question.type === 'matching' &&
-                                    answer.question.matching_pairs_json && (
-                                        <div className="space-y-3">
-                                            {answer.question.matching_pairs_json.map(
-                                                (pair, pairIndex) => {
-                                                    // For matching questions, we'll show the pairs
-                                                    // This is a simplified version - adjust based on actual backend structure
-                                                    return (
-                                                        <div
-                                                            key={pairIndex}
-                                                            className="flex items-center gap-4 p-4 border-2 rounded-lg border-gray-300"
-                                                        >
-                                                            <span className="text-lg font-semibold text-gray-900">
-                                                                {JSON.stringify(
-                                                                    pair
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                }
+                                    answer.question.matching_pairs_json &&
+                                    answer.matching_answers_json && (
+                                        <div className="space-y-4">
+                                            <div className="mb-4">
+                                                <p className="text-sm font-medium text-gray-600 mb-3">
+                                                    Ваши ответы:
+                                                </p>
+                                                <div className="space-y-2">
+                                                    {answer.matching_answers_json.map(
+                                                        (
+                                                            studentPair,
+                                                            pairIndex
+                                                        ) => {
+                                                            const isCorrect =
+                                                                isMatchCorrect(
+                                                                    studentPair,
+                                                                    answer
+                                                                        .question
+                                                                        .matching_pairs_json!
+                                                                );
+
+                                                            return (
+                                                                <div
+                                                                    key={
+                                                                        pairIndex
+                                                                    }
+                                                                    className={`flex items-center gap-3 p-3 rounded-lg border-2 ${
+                                                                        isCorrect
+                                                                            ? 'bg-green-50 border-green-500'
+                                                                            : 'bg-red-50 border-red-500'
+                                                                    }`}
+                                                                >
+                                                                    <div
+                                                                        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                                                            isCorrect
+                                                                                ? 'bg-green-500'
+                                                                                : 'bg-red-500'
+                                                                        }`}
+                                                                    >
+                                                                        {isCorrect ? (
+                                                                            <Check className="w-4 h-4 text-white" />
+                                                                        ) : (
+                                                                            <X className="w-4 h-4 text-white" />
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="font-medium text-gray-900">
+                                                                        {
+                                                                            studentPair.left
+                                                                        }
+                                                                    </span>
+                                                                    <ArrowRight
+                                                                        className={`w-4 h-4 flex-shrink-0 ${
+                                                                            isCorrect
+                                                                                ? 'text-green-600'
+                                                                                : 'text-red-600'
+                                                                        }`}
+                                                                    />
+                                                                    <span
+                                                                        className={`font-medium ${
+                                                                            isCorrect
+                                                                                ? 'text-green-800'
+                                                                                : 'text-red-800'
+                                                                        }`}
+                                                                    >
+                                                                        {
+                                                                            studentPair.right
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {!answer.is_correct && (
+                                                <div className="mt-4">
+                                                    <p className="text-sm font-medium text-gray-600 mb-3">
+                                                        Правильные ответы:
+                                                    </p>
+                                                    <div className="space-y-2">
+                                                        {answer.question.matching_pairs_json.map(
+                                                            (
+                                                                correctPair,
+                                                                pairIndex
+                                                            ) => (
+                                                                <div
+                                                                    key={
+                                                                        pairIndex
+                                                                    }
+                                                                    className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border-2 border-green-300"
+                                                                >
+                                                                    <span className="font-medium text-gray-900">
+                                                                        {
+                                                                            correctPair.left
+                                                                        }
+                                                                    </span>
+                                                                    <ArrowRight className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                                                    <span className="font-medium text-green-800">
+                                                                        {
+                                                                            correctPair.right
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     )}
