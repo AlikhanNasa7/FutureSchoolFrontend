@@ -3,13 +3,24 @@
 import { useSubject } from '../../layout';
 import WeekMaterialsSection from '../../_components/WeekMaterialsSection';
 import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { MessageCircle } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import SubjectOverviewPanel from '../../_components/SubjectOverviewPanel.client';
+import { useLocale } from '@/contexts/LocaleContext';
 
 export default function SubjectContents() {
     const { subject, loading, error } = useSubject();
+    const router = useRouter();
+    const params = useParams();
+    const { t } = useLocale();
+    const subjectId = params?.id as string;
     const [overviewData, setOverviewData] = useState<any>(null);
     const [weekMaterialsData, setWeekMaterialsData] = useState<any[]>([]);
+
+    const handleForumClick = () => {
+        router.push(`/subjects/${subjectId}/qa`);
+    };
 
     console.log(weekMaterialsData, 'weekMaterialsData');
 
@@ -128,6 +139,17 @@ export default function SubjectContents() {
 
     return (
         <div className="space-y-6">
+            {/* Forum Button */}
+            <div className="mb-4">
+                <button
+                    onClick={handleForumClick}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                >
+                    <MessageCircle className="w-5 h-5" />
+                    {t('qa.title')}
+                </button>
+            </div>
+
             <div className="mb-8">
                 <div className="relative">
                     {overviewData && (

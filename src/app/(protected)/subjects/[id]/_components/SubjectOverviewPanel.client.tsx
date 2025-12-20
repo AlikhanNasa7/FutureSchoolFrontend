@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { ChevronDown, Info, Plus } from 'lucide-react';
+import { ChevronDown, Info, Plus, MessageCircle } from 'lucide-react';
+import { useRouter, useParams } from 'next/navigation';
 import type { SubjectOverviewData } from './SubjectOverviewCard';
 import { useUserState } from '@/contexts/UserContext';
 import { modalController } from '@/lib/modalController';
 import { SharedLinkItem } from './SharedLinkItem';
 import axiosInstance from '@/lib/axios';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface SubjectOverviewPanelProps {
     data: SubjectOverviewData;
@@ -329,7 +331,15 @@ export default function SubjectOverviewPanel({
 }: SubjectOverviewPanelProps) {
     const [isExpanded, setIsExpanded] = useState(true);
     const { user } = useUserState();
+    const router = useRouter();
+    const params = useParams();
+    const { t } = useLocale();
     const isTeacher = user?.role === 'teacher';
+    const subjectId = params?.id as string;
+
+    const handleForumClick = () => {
+        router.push(`/subjects/${subjectId}/qa`);
+    };
 
     const toggleExpanded = useCallback(() => {
         setIsExpanded(prev => !prev);
@@ -418,7 +428,14 @@ export default function SubjectOverviewPanel({
                     {data.title}
                 </h2>
 
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center gap-2">
+                    <button
+                        onClick={handleForumClick}
+                        className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                        title={t('qa.title')}
+                    >
+                        <MessageCircle className="w-5 h-5 text-purple-600" />
+                    </button>
                     {isTeacher && (
                         <button
                             onClick={handleAddItem}
