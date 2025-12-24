@@ -66,8 +66,10 @@
         "endsAt": "Тест заканчивается в",
         "addQuestion": "Добавить вопрос",
         "multipleChoice": "Множественный выбор",
+        "chooseAll": "Выберите все подходящие",
         "openQuestion": "Открытый вопрос",
         "matching": "Сопоставление",
+        "selectAllThatApply": "Выберите все подходящие варианты",
         "questionText": "Текст вопроса",
         "points": "Баллы",
         "addOption": "Добавить вариант",
@@ -79,7 +81,26 @@
         "endDateAndTime": "Дата и время окончания",
         "enterQuestionText": "Введите текст вопроса",
         "noQuestionsYet": "Вопросы еще не добавлены. Нажмите кнопки выше, чтобы добавить вопросы.",
-        "testInformation": "Информация о тесте"
+        "testInformation": "Информация о тесте",
+        "testSettings": "Настройки теста",
+        "timeLimit": "Ограничение времени",
+        "timeLimitHint": "Студенты будут иметь это время для прохождения теста после начала",
+        "noTimeLimit": "Без ограничения времени - студенты могут проходить сколько угодно",
+        "dateRange": "Период доступности",
+        "openTest": "Открытый тест - доступен в любое время",
+        "multipleAttempts": "Множественные попытки",
+        "maxAttempts": "макс. попыток",
+        "multipleAttemptsHint": "Оставьте пустым для неограниченного количества попыток",
+        "singleAttempt": "Только одна попытка",
+        "resultVisibility": "Видимость результатов",
+        "showCorrectAnswers": "Показывать правильные ответы",
+        "showFeedback": "Показывать обратную связь",
+        "showScoreImmediately": "Показывать баллы сразу после отправки",
+        "testPreview": "Предпросмотр теста",
+        "testSaveError": "Не удалось сохранить тест. Пожалуйста, попробуйте снова.",
+        "subjectGroupRequired": "Требуется предметная группа",
+        "loading": "Загрузка...",
+        "subjectNotFound": "Предмет не найден"
     },
     "assignment": {
         "title": "Задание",
@@ -146,7 +167,17 @@
         "schedule": "Расписание",
         "pendingTasks": "Ожидающие задания",
         "calendar": "Календарь",
-        "todaySchedule": "Расписание на сегодня"
+        "todaySchedule": "Расписание на сегодня",
+        "viewMonthly": "Месяц",
+        "viewWeekly": "Неделя",
+        "viewDaily": "День",
+        "selectView": "Выбрать вид",
+        "calendarButtons": {
+            "today": "Сегодня",
+            "month": "Месяц",
+            "week": "Неделя",
+            "day": "День"
+        }
     },
     "subject": {
         "contents": "Содержание",
@@ -304,6 +335,7 @@
         "pointsLabel": "Баллы",
         "questionTypes": {
             "multiple_choice": "Один из вариантов",
+            "choose_all": "Выберите все подходящие",
             "open_question": "Открытый вопрос",
             "matching": "Сопоставление"
         },
@@ -328,6 +360,14 @@
             "optionPlaceholder": "Вариант {number}",
             "addOption": "Добавить вариант",
             "selectCorrectHint": "Выберите правильный ответ, нажав на радиокнопку"
+        },
+        "chooseAll": {
+            "answerOptionsLabel": "Варианты ответов",
+            "optionLabel": "Вариант {number}",
+            "optionPlaceholder": "Вариант {number}",
+            "addOption": "Добавить вариант",
+            "selectCorrectHint": "Выберите все правильные ответы (может быть несколько)",
+            "selectAllHint": "Выберите все правильные ответы. Может быть несколько правильных вариантов."
         },
         "matching": {
             "matchingPairsLabel": "Пары для сопоставления",

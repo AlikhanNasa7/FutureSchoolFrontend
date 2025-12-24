@@ -16,7 +16,7 @@ interface QuestionOption {
 interface Question {
     id: number;
     test: number;
-    type: 'multiple_choice' | 'open_question' | 'matching';
+    type: 'multiple_choice' | 'choose_all' | 'open_question' | 'matching';
     text: string;
     points: number;
     position: number;
@@ -89,7 +89,15 @@ export default function StudentResultsPage() {
                 const response = await axiosInstance.get(
                     `/attempts/${attemptId}`
                 );
-                setAttemptData(response.data);
+                const attempt = response.data;
+
+                // Check if student can view results
+                if (!attempt.can_view_results) {
+                    setAttemptData(null);
+                    return;
+                }
+
+                setAttemptData(attempt);
             } catch (error) {
                 console.error('Failed to fetch attempt data:', error);
                 setAttemptData(null);
@@ -286,6 +294,126 @@ export default function StudentResultsPage() {
                                         </div>
                                     )}
 
+                                {/* Choose All That Apply Answer */}
+                                {answer.question.type === 'choose_all' &&
+                                    answer.question.options && (
+                                        <div className="space-y-3">
+                                            <p className="text-sm text-gray-600 italic mb-4">
+                                                Select all that apply
+                                            </p>
+                                            {answer.question.options.map(
+                                                option => {
+                                                    const isSelected =
+                                                        answer.selected_options?.some(
+                                                            opt =>
+                                                                opt.id ===
+                                                                option.id
+                                                        );
+                                                    const isCorrect =
+                                                        option.is_correct;
+
+                                                    return (
+                                                        <div
+                                                            key={option.id}
+                                                            className={`p-4 rounded-lg border-2 ${
+                                                                isSelected
+                                                                    ? isCorrect
+                                                                        ? 'border-green-500 bg-green-50'
+                                                                        : 'border-red-500 bg-red-50'
+                                                                    : isCorrect
+                                                                      ? 'border-green-300 bg-green-25'
+                                                                      : 'border-gray-200'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-start">
+                                                                <div className="flex items-center flex-1">
+                                                                    <div
+                                                                        className={`w-5 h-5 rounded mr-3 flex items-center justify-center shrink-0 ${
+                                                                            isSelected
+                                                                                ? isCorrect
+                                                                                    ? 'bg-green-500'
+                                                                                    : 'bg-red-500'
+                                                                                : isCorrect
+                                                                                  ? 'bg-green-300'
+                                                                                  : 'bg-gray-300'
+                                                                        }`}
+                                                                    >
+                                                                        {isSelected && (
+                                                                            <span className="text-white text-xs font-bold">
+                                                                                ✓
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-gray-900 flex-1">
+                                                                        {
+                                                                            option.text
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                                <div className="ml-3 flex items-center gap-2">
+                                                                    {isCorrect && (
+                                                                        <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded">
+                                                                            Правильный
+                                                                        </span>
+                                                                    )}
+                                                                    {isSelected &&
+                                                                        isCorrect && (
+                                                                            <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                                                                        )}
+                                                                    {isSelected &&
+                                                                        !isCorrect && (
+                                                                            <>
+                                                                                <span className="text-xs font-medium text-red-700 bg-red-100 px-2 py-1 rounded">
+                                                                                    Неправильно
+                                                                                </span>
+                                                                                <X className="w-5 h-5 text-red-500 shrink-0" />
+                                                                            </>
+                                                                        )}
+                                                                    {!isSelected &&
+                                                                        isCorrect && (
+                                                                            <span className="text-xs font-medium text-orange-700 bg-orange-100 px-2 py-1 rounded">
+                                                                                Не
+                                                                                выбрано
+                                                                            </span>
+                                                                        )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                            )}
+                                            {/* Feedback section */}
+                                            {(answer.auto_feedback ||
+                                                answer.teacher_feedback) && (
+                                                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                                    <div className="text-sm font-medium text-blue-900 mb-2">
+                                                        Обратная связь:
+                                                    </div>
+                                                    {answer.teacher_feedback && (
+                                                        <div className="text-sm text-blue-800 mb-2">
+                                                            <span className="font-medium">
+                                                                От учителя:
+                                                            </span>{' '}
+                                                            {
+                                                                answer.teacher_feedback
+                                                            }
+                                                        </div>
+                                                    )}
+                                                    {answer.auto_feedback && (
+                                                        <div className="text-sm text-blue-700">
+                                                            <span className="font-medium">
+                                                                Автоматически:
+                                                            </span>{' '}
+                                                            {
+                                                                answer.auto_feedback
+                                                            }
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                 {/* Open Question Answer */}
                                 {answer.question.type === 'open_question' && (
                                     <div className="space-y-4">
@@ -317,6 +445,33 @@ export default function StudentResultsPage() {
                                                     </p>
                                                 </div>
                                             )}
+                                        {/* Feedback section */}
+                                        {(answer.auto_feedback ||
+                                            answer.teacher_feedback) && (
+                                            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                                <div className="text-sm font-medium text-blue-900 mb-2">
+                                                    Обратная связь:
+                                                </div>
+                                                {answer.teacher_feedback && (
+                                                    <div className="text-sm text-blue-800 mb-2">
+                                                        <span className="font-medium">
+                                                            От учителя:
+                                                        </span>{' '}
+                                                        {
+                                                            answer.teacher_feedback
+                                                        }
+                                                    </div>
+                                                )}
+                                                {answer.auto_feedback && (
+                                                    <div className="text-sm text-blue-700">
+                                                        <span className="font-medium">
+                                                            Автоматически:
+                                                        </span>{' '}
+                                                        {answer.auto_feedback}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -428,6 +583,35 @@ export default function StudentResultsPage() {
                                                             )
                                                         )}
                                                     </div>
+                                                </div>
+                                            )}
+                                            {/* Feedback section */}
+                                            {(answer.auto_feedback ||
+                                                answer.teacher_feedback) && (
+                                                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                                    <div className="text-sm font-medium text-blue-900 mb-2">
+                                                        Обратная связь:
+                                                    </div>
+                                                    {answer.teacher_feedback && (
+                                                        <div className="text-sm text-blue-800 mb-2">
+                                                            <span className="font-medium">
+                                                                От учителя:
+                                                            </span>{' '}
+                                                            {
+                                                                answer.teacher_feedback
+                                                            }
+                                                        </div>
+                                                    )}
+                                                    {answer.auto_feedback && (
+                                                        <div className="text-sm text-blue-700">
+                                                            <span className="font-medium">
+                                                                Автоматически:
+                                                            </span>{' '}
+                                                            {
+                                                                answer.auto_feedback
+                                                            }
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface QuestionData {
     id: string;
     position: number;
     text: string;
-    type: 'multiple_choice' | 'open_question' | 'matching';
+    type: 'multiple_choice' | 'choose_all' | 'open_question' | 'matching';
     options?: Array<{
         id: number;
         text: string;
@@ -33,6 +34,7 @@ export default function QuestionContent({
     selectedAnswers,
     onAnswerChange,
 }: QuestionContentProps) {
+    const { t } = useLocale();
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
     const shuffleArray = <T,>(array: T[]): T[] => {
@@ -80,6 +82,21 @@ export default function QuestionContent({
     const handleMultipleChoiceSelect = (optionId: number) => {
         if (questionData.options) {
             onAnswerChange([optionId]);
+        }
+    };
+
+    const handleChooseAllToggle = (optionId: number) => {
+        if (questionData.options) {
+            const currentAnswers = Array.isArray(selectedAnswers)
+                ? (selectedAnswers as number[])
+                : [];
+            const isSelected = currentAnswers.includes(optionId);
+
+            if (isSelected) {
+                onAnswerChange(currentAnswers.filter(id => id !== optionId));
+            } else {
+                onAnswerChange([...currentAnswers, optionId]);
+            }
         }
     };
 
@@ -183,6 +200,42 @@ export default function QuestionContent({
                                 handleMultipleChoiceSelect(option.id)
                             }
                             className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="ml-3 text-gray-900">
+                            {option.text}
+                        </span>
+                    </label>
+                ))}
+            </div>
+        );
+    }
+
+    if (questionData.type === 'choose_all') {
+        return (
+            <div className="space-y-4">
+                <p className="text-sm text-gray-600 italic mb-4">
+                    {t('test.selectAllThatApply')}
+                </p>
+                {questionData.options?.map((option, index) => (
+                    <label
+                        key={index}
+                        className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                            Array.isArray(selectedAnswers) &&
+                            (selectedAnswers as number[]).includes(option.id)
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={
+                                Array.isArray(selectedAnswers) &&
+                                (selectedAnswers as number[]).includes(
+                                    option.id
+                                )
+                            }
+                            onChange={() => handleChooseAllToggle(option.id)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                         />
                         <span className="ml-3 text-gray-900">
                             {option.text}

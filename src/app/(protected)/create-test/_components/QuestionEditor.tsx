@@ -1,6 +1,7 @@
 import React from 'react';
 import { Question } from './TestCreator';
 import { MultipleChoiceEditor } from './MultipleChoiceEditor';
+import { ChooseAllEditor } from './ChooseAllEditor';
 import { OpenQuestionEditor } from './OpenQuestionEditor';
 import { MatchingEditor } from './MatchingEditor';
 import { useLocale } from '@/contexts/LocaleContext';
@@ -71,6 +72,14 @@ export function QuestionEditor({ question, onUpdate }: QuestionEditorProps) {
             {/* Question Type Specific Editor */}
             {question.type === 'multiple_choice' && question.options && (
                 <MultipleChoiceEditor
+                    data={{ options: question.options }}
+                    questionId={question.id}
+                    onChange={handleDataChange}
+                />
+            )}
+
+            {question.type === 'choose_all' && question.options && (
+                <ChooseAllEditor
                     data={{ options: question.options }}
                     questionId={question.id}
                     onChange={handleDataChange}

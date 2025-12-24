@@ -13,7 +13,7 @@ interface QuestionData {
     id: string;
     position: number;
     text: string;
-    type: 'multiple_choice' | 'open_question' | 'matching';
+    type: 'multiple_choice' | 'choose_all' | 'open_question' | 'matching';
     options?: Array<{
         text: string;
         is_correct: boolean;
@@ -38,6 +38,7 @@ interface TestData {
     scheduled_at: string;
     start_date: string;
     end_date: string;
+    time_limit_minutes: number | null;
     reveal_results_at: string | null;
     allow_multiple_attempts: boolean;
     max_attempts: number | null;
@@ -224,6 +225,11 @@ export default function TestContent({ testId }: TestContentProps) {
                 submitData.selected_option_ids = Array.isArray(currentAnswer)
                     ? (currentAnswer as number[])
                     : [currentAnswer as unknown as number];
+            } else if (currentQuestion.type === 'choose_all') {
+                // For choose_all, selected_answer should be an array of option IDs
+                submitData.selected_option_ids = Array.isArray(currentAnswer)
+                    ? (currentAnswer as number[])
+                    : [];
             } else if (currentQuestion.type === 'open_question') {
                 submitData.text_answer = currentAnswer as string;
             } else if (currentQuestion.type === 'matching') {
@@ -482,26 +488,21 @@ export default function TestContent({ testId }: TestContentProps) {
                         </div>
                     </div>
 
-                    <div className="bg-blue-50 rounded-lg p-4 md:col-span-2">
-                        <div className="flex items-center gap-3">
-                            <Clock className="w-6 h-6 text-blue-600" />
-                            <div>
-                                <p className="text-sm text-gray-600">
-                                    Длительность
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                    {Math.round(
-                                        (new Date(testData.end_date).getTime() -
-                                            new Date(
-                                                testData.start_date
-                                            ).getTime()) /
-                                            60000
-                                    )}{' '}
-                                    мин
-                                </p>
+                    {testData.time_limit_minutes && (
+                        <div className="bg-blue-50 rounded-lg p-4 md:col-span-2">
+                            <div className="flex items-center gap-3">
+                                <Clock className="w-6 h-6 text-blue-600" />
+                                <div>
+                                    <p className="text-sm text-gray-600">
+                                        Лимит времени
+                                    </p>
+                                    <p className="text-lg font-semibold text-gray-900">
+                                        {testData.time_limit_minutes} мин
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="bg-purple-50 rounded-lg p-4 md:col-span-2">
                         <div className="flex items-center gap-3">

@@ -1,18 +1,27 @@
 'use client';
 import React, { useState } from 'react';
-import { Plus, Trash2, Calendar } from 'lucide-react';
+import {
+    Plus,
+    Trash2,
+    Calendar,
+    Clock,
+    CheckCircle2,
+    Info,
+    Settings,
+} from 'lucide-react';
 import { QuestionEditor } from './QuestionEditor';
 import axiosInstance from '@/lib/axios';
 import { useLocale } from '@/contexts/LocaleContext';
+import { useSearchParams } from 'next/navigation';
 
 export interface Question {
     id: string;
-    type: 'multiple_choice' | 'open_question' | 'matching';
+    type: 'multiple_choice' | 'choose_all' | 'open_question' | 'matching';
     text: string;
     position: number;
     points: number;
     test: string;
-    // Multiple choice properties
+    // Multiple choice and choose all properties
     options?: { text: string; is_correct: boolean; position: number }[];
     // Open question properties
     correct_answer_text?: string;
@@ -24,22 +33,67 @@ export interface Question {
 export interface Test {
     title: string;
     description: string;
-    start_date: string;
-    end_date: string;
+    start_date: string | null;
+    end_date: string | null;
     scheduled_at?: string;
-    course_section?: number;
+    subject_group?: number;
+    // Time settings
+    has_time_limit: boolean;
+    time_limit_minutes: number | null;
+    has_dates: boolean;
+    is_published: boolean;
     questions: Question[];
 }
 
 export default function TestCreator() {
     const { t, locale } = useLocale();
+    const searchParams = useSearchParams();
+    const subjectId = searchParams.get('subject');
+    const [subject, setSubject] = useState<{
+        id: number;
+        course_name: string;
+        course_code: string;
+        classroom_display?: string;
+    } | null>(null);
+    const [loadingSubject, setLoadingSubject] = useState(true);
+
     const [test, setTest] = useState<Test>({
         title: '',
         description: '',
-        start_date: '',
-        end_date: '',
+        start_date: null,
+        end_date: null,
+        has_time_limit: false,
+        time_limit_minutes: null,
+        has_dates: false,
+        is_published: true,
         questions: [],
     });
+
+    // Fetch subject information from query params
+    React.useEffect(() => {
+        const fetchSubject = async () => {
+            if (!subjectId) {
+                setLoadingSubject(false);
+                return;
+            }
+            try {
+                setLoadingSubject(true);
+                const response = await axiosInstance.get(
+                    `/subject-groups/${subjectId}/`
+                );
+                setSubject(response.data);
+                setTest(prev => ({
+                    ...prev,
+                    subject_group: response.data.id,
+                }));
+            } catch (error) {
+                console.error('Error fetching subject:', error);
+            } finally {
+                setLoadingSubject(false);
+            }
+        };
+        fetchSubject();
+    }, [subjectId]);
 
     console.log(test, 'test');
 
@@ -70,35 +124,6 @@ export default function TestCreator() {
         }
     };
 
-    const formatDuration = (startDate: string, endDate: string) => {
-        const totalMinutes = Math.round(
-            (new Date(endDate).getTime() - new Date(startDate).getTime()) /
-                60000
-        );
-
-        if (totalMinutes < 60) {
-            // Less than 1 hour: show only minutes
-            return `${totalMinutes} ${t('test.minutes')}`;
-        } else if (totalMinutes < 1440) {
-            // Less than 24 hours: show hours and minutes
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-            if (minutes === 0) {
-                return `${hours} ${t('test.hours')}`;
-            }
-            return `${hours} ${t('test.hours')} ${minutes} ${t('test.minutes')}`;
-        } else {
-            // 24 hours or more: show days and hours
-            const days = Math.floor(totalMinutes / 1440);
-            const remainingMinutes = totalMinutes % 1440;
-            const hours = Math.floor(remainingMinutes / 60);
-            if (hours === 0) {
-                return `${days} ${t('test.days')}`;
-            }
-            return `${days} ${t('test.days')} ${hours} ${t('test.hours')} ${remainingMinutes % 60} ${t('test.minutes')}`;
-        }
-    };
-
     const addQuestion = (type: Question['type']) => {
         const newQuestion: Question = {
             id: Date.now().toString(),
@@ -123,6 +148,15 @@ export default function TestCreator() {
                     options: [
                         { text: '', is_correct: true, position: 1 },
                         { text: '', is_correct: false, position: 2 },
+                        { text: '', is_correct: false, position: 3 },
+                        { text: '', is_correct: false, position: 4 },
+                    ],
+                };
+            case 'choose_all':
+                return {
+                    options: [
+                        { text: '', is_correct: true, position: 1 },
+                        { text: '', is_correct: true, position: 2 },
                         { text: '', is_correct: false, position: 3 },
                         { text: '', is_correct: false, position: 4 },
                     ],
@@ -171,32 +205,103 @@ export default function TestCreator() {
         });
     };
 
-    const handleTestUpdate = (field: keyof Test, value: string | number) => {
+    const handleTestUpdate = (
+        field: keyof Test,
+        value: string | number | boolean | null
+    ) => {
         setTest(prev => ({ ...prev, [field]: value }));
     };
 
+    const toggleTimeLimit = () => {
+        setTest(prev => ({
+            ...prev,
+            has_time_limit: !prev.has_time_limit,
+            time_limit_minutes: !prev.has_time_limit ? 60 : null,
+        }));
+    };
+
+    const toggleDates = () => {
+        setTest(prev => ({
+            ...prev,
+            has_dates: !prev.has_dates,
+            start_date: !prev.has_dates
+                ? new Date().toLocaleString().toString()
+                : null,
+            end_date: !prev.has_dates
+                ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                      .toISOString()
+                      .slice(0, 16)
+                : null,
+        }));
+    };
+
     const saveTest = async () => {
+        if (!test.subject_group) {
+            alert(t('test.subjectGroupRequired'));
+            return;
+        }
+
         // Create a copy of the test data
-        const testData = { ...test };
+        const testData: Record<string, unknown> = {
+            title: test.title,
+            description: test.description,
+            subject_group: test.subject_group,
+            is_published: test.is_published,
+            questions: test.questions.map(q => ({
+                type: q.type,
+                text: q.text,
+                points: q.points,
+                position: q.position,
+                options: q.options || [],
+                correct_answer_text: q.correct_answer_text,
+                key_words: q.key_words,
+                matching_pairs_json: q.matching_pairs_json,
+            })),
+        };
 
-        // Subtract 5 hours from start_date and end_date for backend
-        if (testData.start_date) {
-            const startDate = new Date(testData.start_date);
-            testData.start_date = startDate.toISOString();
-            testData.scheduled_at = testData.start_date;
+        // Add time limit if enabled
+        if (test.has_time_limit && test.time_limit_minutes) {
+            testData.time_limit_minutes = test.time_limit_minutes;
         }
 
-        if (testData.end_date) {
-            const endDate = new Date(testData.end_date);
-            testData.end_date = endDate.toISOString();
+        // Add dates if enabled - backend will auto-select course_section based on dates
+        // Convert dates to ISO format before sending
+        if (test.has_dates) {
+            if (test.start_date) {
+                // datetime-local input returns format: YYYY-MM-DDTHH:mm
+                // Convert to ISO string (UTC)
+                const startDate = new Date(test.start_date);
+                if (!isNaN(startDate.getTime())) {
+                    testData.start_date = startDate.toISOString();
+                    testData.scheduled_at = testData.start_date;
+                }
+            }
+            if (test.end_date) {
+                // datetime-local input returns format: YYYY-MM-DDTHH:mm
+                // Convert to ISO string (UTC)
+                const endDate = new Date(test.end_date);
+                if (!isNaN(endDate.getTime())) {
+                    testData.end_date = endDate.toISOString();
+                }
+            }
         }
 
-        const response = await axiosInstance.post(
-            'tests/create-full/',
-            testData
-        );
-        console.log(response.data, 'response');
-        alert(t('test.testSavedSuccess'));
+        try {
+            const response = await axiosInstance.post(
+                'tests/create-full/',
+                testData
+            );
+            console.log(response.data, 'response');
+            alert(t('test.testSavedSuccess'));
+        } catch (error: unknown) {
+            console.error('Error saving test:', error);
+            const errorMessage =
+                (error as { response?: { data?: { detail?: string } } })
+                    ?.response?.data?.detail ||
+                (error as { message?: string })?.message ||
+                t('test.testSaveError');
+            alert(errorMessage);
+        }
     };
 
     const getTotalPoints = () => {
@@ -206,14 +311,47 @@ export default function TestCreator() {
         );
     };
 
+    if (loadingSubject) {
+        return (
+            <div className="mx-auto p-6">
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-gray-500">{t('test.loading')}</div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!subject && subjectId) {
+        return (
+            <div className="mx-auto p-6">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <p className="text-red-600">{t('test.subjectNotFound')}</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="mx-auto p-6">
             <div className="border border-[#694CFD]/20 shadow-lg shadow-[#694CFD]/5 bg-white rounded-lg">
                 <div className="bg-gradient-to-r from-[#694CFD]/5 to-[#694CFD]/10 border-b border-[#694CFD]/20 p-6 rounded-t-lg">
-                    <h2 className="flex items-center gap-2 text-[#694CFD] font-semibold text-xl">
-                        <Calendar className="w-5 h-5" />
-                        {t('test.testInformation')}
-                    </h2>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="flex items-center gap-2 text-[#694CFD] font-semibold text-xl mb-1">
+                                <Calendar className="w-5 h-5" />
+                                {t('test.testInformation')}
+                            </h2>
+                            {subject && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {subject.course_name} ({subject.course_code}
+                                    {subject.classroom_display
+                                        ? ` - ${subject.classroom_display}`
+                                        : ''}
+                                    )
+                                </p>
+                            )}
+                        </div>
+                    </div>
                 </div>
                 <div className="p-6 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -252,74 +390,211 @@ export default function TestCreator() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label
-                                htmlFor="start-date"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                {t('test.startDateAndTime')}
-                            </label>
-                            <input
-                                id="start-date"
-                                type="datetime-local"
-                                value={test.start_date}
-                                onChange={e =>
-                                    handleTestUpdate(
-                                        'start_date',
-                                        e.target.value
-                                    )
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
-                            />
+                    {/* Test Settings Section */}
+                    <div className="border-t border-gray-200 pt-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Settings className="w-5 h-5 text-[#694CFD]" />
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                {t('test.testSettings')}
+                            </h3>
                         </div>
-                        <div className="space-y-2">
-                            <label
-                                htmlFor="end-date"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                {t('test.endDateAndTime')}
-                            </label>
-                            <input
-                                id="end-date"
-                                type="datetime-local"
-                                value={test.end_date}
-                                onChange={e =>
-                                    handleTestUpdate('end_date', e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
-                            />
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                {t('test.testInfo')}
-                            </label>
-                            <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
-                                <div className="space-y-1">
-                                    {test.start_date && (
-                                        <div>
-                                            • {t('test.startsAt')}:{' '}
-                                            {formatDateTime(test.start_date)}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Time Limit Card */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-[#694CFD]/30 transition-colors">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-5 h-5 text-[#694CFD]" />
+                                        <label className="text-sm font-medium text-gray-900">
+                                            {t('test.timeLimit')}
+                                        </label>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={toggleTimeLimit}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                            test.has_time_limit
+                                                ? 'bg-[#694CFD]'
+                                                : 'bg-gray-300'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                test.has_time_limit
+                                                    ? 'translate-x-6'
+                                                    : 'translate-x-1'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                                {test.has_time_limit && (
+                                    <div className="mt-3">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="1440"
+                                                value={
+                                                    test.time_limit_minutes ||
+                                                    ''
+                                                }
+                                                onChange={e =>
+                                                    handleTestUpdate(
+                                                        'time_limit_minutes',
+                                                        parseInt(
+                                                            e.target.value
+                                                        ) || null
+                                                    )
+                                                }
+                                                className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
+                                                placeholder="60"
+                                            />
+                                            <span className="text-sm text-gray-600">
+                                                {t('test.minutes')}
+                                            </span>
                                         </div>
-                                    )}
-                                    {test.end_date && (
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            {t('test.timeLimitHint')}
+                                        </p>
+                                    </div>
+                                )}
+                                {!test.has_time_limit && (
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        {t('test.noTimeLimit')}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Date Range Card */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-[#694CFD]/30 transition-colors">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-5 h-5 text-[#694CFD]" />
+                                        <label className="text-sm font-medium text-gray-900">
+                                            {t('test.dateRange')}
+                                        </label>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={toggleDates}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                            test.has_dates
+                                                ? 'bg-[#694CFD]'
+                                                : 'bg-gray-300'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                test.has_dates
+                                                    ? 'translate-x-6'
+                                                    : 'translate-x-1'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                                {test.has_dates && (
+                                    <div className="mt-3 space-y-3">
                                         <div>
-                                            • {t('test.endsAt')}:{' '}
-                                            {formatDateTime(test.end_date)}
+                                            <label className="block text-xs text-gray-600 mb-1">
+                                                {t('test.startDateAndTime')}
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                value={test.start_date || ''}
+                                                onChange={e =>
+                                                    handleTestUpdate(
+                                                        'start_date',
+                                                        e.target.value || null
+                                                    )
+                                                }
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
+                                            />
                                         </div>
-                                    )}
-                                    {test.start_date && test.end_date && (
                                         <div>
-                                            • {t('test.duration')}:{' '}
-                                            {formatDuration(
-                                                test.start_date,
-                                                test.end_date
+                                            <label className="block text-xs text-gray-600 mb-1">
+                                                {t('test.endDateAndTime')}
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                value={test.end_date || ''}
+                                                onChange={e =>
+                                                    handleTestUpdate(
+                                                        'end_date',
+                                                        e.target.value || null
+                                                    )
+                                                }
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                {!test.has_dates && (
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        {t('test.openTest')}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Test Preview Card */}
+                        <div className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                                <Info className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" />
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                                        {t('test.testPreview')}
+                                    </h4>
+                                    <div className="space-y-1 text-sm text-gray-700">
+                                        {test.has_time_limit &&
+                                            test.time_limit_minutes && (
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="w-4 h-4" />
+                                                    <span>
+                                                        {t('test.timeLimit')}:{' '}
+                                                        {
+                                                            test.time_limit_minutes
+                                                        }{' '}
+                                                        {t('test.minutes')}
+                                                    </span>
+                                                </div>
                                             )}
-                                        </div>
-                                    )}
+                                        {test.has_dates && (
+                                            <>
+                                                {test.start_date && (
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar className="w-4 h-4" />
+                                                        <span>
+                                                            {t('test.startsAt')}
+                                                            :{' '}
+                                                            {formatDateTime(
+                                                                test.start_date
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {test.end_date && (
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar className="w-4 h-4" />
+                                                        <span>
+                                                            {t('test.endsAt')}:{' '}
+                                                            {formatDateTime(
+                                                                test.end_date
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                        {!test.has_dates &&
+                                            !test.has_time_limit && (
+                                                <div className="flex items-center gap-2">
+                                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                                    <span>
+                                                        {t('test.openTest')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -360,6 +635,13 @@ export default function TestCreator() {
                         >
                             <Plus className="w-4 h-4" />
                             {t('test.multipleChoice')}
+                        </button>
+                        <button
+                            onClick={() => addQuestion('choose_all')}
+                            className="flex items-center gap-2 px-4 py-2 border border-[#694CFD]/30 text-[#694CFD] rounded-md hover:bg-[#694CFD]/10 hover:border-[#694CFD]/50 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            {t('test.chooseAll')}
                         </button>
                         <button
                             onClick={() => addQuestion('open_question')}

@@ -66,8 +66,10 @@
         "endsAt": "Test ends at",
         "addQuestion": "Add Question",
         "multipleChoice": "Multiple Choice",
+        "chooseAll": "Choose All That Apply",
         "openQuestion": "Open Question",
         "matching": "Matching",
+        "selectAllThatApply": "Select all that apply",
         "questionText": "Question Text",
         "points": "Points",
         "addOption": "Add Option",
@@ -79,7 +81,26 @@
         "endDateAndTime": "End Date & Time",
         "enterQuestionText": "Enter question text",
         "noQuestionsYet": "No questions added yet. Click the buttons above to add questions.",
-        "testInformation": "Test Information"
+        "testInformation": "Test Information",
+        "testSettings": "Test Settings",
+        "timeLimit": "Time Limit",
+        "timeLimitHint": "Students will have this amount of time to complete the test once they start",
+        "noTimeLimit": "No time limit - students can take as long as needed",
+        "dateRange": "Date Range",
+        "openTest": "Open test - available anytime",
+        "multipleAttempts": "Multiple Attempts",
+        "maxAttempts": "max attempts",
+        "multipleAttemptsHint": "Leave empty for unlimited attempts",
+        "singleAttempt": "Single attempt only",
+        "resultVisibility": "Result Visibility",
+        "showCorrectAnswers": "Show correct answers",
+        "showFeedback": "Show feedback",
+        "showScoreImmediately": "Show score immediately after submission",
+        "testPreview": "Test Preview",
+        "testSaveError": "Failed to save test. Please try again.",
+        "subjectGroupRequired": "Subject group is required",
+        "loading": "Loading...",
+        "subjectNotFound": "Subject not found"
     },
     "assignment": {
         "title": "Assignment",
@@ -146,7 +167,17 @@
         "schedule": "Schedule",
         "pendingTasks": "Pending Tasks",
         "calendar": "Calendar",
-        "todaySchedule": "Today's Schedule"
+        "todaySchedule": "Today's Schedule",
+        "viewMonthly": "Monthly",
+        "viewWeekly": "Weekly",
+        "viewDaily": "Daily",
+        "selectView": "Select View",
+        "calendarButtons": {
+            "today": "Today",
+            "month": "Month",
+            "week": "Week",
+            "day": "Day"
+        }
     },
     "subject": {
         "contents": "Contents",
@@ -304,6 +335,7 @@
         "pointsLabel": "Points",
         "questionTypes": {
             "multiple_choice": "Multiple Choice",
+            "choose_all": "Choose All That Apply",
             "open_question": "Open Question",
             "matching": "Matching"
         },

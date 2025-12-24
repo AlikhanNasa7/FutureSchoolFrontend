@@ -66,8 +66,10 @@
         "endsAt": "Тест аяқталады",
         "addQuestion": "Сұрақ қосу",
         "multipleChoice": "Көп таңдау",
+        "chooseAll": "Барлық тиістілерін таңдаңыз",
         "openQuestion": "Ашық сұрақ",
         "matching": "Сәйкестендіру",
+        "selectAllThatApply": "Барлық тиісті нұсқаларды таңдаңыз",
         "questionText": "Сұрақ мәтіні",
         "points": "Ұпай",
         "addOption": "Нұсқа қосу",
@@ -79,7 +81,26 @@
         "endDateAndTime": "Аяқталу күні мен уақыты",
         "enterQuestionText": "Сұрақ мәтінін енгізіңіз",
         "noQuestionsYet": "Сұрақтар әлі қосылмаған. Сұрақтарды қосу үшін жоғарыдағы батырмаларды басыңыз.",
-        "testInformation": "Тест туралы ақпарат"
+        "testInformation": "Тест туралы ақпарат",
+        "testSettings": "Тест параметрлері",
+        "timeLimit": "Уақыт шегі",
+        "timeLimitHint": "Студенттер бастағаннан кейін тестті орындауға осы уақыт болады",
+        "noTimeLimit": "Уақыт шегі жоқ - студенттер қажет болғанша орындай алады",
+        "dateRange": "Қолжетімділік кезеңі",
+        "openTest": "Ашық тест - кез келген уақытта қолжетімді",
+        "multipleAttempts": "Бірнеше әрекет",
+        "maxAttempts": "макс. әрекет",
+        "multipleAttemptsHint": "Шексіз әрекеттер үшін бос қалдырыңыз",
+        "singleAttempt": "Тек бір әрекет",
+        "resultVisibility": "Нәтижелердің көрінуі",
+        "showCorrectAnswers": "Дұрыс жауаптарды көрсету",
+        "showFeedback": "Кері байланысты көрсету",
+        "showScoreImmediately": "Жібергеннен кейін бірден ұпайларды көрсету",
+        "testPreview": "Тест алдын ала қарау",
+        "testSaveError": "Тестті сақтау сәтсіз аяқталды. Қайталап көріңіз.",
+        "subjectGroupRequired": "Пән тобы талап етіледі",
+        "loading": "Жүктелуде...",
+        "subjectNotFound": "Пән табылмады"
     },
     "assignment": {
         "title": "Тапсырма",
@@ -146,7 +167,17 @@
         "schedule": "Кесте",
         "pendingTasks": "Күтілетін тапсырмалар",
         "calendar": "Күнтізбе",
-        "todaySchedule": "Бүгінгі кесте"
+        "todaySchedule": "Бүгінгі кесте",
+        "viewMonthly": "Айлық",
+        "viewWeekly": "Апталық",
+        "viewDaily": "Күндік",
+        "selectView": "Көріністі таңдау",
+        "calendarButtons": {
+            "today": "Бүгін",
+            "month": "Ай",
+            "week": "Апта",
+            "day": "Күн"
+        }
     },
     "subject": {
         "contents": "Мазмұны",
@@ -304,6 +335,7 @@
         "pointsLabel": "Ұпайлар",
         "questionTypes": {
             "multiple_choice": "Бірнеше нұсқа",
+            "choose_all": "Барлық тиістілерін таңдаңыз",
             "open_question": "Ашық сұрақ",
             "matching": "Сәйкестендіру"
         },
@@ -328,6 +360,14 @@
             "optionPlaceholder": "Нұсқа {number}",
             "addOption": "Нұсқа қосу",
             "selectCorrectHint": "Дұрыс жауапты радиобатырманы басу арқылы таңдаңыз"
+        },
+        "chooseAll": {
+            "answerOptionsLabel": "Жауап нұсқалары",
+            "optionLabel": "Нұсқа {number}",
+            "optionPlaceholder": "Нұсқа {number}",
+            "addOption": "Нұсқа қосу",
+            "selectCorrectHint": "Барлық дұрыс жауаптарды таңдаңыз (бірнеше дұрыс болуы мүмкін)",
+            "selectAllHint": "Барлық дұрыс жауаптарды таңдаңыз. Бірнеше нұсқа дұрыс болуы мүмкін."
         },
         "matching": {
             "matchingPairsLabel": "Сәйкестік жұптары",
