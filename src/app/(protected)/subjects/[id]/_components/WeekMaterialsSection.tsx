@@ -17,6 +17,9 @@ export type WeekItem =
               | 'video'
               | 'image'
               | 'recording'; // icon type
+          // Template fields
+          template_resource?: number | null;
+          is_unlinked_from_template?: boolean;
       }
     | {
           id: string;
@@ -43,6 +46,14 @@ export type WeekItem =
           grade_value?: number;
           max_grade?: number;
           icon?: React.ReactNode;
+          // Template fields
+          template_assignment?: number | null;
+          is_unlinked_from_template?: boolean;
+          // Student submission (for status display)
+          student_submission?: {
+              grade_value?: number | null;
+              [key: string]: unknown;
+          } | null;
       }
     | {
           id: string;

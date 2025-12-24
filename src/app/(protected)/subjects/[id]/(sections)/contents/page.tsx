@@ -66,6 +66,12 @@ export default function SubjectContents() {
                                 grade_value:
                                     item.grade_value || item.student_grade,
                                 max_grade: item.max_grade || item.max_points,
+                                // Preserve template fields
+                                template_resource: item.template_resource,
+                                template_assignment: item.template_assignment,
+                                is_unlinked_from_template: item.is_unlinked_from_template,
+                                // Preserve student submission for assignments
+                                student_submission: item.student_submission,
                             }));
                         };
 

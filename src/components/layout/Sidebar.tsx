@@ -12,6 +12,7 @@ import {
     Settings,
     MoreVertical,
     LogOut,
+    BookOpen,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUserState, useUserActions } from '@/contexts/UserContext';
@@ -48,6 +49,12 @@ const navigation = [
         href: '/classrooms',
         icon: Box,
         roles: ['schooladmin', 'superadmin'],
+    },
+    {
+        key: 'courses',
+        href: '/admin/courses',
+        icon: BookOpen,
+        roles: ['superadmin'],
     },
 ];
 
@@ -115,7 +122,9 @@ export default function Sidebar() {
                         <div className="space-y-2">
                             {user?.role &&
                                 navigation.map(item => {
-                                    const isActive = pathname === item.href;
+                                    const isActive =
+                                        pathname === item.href ||
+                                        pathname.startsWith(item.href + '/');
                                     if (
                                         !item.roles.includes(
                                             user?.role as string

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { getIconByType, IconType } from './IconUtils';
 import { DeleteButton } from './WeekMaterialsPanel.client';
 import { modalController } from '@/lib/modalController';
@@ -19,6 +20,8 @@ interface SharedLinkItemProps {
         recording?: string;
         title: string;
         type?: string;
+        template_resource?: number | null;
+        is_unlinked_from_template?: boolean;
     };
     isTeacher: boolean;
     onFileView?: (
@@ -29,6 +32,7 @@ interface SharedLinkItemProps {
         itemId: string,
         itemType: 'resource' | 'assignment' | 'test'
     ) => void;
+    onRefresh?: () => void;
 }
 
 export function SharedLinkItem({
@@ -36,6 +40,7 @@ export function SharedLinkItem({
     isTeacher,
     onFileView,
     onDelete,
+    onRefresh,
 }: SharedLinkItemProps) {
     const isLink = item.type === 'link' && item.url;
     const isDirectory = item.type === 'directory';

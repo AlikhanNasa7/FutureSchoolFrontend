@@ -16,6 +16,7 @@ interface ClassroomData {
     language: string;
     school_name: string;
     total_students: number;
+    name?: string; // Computed field: `${grade}${letter}`
 }
 export default function ClassroomsPage() {
     const [classrooms, setClassrooms] = useState([]);
@@ -51,7 +52,10 @@ export default function ClassroomsPage() {
     }, [user, router]);
 
     const handleCreateClassroom = async (
-        classroomData: Omit<ClassroomData, 'id' | 'created_at' | 'updated_at'>
+        classroomData: Omit<
+            ClassroomData,
+            'id' | 'created_at' | 'updated_at' | 'name'
+        >
     ) => {
         setLoading(true);
         try {
@@ -61,6 +65,7 @@ export default function ClassroomsPage() {
             );
             const newClassroom = {
                 ...response.data,
+                name: `${response.data.grade}${response.data.letter}`,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             };
@@ -79,13 +84,16 @@ export default function ClassroomsPage() {
     ) => {
         setLoading(true);
         try {
-            await axiosInstance.put(`/classrooms/${id}/`, classroomData);
+            const response = await axiosInstance.put(
+                `/classrooms/${id}/`,
+                classroomData
+            );
             setClassrooms(prev =>
                 prev.map(classroom =>
                     classroom.id === id
                         ? {
-                              ...classroom,
-                              ...classroomData,
+                              ...response.data,
+                              name: `${response.data.grade}${response.data.letter}`,
                               updated_at: new Date().toISOString(),
                           }
                         : classroom
@@ -116,10 +124,17 @@ export default function ClassroomsPage() {
     };
 
     const filteredClassrooms = useMemo(() => {
+        if (!searchQuery) return classrooms;
+
+        const query = searchQuery.toLowerCase();
         return classrooms.filter(classroom => {
-            const matchesSearch = classroom.name
-                .toLowerCase()
-                .includes(searchQuery.toLowerCase());
+            // Use name if available, otherwise construct from grade and letter
+            const name =
+                classroom.name || `${classroom.grade}${classroom.letter}`;
+            const matchesSearch =
+                name.toLowerCase().includes(query) ||
+                classroom.school_name?.toLowerCase().includes(query) ||
+                classroom.letter?.toLowerCase().includes(query);
             return matchesSearch;
         });
     }, [classrooms, searchQuery]);

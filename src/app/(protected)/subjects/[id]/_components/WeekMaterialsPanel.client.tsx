@@ -76,9 +76,10 @@ function getStatusText(
         const isAvailable = 'is_available' in item ? item.is_available : false;
 
         if (isSubmitted) {
+            const studentSubmission = item.student_submission;
             const gradeValue =
-                'grade_value' in item.student_submission
-                    ? item.student_submission.grade_value
+                studentSubmission && 'grade_value' in studentSubmission
+                    ? studentSubmission.grade_value
                     : null;
             const maxGrade = 'max_grade' in item ? item.max_grade : null;
 
@@ -204,7 +205,7 @@ function TaskItem({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-1">
                         <span className="text-gray-900 truncate">
                             {item.title}
                         </span>
@@ -279,9 +280,7 @@ function TestItem({
                 </div>
 
                 <div className="flex-1 min-w-0 px-2 py-1">
-                    <span className="text-gray-900 truncate">
-                        {item.title}
-                    </span>
+                    <span className="text-gray-900 truncate">{item.title}</span>
                 </div>
             </div>
 
@@ -391,7 +390,7 @@ export default function WeekMaterialsPanel({
                 },
             });
         },
-        [onRefresh]
+        [onRefresh, t]
     );
 
     console.log('WeekMaterialsPanel data:', data);
@@ -458,7 +457,9 @@ export default function WeekMaterialsPanel({
             {/* Content */}
             <div
                 className={`overflow-x-hidden transition-all duration-300 ease-in-out ${
-                    isExpanded ? 'max-h-[720px] opacity-100' : 'max-h-0 opacity-0'
+                    isExpanded
+                        ? 'max-h-[720px] opacity-100'
+                        : 'max-h-0 opacity-0'
                 }`}
             >
                 {data.tests && data.tests.length > 0 && (
