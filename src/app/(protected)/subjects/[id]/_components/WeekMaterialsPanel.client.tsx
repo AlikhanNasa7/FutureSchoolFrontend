@@ -10,6 +10,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import axiosInstance from '@/lib/axios';
 import { useLocale } from '@/contexts/LocaleContext';
+import TemplateLinkIndicator from '@/components/courseTemplates/TemplateLinkIndicator';
+import { assignmentService } from '@/services/assignmentService';
 interface WeekMaterialsPanelProps {
     data: WeekMaterialsData;
     courseSectionId?: number;
@@ -158,11 +160,13 @@ function TaskItem({
     item,
     isTeacher,
     onDelete,
+    onRefresh,
     t,
 }: {
     item: Extract<WeekItem, { kind: 'task' }>;
     isTeacher: boolean;
     onDelete?: (itemId: string, itemType: 'resource' | 'assignment') => void;
+    onRefresh?: () => void;
     t: (key: string) => string;
 }) {
     console.log(
@@ -192,6 +196,31 @@ function TaskItem({
 
         return 'px-4 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transition-colors';
     };
+
+    async function handleUnlink() {
+        if (!item.template_assignment || item.is_unlinked_from_template) {
+            return;
+        }
+
+        modalController.open('confirmation', {
+            title: 'Отвязать от шаблона',
+            message: `Вы уверены, что хотите отвязать "${item.title}" от шаблона? После отвязки это задание больше не будет автоматически синхронизироваться с шаблоном.`,
+            confirmText: 'Отвязать',
+            cancelText: 'Отмена',
+            confirmVariant: 'warning',
+            onConfirm: async () => {
+                try {
+                    await assignmentService.unlinkFromTemplate(Number(item.id));
+                    onRefresh?.();
+                } catch (error: any) {
+                    console.error('Error unlinking assignment:', error);
+                    const errorMessage = error?.formattedMessage || 'Не удалось отвязать задание от шаблона';
+                    alert(errorMessage);
+                }
+            },
+        });
+    }
+
     return (
         <div className="flex items-center justify-between gap-3 p-2">
             <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -209,6 +238,14 @@ function TaskItem({
                         <span className="text-gray-900 truncate">
                             {item.title}
                         </span>
+                        {isTeacher && (
+                            <TemplateLinkIndicator
+                                isLinked={!!item.template_assignment}
+                                isUnlinked={!!item.is_unlinked_from_template}
+                                onUnlink={handleUnlink}
+                                showButton={!!item.template_assignment && !item.is_unlinked_from_template}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
@@ -505,6 +542,7 @@ export default function WeekMaterialsPanel({
                                             )
                                         }
                                         onDelete={handleDeleteItem}
+                                        onRefresh={onRefresh}
                                     />
                                 </div>
                             );
@@ -527,6 +565,7 @@ export default function WeekMaterialsPanel({
                                     }
                                     isTeacher={isTeacher}
                                     onDelete={handleDeleteItem}
+                                    onRefresh={onRefresh}
                                     t={t}
                                 />
                             </div>

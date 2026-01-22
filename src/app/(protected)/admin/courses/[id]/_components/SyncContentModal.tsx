@@ -57,18 +57,13 @@ export default function SyncContentModal({
             }, 1500);
         } catch (err: any) {
             console.error('Error syncing content:', err);
-            console.error('Error response:', err.response);
-            if (err.response?.data?.detail) {
-                setError(err.response.data.detail);
-            } else if (err.response?.data) {
-                // Handle other error formats
-                const errorMsg = typeof err.response.data === 'string' 
+            const errorMessage =
+                err?.formattedMessage ||
+                err?.response?.data?.detail ||
+                (typeof err?.response?.data === 'string' 
                     ? err.response.data 
-                    : JSON.stringify(err.response.data);
-                setError(errorMsg);
-            } else {
-                setError('Не удалось синхронизировать контент. Проверьте консоль для деталей.');
-            }
+                    : 'Не удалось синхронизировать контент. Проверьте консоль для деталей.');
+            setError(errorMessage);
         } finally {
             setSubmitting(false);
         }
@@ -100,7 +95,26 @@ export default function SyncContentModal({
 
                     {error && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <p className="text-sm text-red-800">{error}</p>
+                            <div className="flex items-start gap-2">
+                                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-red-800 mb-1">
+                                        Ошибка синхронизации
+                                    </p>
+                                    <p className="text-sm text-red-700">{error}</p>
+                                    {error.includes('No template sections') && (
+                                        <div className="mt-2 text-xs text-red-600">
+                                            <p className="font-medium mb-1">Что делать:</p>
+                                            <ol className="list-decimal list-inside space-y-1">
+                                                <li>Перейдите на вкладку "Шаблонные секции"</li>
+                                                <li>Создайте хотя бы одну шаблонную секцию</li>
+                                                <li>При необходимости добавьте ресурсы и задания в шаблонные секции</li>
+                                                <li>Затем повторите синхронизацию</li>
+                                            </ol>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
 

@@ -72,10 +72,10 @@ export const courseService = {
     },
 
     /**
-     * Get template sections for a course
+     * Get template sections for a course (only sections where subject_group is null)
      */
     async getTemplateSections(courseId: number): Promise<CourseSection[]> {
-        const response = await axiosInstance.get(`/course-sections/?course=${courseId}`);
+        const response = await axiosInstance.get(`/course-sections/?course=${courseId}&subject_group__isnull=True`);
         return response.data;
     },
 

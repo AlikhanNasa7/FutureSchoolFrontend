@@ -1,22 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { courseService } from '@/services/courseService';
 import { useLocale } from '@/contexts/LocaleContext';
 import Modal from '@/components/ui/Modal';
+import type { Course } from '@/types/course';
 
 interface CreateCourseModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    course?: Course | null;
 }
 
 export default function CreateCourseModal({
     isOpen,
     onClose,
     onSuccess,
+    course,
 }: CreateCourseModalProps) {
     const { t } = useLocale();
+    const isEditMode = !!course;
     const [formData, setFormData] = useState({
         course_code: '',
         name: '',
@@ -25,6 +29,26 @@ export default function CreateCourseModal({
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
+
+    // Load course data when editing
+    useEffect(() => {
+        if (course) {
+            setFormData({
+                course_code: course.course_code || '',
+                name: course.name || '',
+                description: course.description || '',
+                grade: course.grade || 1,
+            });
+        } else {
+            setFormData({
+                course_code: '',
+                name: '',
+                description: '',
+                grade: 1,
+            });
+        }
+        setErrors({});
+    }, [course, isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,20 +75,31 @@ export default function CreateCourseModal({
 
         try {
             setSubmitting(true);
-            await courseService.createCourse({
-                course_code: formData.course_code.trim(),
-                name: formData.name.trim(),
-                description: formData.description.trim() || undefined,
-                grade: formData.grade,
-            });
+            if (isEditMode && course) {
+                await courseService.updateCourse(course.id, {
+                    course_code: formData.course_code.trim(),
+                    name: formData.name.trim(),
+                    description: formData.description.trim() || undefined,
+                    grade: formData.grade,
+                });
+            } else {
+                await courseService.createCourse({
+                    course_code: formData.course_code.trim(),
+                    name: formData.name.trim(),
+                    description: formData.description.trim() || undefined,
+                    grade: formData.grade,
+                });
+            }
             onSuccess();
-            // Reset form
-            setFormData({
-                course_code: '',
-                name: '',
-                description: '',
-                grade: 1,
-            });
+            // Reset form only if not editing
+            if (!isEditMode) {
+                setFormData({
+                    course_code: '',
+                    name: '',
+                    description: '',
+                    grade: 1,
+                });
+            }
         } catch (error: any) {
             console.error('Error creating course:', error);
             if (error.response?.data) {
@@ -82,10 +117,10 @@ export default function CreateCourseModal({
                             : apiErrors.non_field_errors,
                     });
                 } else {
-                    setErrors({ general: 'Не удалось создать курс' });
+                    setErrors({ general: isEditMode ? 'Не удалось обновить курс' : 'Не удалось создать курс' });
                 }
             } else {
-                setErrors({ general: 'Не удалось создать курс' });
+                setErrors({ general: isEditMode ? 'Не удалось обновить курс' : 'Не удалось создать курс' });
             }
         } finally {
             setSubmitting(false);
@@ -96,7 +131,7 @@ export default function CreateCourseModal({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Создать курс"
+            title={isEditMode ? 'Редактировать курс' : 'Создать курс'}
             maxWidth="max-w-md"
         >
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -200,7 +235,13 @@ export default function CreateCourseModal({
                             disabled={submitting}
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            {submitting ? 'Создание...' : 'Создать'}
+                            {submitting
+                                ? isEditMode
+                                    ? 'Сохранение...'
+                                    : 'Создание...'
+                                : isEditMode
+                                  ? 'Сохранить'
+                                  : 'Создать'}
                         </button>
                     </div>
                 </form>

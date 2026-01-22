@@ -6,5 +6,11 @@ import axiosInstance from '@/lib/axios';
 import type { Assignment } from '@/types/course';
 
 export const assignmentService = {
-    // Assignment service functions can be added here if needed
+    /**
+     * Unlink assignment from template
+     */
+    async unlinkFromTemplate(assignmentId: number): Promise<Assignment> {
+        const response = await axiosInstance.post(`/assignments/${assignmentId}/unlink-from-template/`);
+        return response.data;
+    },
 };

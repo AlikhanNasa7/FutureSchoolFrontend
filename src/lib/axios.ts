@@ -18,7 +18,7 @@ interface CustomInternalAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const axiosInstance: AxiosInstance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
@@ -112,14 +112,84 @@ axiosInstance.interceptors.response.use(
             ? endTime.getTime() - startTime.getTime()
             : 0;
 
-        console.error('❌ Response Error:', {
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            url: error.config?.url,
-            duration: `${duration}ms`,
-            message: error.message,
-            data: error.response?.data,
-        });
+        // Handle network errors (no response)
+        if (!error.response) {
+            console.error('❌ Network Error:', {
+                message: error.message,
+                code: error.code,
+                url: error.config?.url,
+                baseURL: error.config?.baseURL,
+                fullUrl: error.config?.baseURL
+                    ? `${error.config.baseURL}${error.config.url}`
+                    : error.config?.url,
+                duration: `${duration}ms`,
+                error: error,
+            });
+            
+            // Check if it's a connection error
+            if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+                console.error('🔴 Cannot connect to API server. Is the backend running on http://localhost:8000?');
+            }
+        } else {
+            // Extract error message from Django REST Framework response
+            const errorData = error.response?.data;
+            let errorMessage = error.message;
+            let errorDetails: any = null;
+
+            if (errorData) {
+                // DRF validation errors format: { "field": ["error1", "error2"] }
+                if (typeof errorData === 'object' && !Array.isArray(errorData)) {
+                    const errorObj = errorData as Record<string, any>;
+                    
+                    // Check for detail field (general errors)
+                    if (errorObj.detail) {
+                        errorMessage = typeof errorObj.detail === 'string' 
+                            ? errorObj.detail 
+                            : JSON.stringify(errorObj.detail);
+                    }
+                    // Check for non_field_errors
+                    else if (errorObj.non_field_errors) {
+                        errorMessage = Array.isArray(errorObj.non_field_errors)
+                            ? errorObj.non_field_errors.join(', ')
+                            : String(errorObj.non_field_errors);
+                    }
+                    // Format field-specific validation errors
+                    else {
+                        const fieldErrors = Object.entries(errorObj)
+                            .map(([field, messages]) => {
+                                const msg = Array.isArray(messages) 
+                                    ? messages.join(', ') 
+                                    : String(messages);
+                                return `${field}: ${msg}`;
+                            })
+                            .join('; ');
+                        if (fieldErrors) {
+                            errorMessage = fieldErrors;
+                            errorDetails = errorObj;
+                        }
+                    }
+                } else if (typeof errorData === 'string') {
+                    errorMessage = errorData;
+                }
+            }
+
+            console.error('❌ Response Error:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                url: error.config?.url,
+                baseURL: error.config?.baseURL,
+                fullUrl: error.config?.baseURL
+                    ? `${error.config.baseURL}${error.config.url}`
+                    : error.config?.url,
+                duration: `${duration}ms`,
+                message: errorMessage,
+                rawData: errorData,
+                details: errorDetails,
+            });
+
+            // Attach formatted error message to error object for easier access
+            (error as any).formattedMessage = errorMessage;
+        }
 
         if (error.response?.status === 401) {
             console.error(

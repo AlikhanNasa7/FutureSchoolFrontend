@@ -71,8 +71,14 @@ export default function ClassroomsPage() {
             };
             setClassrooms(prev => [...prev, newClassroom]);
             setShowCreateModal(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating classroom:', error);
+            // Error message is already logged in axios interceptor
+            // You can add a toast notification here if needed
+            const errorMessage = error?.formattedMessage || 
+                                error?.response?.data?.detail ||
+                                'Failed to create classroom. Please check the form data.';
+            alert(errorMessage); // TODO: Replace with proper toast notification
         } finally {
             setLoading(false);
         }
@@ -100,8 +106,12 @@ export default function ClassroomsPage() {
                 )
             );
             setEditingClassroom(null);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating classroom:', error);
+            const errorMessage = error?.formattedMessage || 
+                                error?.response?.data?.detail ||
+                                'Failed to update classroom. Please check the form data.';
+            alert(errorMessage); // TODO: Replace with proper toast notification
         } finally {
             setLoading(false);
         }
@@ -116,8 +126,12 @@ export default function ClassroomsPage() {
             setClassrooms(prev =>
                 prev.filter(classroom => classroom.id !== id)
             );
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting classroom:', error);
+            const errorMessage = error?.formattedMessage || 
+                                error?.response?.data?.detail ||
+                                'Failed to delete classroom.';
+            alert(errorMessage); // TODO: Replace with proper toast notification
         } finally {
             setLoading(false);
         }

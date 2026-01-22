@@ -10,12 +10,14 @@ import {
     Settings,
     Plus,
     Calendar,
+    RefreshCw,
 } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
 import { courseService } from '@/services/courseService';
 import type { Course, CourseSection, SubjectGroup } from '@/types/course';
 import TemplateSectionsTab from './_components/TemplateSectionsTab';
 import SubjectGroupsTab from './_components/SubjectGroupsTab';
+import SyncContentModal from './_components/SyncContentModal';
 
 type Tab = 'sections' | 'subjectGroups' | 'settings';
 
@@ -31,6 +33,7 @@ export default function CourseDetailsPage() {
     const [activeTab, setActiveTab] = useState<Tab>('sections');
     const [templateSections, setTemplateSections] = useState<CourseSection[]>([]);
     const [subjectGroups, setSubjectGroups] = useState<SubjectGroup[]>([]);
+    const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
     useEffect(() => {
         if (user && user.role !== 'superadmin') {
@@ -133,6 +136,32 @@ export default function CourseDetailsPage() {
                                     </span>
                                 </div>
                             </div>
+                            <button
+                                onClick={() => {
+                                    if (templateSections.length === 0) {
+                                        alert('Для синхронизации необходимо сначала создать шаблонные секции. Перейдите на вкладку "Шаблонные секции" и создайте хотя бы одну секцию.');
+                                        setActiveTab('sections');
+                                    } else {
+                                        setIsSyncModalOpen(true);
+                                    }
+                                }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm ${
+                                    templateSections.length === 0
+                                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                                }`}
+                                title={
+                                    templateSections.length === 0
+                                        ? 'Сначала создайте шаблонные секции'
+                                        : 'Синхронизировать контент во все классы'
+                                }
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                <span>Синхронизировать</span>
+                                {templateSections.length === 0 && (
+                                    <span className="ml-2 text-xs">(нет секций)</span>
+                                )}
+                            </button>
                         </div>
 
                         {course.description && (
@@ -225,6 +254,20 @@ export default function CourseDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Sync Content Modal */}
+            {course && (
+                <SyncContentModal
+                    isOpen={isSyncModalOpen}
+                    onClose={() => setIsSyncModalOpen(false)}
+                    courseId={courseId}
+                    courseName={course.name}
+                    onSuccess={() => {
+                        setIsSyncModalOpen(false);
+                        fetchCourseData(); // Refresh course data after sync
+                    }}
+                />
+            )}
         </div>
     );
 }

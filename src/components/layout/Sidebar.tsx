@@ -13,6 +13,8 @@ import {
     MoreVertical,
     LogOut,
     BookOpen,
+    Building2,
+    Users,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUserState, useUserActions } from '@/contexts/UserContext';
@@ -54,6 +56,18 @@ const navigation = [
         key: 'courses',
         href: '/admin/courses',
         icon: BookOpen,
+        roles: ['superadmin'],
+    },
+    {
+        key: 'schools',
+        href: '/admin/schools',
+        icon: Building2,
+        roles: ['superadmin'],
+    },
+    {
+        key: 'users',
+        href: '/admin/users',
+        icon: Users,
         roles: ['superadmin'],
     },
 ];

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, BookOpen, Users, FileText, Search, Filter } from 'lucide-react';
+import { Plus, BookOpen, Users, FileText, Search, Filter, Edit, Trash2 } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
 import { courseService } from '@/services/courseService';
-import type { CourseWithStats } from '@/types/course';
+import type { CourseWithStats, Course } from '@/types/course';
 import { useLocale } from '@/contexts/LocaleContext';
 import CreateCourseModal from './_components/CreateCourseModal';
 
@@ -19,6 +19,7 @@ export default function CoursesPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [gradeFilter, setGradeFilter] = useState<number | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
     // Check if user is SuperAdmin
     useEffect(() => {
@@ -47,7 +48,34 @@ export default function CoursesPage() {
 
     const handleCourseCreated = () => {
         setIsCreateModalOpen(false);
+        setEditingCourse(null);
         fetchCourses();
+    };
+
+    const handleEdit = (e: React.MouseEvent, course: CourseWithStats) => {
+        e.stopPropagation();
+        setEditingCourse(course);
+    };
+
+    const handleDelete = async (e: React.MouseEvent, course: CourseWithStats) => {
+        e.stopPropagation();
+        
+        const confirmed = window.confirm(
+            `Вы уверены, что хотите удалить курс "${course.name}"?\n\nЭто действие нельзя отменить. Все шаблонные секции и связанные данные будут удалены.`
+        );
+        
+        if (!confirmed) {
+            return;
+        }
+        
+        try {
+            await courseService.deleteCourse(course.id);
+            fetchCourses();
+        } catch (error: any) {
+            console.error('Error deleting course:', error);
+            const errorMessage = error?.formattedMessage || 'Не удалось удалить курс';
+            alert(errorMessage);
+        }
     };
 
     const filteredCourses = courses.filter((course) => {
@@ -181,11 +209,13 @@ export default function CoursesPage() {
                         {filteredCourses.map((course) => (
                             <div
                                 key={course.id}
-                                onClick={() => router.push(`/admin/courses/${course.id}`)}
-                                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+                                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
                             >
                                 <div className="flex items-start justify-between mb-4">
-                                    <div>
+                                    <div
+                                        onClick={() => router.push(`/admin/courses/${course.id}`)}
+                                        className="flex-1 cursor-pointer"
+                                    >
                                         <h3 className="text-lg font-semibold text-gray-900 mb-1">
                                             {course.name}
                                         </h3>
@@ -193,9 +223,25 @@ export default function CoursesPage() {
                                             {course.course_code}
                                         </p>
                                     </div>
-                                    <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">
-                                        {course.grade} класс
-                                    </span>
+                                    <div className="flex items-center gap-2 ml-2">
+                                        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">
+                                            {course.grade} класс
+                                        </span>
+                                        <button
+                                            onClick={(e) => handleEdit(e, course)}
+                                            className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                            title="Редактировать курс"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDelete(e, course)}
+                                            className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                            title="Удалить курс"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {course.description && (
@@ -204,7 +250,10 @@ export default function CoursesPage() {
                                     </p>
                                 )}
 
-                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                <div
+                                    onClick={() => router.push(`/admin/courses/${course.id}`)}
+                                    className="flex items-center gap-4 text-sm text-gray-600 cursor-pointer"
+                                >
                                     <div className="flex items-center gap-1">
                                         <Users className="w-4 h-4" />
                                         <span>
@@ -224,11 +273,15 @@ export default function CoursesPage() {
                 )}
             </div>
 
-            {/* Create Course Modal */}
+            {/* Create/Edit Course Modal */}
             <CreateCourseModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+                isOpen={isCreateModalOpen || !!editingCourse}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setEditingCourse(null);
+                }}
                 onSuccess={handleCourseCreated}
+                course={editingCourse}
             />
         </div>
     );

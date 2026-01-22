@@ -90,10 +90,15 @@ export function useApi<T>(endpoint?: string, initialData?: T): UseApiReturn<T> {
 
                 return result;
             } catch (error) {
-                const errorMessage =
-                    error instanceof AxiosError
-                        ? error.response?.data?.message || error.message
-                        : 'An error occurred';
+                let errorMessage = 'An error occurred';
+                
+                if (error instanceof AxiosError) {
+                    // Use formattedMessage from axios interceptor if available
+                    errorMessage = (error as any)?.formattedMessage || 
+                                  error.response?.data?.detail ||
+                                  error.response?.data?.message || 
+                                  error.message;
+                }
 
                 setState(prev => ({
                     ...prev,
@@ -130,10 +135,15 @@ export function useCrud<T, CreateData = Partial<T>, UpdateData = Partial<T>>(
     const [error, setError] = useState<string | null>(null);
 
     const handleError = (error: unknown): string => {
-        const errorMessage =
-            error instanceof AxiosError
-                ? error.response?.data?.message || error.message
-                : 'An error occurred';
+        let errorMessage = 'An error occurred';
+        
+        if (error instanceof AxiosError) {
+            // Use formattedMessage from axios interceptor if available
+            errorMessage = (error as any)?.formattedMessage || 
+                          error.response?.data?.detail ||
+                          error.response?.data?.message || 
+                          error.message;
+        }
 
         setError(errorMessage);
         return errorMessage;

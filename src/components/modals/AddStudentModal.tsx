@@ -44,12 +44,39 @@ export default function AddStudentModal({
     const fetchAvailableStudents = async () => {
         setLoading(true);
         try {
-            const response = await axiosInstance.get(
-                '/users?role=student&no_classroom=true'
-            );
-            setAvailableStudents(response.data);
-        } catch (error) {
+            // Fetch students without classrooms
+            const response = await axiosInstance.get('/users/', {
+                params: {
+                    role: 'student',
+                    no_classroom: 'true',
+                },
+            });
+            
+            // Handle both array and paginated responses
+            let students = [];
+            if (Array.isArray(response.data)) {
+                students = response.data;
+            } else if (response.data.results) {
+                students = response.data.results;
+            } else if (response.data.data) {
+                students = response.data.data;
+            }
+            
+            setAvailableStudents(students);
+            
+            // If no students without classrooms, show a helpful message
+            if (students.length === 0) {
+                console.log('No students without classrooms found. You may need to create students first.');
+            }
+        } catch (error: any) {
             console.error('Error fetching available students:', error);
+            const errorMessage =
+                error?.formattedMessage ||
+                error?.response?.data?.detail ||
+                'Failed to load available students';
+            // Don't show alert here, just log - the UI will show "no students" message
+            console.error(errorMessage);
+            setAvailableStudents([]);
         } finally {
             setLoading(false);
         }
@@ -66,8 +93,14 @@ export default function AddStudentModal({
             );
             await fetchAvailableStudents();
             onStudentAdded();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error adding student:', error);
+            const errorMessage =
+                error?.formattedMessage ||
+                error?.response?.data?.detail ||
+                error?.response?.data?.error ||
+                'Failed to add student to classroom';
+            alert(errorMessage);
         } finally {
             setAdding(false);
         }
@@ -163,7 +196,7 @@ export default function AddStudentModal({
                                           'modals.addStudent.noAvailableStudents'
                                       )}
                             </h3>
-                            <p className="text-gray-500">
+                            <p className="text-gray-500 mb-4">
                                 {searchQuery
                                     ? t('modals.addStudent.noSearchResults', {
                                           query: searchQuery,
@@ -172,6 +205,11 @@ export default function AddStudentModal({
                                           'modals.addStudent.allStudentsAssigned'
                                       )}
                             </p>
+                            {!searchQuery && (
+                                <p className="text-sm text-gray-400">
+                                    Создайте учеников в разделе управления пользователями, чтобы добавить их в класс.
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>

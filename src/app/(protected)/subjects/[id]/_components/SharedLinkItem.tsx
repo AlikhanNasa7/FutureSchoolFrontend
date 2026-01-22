@@ -6,6 +6,8 @@ import { DeleteButton } from './WeekMaterialsPanel.client';
 import { modalController } from '@/lib/modalController';
 import axiosInstance from '@/lib/axios';
 import Image from 'next/image';
+import TemplateLinkIndicator from '@/components/courseTemplates/TemplateLinkIndicator';
+import { resourceService } from '@/services/resourceService';
 
 interface SharedLinkItemProps {
     item: {
@@ -75,6 +77,30 @@ export function SharedLinkItem({
         }
     }
 
+    async function handleUnlink() {
+        if (!item.template_resource || item.is_unlinked_from_template) {
+            return;
+        }
+
+        modalController.open('confirmation', {
+            title: 'Отвязать от шаблона',
+            message: `Вы уверены, что хотите отвязать "${item.title}" от шаблона? После отвязки этот ресурс больше не будет автоматически синхронизироваться с шаблоном.`,
+            confirmText: 'Отвязать',
+            cancelText: 'Отмена',
+            confirmVariant: 'warning',
+            onConfirm: async () => {
+                try {
+                    await resourceService.unlinkFromTemplate(Number(item.id));
+                    onRefresh?.();
+                } catch (error: any) {
+                    console.error('Error unlinking resource:', error);
+                    const errorMessage = error?.formattedMessage || 'Не удалось отвязать ресурс от шаблона';
+                    alert(errorMessage);
+                }
+            },
+        });
+    }
+
     function handleClick() {
         console.log(item, 'item inside handleClick');
         if (item.file && onFileView) {
@@ -122,6 +148,16 @@ export function SharedLinkItem({
                     )}
                     {isText && (
                         <span className="block break-all">{item.title}</span>
+                    )}
+                    {isTeacher && (
+                        <div className="mt-1">
+                            <TemplateLinkIndicator
+                                isLinked={!!item.template_resource}
+                                isUnlinked={!!item.is_unlinked_from_template}
+                                onUnlink={handleUnlink}
+                                showButton={!!item.template_resource && !item.is_unlinked_from_template}
+                            />
+                        </div>
                     )}
                 </div>
 
