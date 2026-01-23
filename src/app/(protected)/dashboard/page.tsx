@@ -1,11 +1,26 @@
 'use client';
 import { useUserState } from '@/contexts/UserContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import Calender from '@/components/dashboard/Calender';
 import DaySchedule from '@/components/dashboard/DaySchedule';
 import PendingAssignments from '@/components/dashboard/PendingAssignments';
 
 export default function DashboardPage() {
     const { user } = useUserState();
+    const router = useRouter();
+
+    useEffect(() => {
+        // Redirect parents to their dashboard
+        if (user?.role === 'parent') {
+            router.push('/parent/dashboard');
+        }
+    }, [user, router]);
+
+    // Don't render anything for parents (will redirect)
+    if (user?.role === 'parent') {
+        return null;
+    }
 
     return (
         <div className="flex gap-6 md:flex-row flex-col">

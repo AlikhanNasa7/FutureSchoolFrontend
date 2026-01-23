@@ -12,7 +12,7 @@ interface UserData {
     first_name: string;
     last_name: string;
     phone_number?: string | null;
-    role: 'superadmin' | 'schooladmin' | 'teacher' | 'student';
+    role: 'superadmin' | 'schooladmin' | 'teacher' | 'student' | 'parent';
     school?: number | null;
     is_active: boolean;
     kundelik_id?: string | null;
@@ -350,6 +350,7 @@ export default function UserModal({
                             <option value="teacher">Учитель</option>
                             <option value="schooladmin">Администратор школы</option>
                             <option value="superadmin">Супер-администратор</option>
+                            <option value="parent">Родитель</option>
                         </select>
                     </div>
 

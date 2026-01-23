@@ -2,6 +2,8 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { AlertCircle } from 'lucide-react';
+import { useUserState } from '@/contexts/UserContext';
 import axiosInstance from '@/lib/axios';
 import { CheckCircle, ArrowRight, Check, X, ArrowLeft, AlertCircle } from 'lucide-react';
 
@@ -76,6 +78,7 @@ interface AttemptResult {
 export default function StudentResultsPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { user } = useUserState();
     const attemptId = searchParams.get('attempt');
 
     const [attemptData, setAttemptData] = useState<AttemptResult | null>(null);
@@ -92,8 +95,12 @@ export default function StudentResultsPage() {
                 );
                 const attempt = response.data;
 
-                // Check if student can view results
-                if (!attempt.can_view_results) {
+                // Check if user can view results
+                // For students: check can_view_results
+                // For parents: backend will filter by children, so if we get the attempt, it's allowed
+                const isParent = user?.role === 'parent';
+                
+                if (!attempt.can_view_results && !isParent) {
                     setAttemptData(null);
                     setLoading(false);
                     return;

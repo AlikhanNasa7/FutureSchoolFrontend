@@ -6,6 +6,7 @@ import { useUserState } from '@/contexts/UserContext';
 import axiosInstance from '@/lib/axios';
 import UserModal from '@/components/users/UserModal';
 import { useRouter } from 'next/navigation';
+import ParentChildrenModal from '@/components/users/ParentChildrenModal';
 
 interface UserData {
     id: number;
@@ -14,7 +15,7 @@ interface UserData {
     first_name: string;
     last_name: string;
     phone_number?: string | null;
-    role: 'superadmin' | 'schooladmin' | 'teacher' | 'student';
+    role: 'superadmin' | 'schooladmin' | 'teacher' | 'student' | 'parent';
     school?: number | null;
     school_name?: string;
     is_active: boolean;
@@ -28,6 +29,7 @@ export default function UsersPage() {
     const [editingUser, setEditingUser] = useState<UserData | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
+    const [parentForChildrenModal, setParentForChildrenModal] = useState<UserData | null>(null);
     const { user } = useUserState();
     const router = useRouter();
 
@@ -210,6 +212,7 @@ export default function UsersPage() {
                             <option value="teacher">Учителя</option>
                             <option value="schooladmin">Администраторы школ</option>
                             <option value="superadmin">Супер-администраторы</option>
+                            <option value="parent">Родители</option>
                         </select>
                     </div>
                     {canEdit && (
@@ -285,7 +288,9 @@ export default function UsersPage() {
                                                           ? 'bg-blue-100 text-blue-800'
                                                           : user.role === 'teacher'
                                                             ? 'bg-green-100 text-green-800'
-                                                            : 'bg-gray-100 text-gray-800'
+                                                            : user.role === 'parent'
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : 'bg-gray-100 text-gray-800'
                                                 }`}
                                             >
                                                 {user.role === 'superadmin'
@@ -294,7 +299,9 @@ export default function UsersPage() {
                                                       ? 'Админ школы'
                                                       : user.role === 'teacher'
                                                         ? 'Учитель'
-                                                        : 'Ученик'}
+                                                        : user.role === 'parent'
+                                                          ? 'Родитель'
+                                                          : 'Ученик'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">
@@ -314,6 +321,18 @@ export default function UsersPage() {
                                         {canEdit && (
                                             <td className="px-6 py-4 text-sm">
                                                 <div className="flex gap-2">
+                                                    {user.role === 'parent' && (
+                                                        <button
+                                                            onClick={() =>
+                                                                setParentForChildrenModal(user)
+                                                            }
+                                                            className="p-1 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                                                            disabled={loading}
+                                                            title="Дети родителя"
+                                                        >
+                                                            <Users className="w-3 h-3" />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() =>
                                                             setEditingUser(user)
@@ -370,6 +389,19 @@ export default function UsersPage() {
                     setEditingUser(null);
                 }}
                 loading={loading}
+            />
+
+            {/* Parent–Children Modal */}
+            <ParentChildrenModal
+                isOpen={!!parentForChildrenModal}
+                parentId={parentForChildrenModal?.id || null}
+                parentName={
+                    parentForChildrenModal
+                        ? `${parentForChildrenModal.first_name} ${parentForChildrenModal.last_name}`.trim() ||
+                          parentForChildrenModal.username
+                        : undefined
+                }
+                onClose={() => setParentForChildrenModal(null)}
             />
         </div>
     );

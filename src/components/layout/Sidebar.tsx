@@ -26,7 +26,7 @@ const navigation = [
         key: 'home',
         href: '/dashboard',
         icon: Home,
-        roles: ['teacher', 'student', 'superadmin', 'schooladmin'],
+        roles: ['teacher', 'student', 'superadmin', 'schooladmin', 'parent'],
     },
     {
         key: 'subjects',
