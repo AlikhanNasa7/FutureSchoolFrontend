@@ -17,6 +17,7 @@ interface Classroom {
     id: number;
     grade: number;
     letter: string;
+    language?: string;
     school_name: string;
 }
 
@@ -24,6 +25,7 @@ interface CreateSubjectGroupModalProps {
     isOpen: boolean;
     onClose: () => void;
     courseId: number;
+    courseLanguage?: string;
     subjectGroup?: SubjectGroup | null;
     onSuccess: () => void;
 }
@@ -42,6 +44,7 @@ export default function CreateSubjectGroupModal({
     isOpen,
     onClose,
     courseId,
+    courseLanguage,
     subjectGroup,
     onSuccess,
 }: CreateSubjectGroupModalProps) {
@@ -90,7 +93,12 @@ export default function CreateSubjectGroupModal({
     const fetchClassrooms = async () => {
         setLoadingClassrooms(true);
         try {
-            const response = await axiosInstance.get('/classrooms/');
+            const params: Record<string, string> = {};
+            // Filter classrooms by course language if provided
+            if (courseLanguage) {
+                params.language = courseLanguage;
+            }
+            const response = await axiosInstance.get('/classrooms/', { params });
             setClassrooms(response.data);
         } catch (error) {
             console.error('Error fetching classrooms:', error);
@@ -196,12 +204,17 @@ export default function CreateSubjectGroupModal({
                             } ${subjectGroup ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         >
                             <option value="">Выберите класс</option>
-                            {classrooms.map((classroom) => (
-                                <option key={classroom.id} value={classroom.id}>
-                                    {classroom.grade}
-                                    {classroom.letter} ({classroom.school_name})
-                                </option>
-                            ))}
+                            {classrooms.map((classroom) => {
+                                const languageLabel = classroom.language === 'kazakh' ? 'Қаз' : 
+                                                     classroom.language === 'russian' ? 'Рус' : 
+                                                     classroom.language === 'english' ? 'Eng' : 
+                                                     classroom.language || '';
+                                return (
+                                    <option key={classroom.id} value={classroom.id}>
+                                        {classroom.grade}{classroom.letter} {languageLabel && `[${languageLabel}]`} ({classroom.school_name})
+                                    </option>
+                                );
+                            })}
                         </select>
                     )}
                     {subjectGroup && (

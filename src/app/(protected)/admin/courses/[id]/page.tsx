@@ -11,15 +11,19 @@ import {
     Plus,
     Calendar,
     RefreshCw,
+    ClipboardList,
 } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
 import { courseService } from '@/services/courseService';
 import type { Course, CourseSection, SubjectGroup } from '@/types/course';
 import TemplateSectionsTab from './_components/TemplateSectionsTab';
 import SubjectGroupsTab from './_components/SubjectGroupsTab';
+import TemplateTestsTab from './_components/TemplateTestsTab';
 import SyncContentModal from './_components/SyncContentModal';
+import { testService } from '@/services/testService';
+import type { Test } from '@/services/testService';
 
-type Tab = 'sections' | 'subjectGroups' | 'settings';
+type Tab = 'sections' | 'subjectGroups' | 'tests' | 'settings';
 
 export default function CourseDetailsPage() {
     const params = useParams();
@@ -33,6 +37,7 @@ export default function CourseDetailsPage() {
     const [activeTab, setActiveTab] = useState<Tab>('sections');
     const [templateSections, setTemplateSections] = useState<CourseSection[]>([]);
     const [subjectGroups, setSubjectGroups] = useState<SubjectGroup[]>([]);
+    const [templateTests, setTemplateTests] = useState<Test[]>([]);
     const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
     useEffect(() => {
@@ -52,15 +57,17 @@ export default function CourseDetailsPage() {
             setLoading(true);
             setError(null);
 
-            const [courseData, sectionsData, groupsData] = await Promise.all([
+            const [courseData, sectionsData, groupsData, testsData] = await Promise.all([
                 courseService.getCourseById(courseId),
                 courseService.getTemplateSections(courseId),
                 courseService.getSubjectGroupsForCourse(courseId),
+                testService.getTemplateTests(courseId).catch(() => []),
             ]);
 
             setCourse(courseData);
             setTemplateSections(sectionsData);
             setSubjectGroups(groupsData);
+            setTemplateTests(testsData);
         } catch (err) {
             console.error('Error fetching course data:', err);
             setError('Не удалось загрузить данные курса');
@@ -214,6 +221,19 @@ export default function CourseDetailsPage() {
                                 </div>
                             </button>
                             <button
+                                onClick={() => setActiveTab('tests')}
+                                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                                    activeTab === 'tests'
+                                        ? 'border-purple-600 text-purple-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <ClipboardList className="w-4 h-4" />
+                                    <span>Тесты ({templateTests.length})</span>
+                                </div>
+                            </button>
+                            <button
                                 onClick={() => setActiveTab('settings')}
                                 className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                                     activeTab === 'settings'
@@ -241,8 +261,16 @@ export default function CourseDetailsPage() {
                         {activeTab === 'subjectGroups' && (
                             <SubjectGroupsTab
                                 courseId={courseId}
+                                courseLanguage={course?.language}
                                 subjectGroups={subjectGroups}
                                 onSubjectGroupsChange={fetchCourseData}
+                            />
+                        )}
+                        {activeTab === 'tests' && (
+                            <TemplateTestsTab
+                                courseId={courseId}
+                                sections={templateSections}
+                                onTestsChange={fetchCourseData}
                             />
                         )}
                         {activeTab === 'settings' && (

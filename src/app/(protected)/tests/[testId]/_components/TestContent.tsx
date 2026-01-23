@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import Question from '../questions/[questionOrder]/_components/Question';
 import { useRouter } from 'next/navigation';
+import TestReviewModal from './TestReviewModal';
 
 interface TestContentProps {
     testId: string;
@@ -35,9 +36,9 @@ interface TestData {
     title: string;
     description: string;
     is_published: boolean;
-    scheduled_at: string;
-    start_date: string;
-    end_date: string;
+    scheduled_at: string | null;
+    start_date: string | null;
+    end_date: string | null;
     time_limit_minutes: number | null;
     reveal_results_at: string | null;
     allow_multiple_attempts: boolean;
@@ -78,6 +79,8 @@ export default function TestContent({ testId }: TestContentProps) {
     const [isTestStarted, setIsTestStarted] = useState(false);
     const [activeAttemptId, setActiveAttemptId] = useState<number | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+    const [attemptStartedAt, setAttemptStartedAt] = useState<string | null>(null);
+    const [showReviewModal, setShowReviewModal] = useState(false);
 
     const router = useRouter();
     useEffect(() => {
@@ -101,16 +104,26 @@ export default function TestContent({ testId }: TestContentProps) {
     }, [testId]);
 
     useEffect(() => {
-        if (!testData || !isTestStarted) return;
+        if (!testData || !isTestStarted || !attemptStartedAt) return;
+
+        // Only calculate time remaining if test has time limit
+        if (!testData.time_limit_minutes) {
+            setTimeRemaining(null);
+            return;
+        }
 
         const calculateTimeRemaining = () => {
+            const startedAt = new Date(attemptStartedAt).getTime();
             const now = new Date().getTime();
-            const endTime = new Date(testData.end_date).getTime();
+            const timeLimitMs = testData.time_limit_minutes! * 60 * 1000;
+            const endTime = startedAt + timeLimitMs;
             const remaining = Math.max(0, endTime - now);
             setTimeRemaining(remaining);
 
-            if (remaining === 0 && activeAttemptId) {
-                handleSubmitTest();
+            // Auto-submit when time runs out
+            if (remaining === 0 && activeAttemptId && !showReviewModal) {
+                // Save all answers first, then show review or submit directly
+                handleAutoSubmit();
             }
         };
 
@@ -119,7 +132,7 @@ export default function TestContent({ testId }: TestContentProps) {
 
         return () => clearInterval(interval);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [testData, isTestStarted, activeAttemptId]);
+    }, [testData, isTestStarted, activeAttemptId, attemptStartedAt, showReviewModal]);
 
     const formatTimeRemaining = (ms: number | null): string => {
         if (ms === null) return '--:--';
@@ -144,6 +157,7 @@ export default function TestContent({ testId }: TestContentProps) {
 
             const attempt = response.data;
             setActiveAttemptId(attempt.id);
+            setAttemptStartedAt(attempt.started_at);
             setIsTestStarted(true);
             setCurrentQuestionIndex(0);
 
@@ -263,15 +277,80 @@ export default function TestContent({ testId }: TestContentProps) {
         }
     };
 
+    const handleAutoSubmit = async () => {
+        // Auto-submit when time runs out - save all answers and submit directly
+        if (!activeAttemptId || !testData) return;
+
+        try {
+            // Save all answers first (only if they exist)
+            for (let i = 0; i < testData.questions.length; i++) {
+                if (answers[i] !== undefined) {
+                    await submitCurrentAnswer(i);
+                }
+            }
+
+            // Small delay to ensure all answers are saved
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Submit the test
+            await axiosInstance.post(
+                `/attempts/${activeAttemptId}/submit/`,
+                {}
+            );
+
+            // Navigate to results
+            router.push(
+                `/tests/${testId}/student-results?attempt=${activeAttemptId}`
+            );
+        } catch (error) {
+            console.error('Failed to auto-submit test:', error);
+            // Even if there's an error, try to submit
+            try {
+                await axiosInstance.post(
+                    `/attempts/${activeAttemptId}/submit/`,
+                    {}
+                );
+            } catch (submitError) {
+                console.error('Failed to submit after error:', submitError);
+            }
+            alert('Время истекло. Тест будет автоматически завершен.');
+            router.push(
+                `/tests/${testId}/student-results?attempt=${activeAttemptId}`
+            );
+        }
+    };
+
     const handleSubmitTest = async () => {
+        // Show review modal before final submission
+        setShowReviewModal(true);
+    };
+
+    const handleFinalSubmit = async () => {
         try {
             if (!activeAttemptId) {
                 console.error('No active attempt found');
                 return;
             }
 
+            // Close modal first
+            setShowReviewModal(false);
+
             // Submit current answer before submitting the test
-            await submitCurrentAnswer(currentQuestionIndex);
+            if (answers[currentQuestionIndex] !== undefined) {
+                await submitCurrentAnswer(currentQuestionIndex);
+            }
+
+            // Save all answers (only if they exist)
+            if (testData) {
+                for (let i = 0; i < testData.questions.length; i++) {
+                    if (answers[i] !== undefined) {
+                        await submitCurrentAnswer(i);
+                    }
+                }
+            }
+
+            // Small delay to ensure all answers are saved
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const response = await axiosInstance.post(
                 `/attempts/${activeAttemptId}/submit/`,
@@ -285,10 +364,12 @@ export default function TestContent({ testId }: TestContentProps) {
             );
         } catch (error) {
             console.error('Failed to submit test:', error);
+            alert('Не удалось завершить тест. Попробуйте еще раз.');
         }
     };
 
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString: string | null) => {
+        if (!dateString) return 'Не указано';
         return new Date(dateString).toLocaleString('ru-RU', {
             year: 'numeric',
             month: 'long',
@@ -441,6 +522,18 @@ export default function TestContent({ testId }: TestContentProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Review Modal */}
+                {testData && (
+                    <TestReviewModal
+                        isOpen={showReviewModal}
+                        onClose={() => setShowReviewModal(false)}
+                        onConfirm={handleFinalSubmit}
+                        questions={testData.questions}
+                        answers={answers}
+                        timeRemaining={timeRemaining}
+                    />
+                )}
             </div>
         );
     }
@@ -460,33 +553,51 @@ export default function TestContent({ testId }: TestContentProps) {
 
                 {/* Test Information */}
                 <div className="grid grid-cols-1 md:grid-cols-10 gap-4 mb-8">
-                    <div className="bg-green-50 rounded-lg p-4 md:col-span-3">
-                        <div className="flex items-center gap-3">
-                            <Clock className="w-6 h-6 text-green-600" />
-                            <div>
-                                <p className="text-sm text-gray-600">
-                                    Начало теста
-                                </p>
-                                <p className="text-sm font-semibold text-gray-900">
-                                    {formatDate(testData.start_date)}
-                                </p>
+                    {testData.start_date && testData.end_date ? (
+                        <>
+                            <div className="bg-green-50 rounded-lg p-4 md:col-span-3">
+                                <div className="flex items-center gap-3">
+                                    <Clock className="w-6 h-6 text-green-600" />
+                                    <div>
+                                        <p className="text-sm text-gray-600">
+                                            Начало теста
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                            {formatDate(testData.start_date)}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="bg-red-50 rounded-lg p-4 md:col-span-3">
-                        <div className="flex items-center gap-3">
-                            <Clock className="w-6 h-6 text-red-600" />
-                            <div>
-                                <p className="text-sm text-gray-600">
-                                    Окончание теста
-                                </p>
-                                <p className="text-sm font-semibold text-gray-900">
-                                    {formatDate(testData.end_date)}
-                                </p>
+                            <div className="bg-red-50 rounded-lg p-4 md:col-span-3">
+                                <div className="flex items-center gap-3">
+                                    <Clock className="w-6 h-6 text-red-600" />
+                                    <div>
+                                        <p className="text-sm text-gray-600">
+                                            Окончание теста
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                            {formatDate(testData.end_date)}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="bg-gray-50 rounded-lg p-4 md:col-span-6">
+                            <div className="flex items-center gap-3">
+                                <Clock className="w-6 h-6 text-gray-600" />
+                                <div>
+                                    <p className="text-sm text-gray-600">
+                                        Период доступности
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                        Открытый тест - доступен в любое время
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {testData.time_limit_minutes && (
                         <div className="bg-blue-50 rounded-lg p-4 md:col-span-2">

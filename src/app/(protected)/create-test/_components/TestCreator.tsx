@@ -8,11 +8,14 @@ import {
     CheckCircle2,
     Info,
     Settings,
+    Eye,
 } from 'lucide-react';
 import { QuestionEditor } from './QuestionEditor';
 import axiosInstance from '@/lib/axios';
 import { useLocale } from '@/contexts/LocaleContext';
 import { useSearchParams } from 'next/navigation';
+import { courseService } from '@/services/courseService';
+import { testService } from '@/services/testService';
 
 export interface Question {
     id: string;
@@ -22,7 +25,7 @@ export interface Question {
     points: number;
     test: string;
     // Multiple choice and choose all properties
-    options?: { text: string; is_correct: boolean; position: number }[];
+    options?: { id?: string | number; text: string; is_correct: boolean; position: number; image_url?: string }[];
     // Open question properties
     correct_answer_text?: string;
     key_words?: string;
@@ -37,11 +40,16 @@ export interface Test {
     end_date: string | null;
     scheduled_at?: string;
     subject_group?: number;
+    course_section?: number;
     // Time settings
     has_time_limit: boolean;
     time_limit_minutes: number | null;
     has_dates: boolean;
     is_published: boolean;
+    // Result visibility settings
+    show_score_immediately: boolean;
+    reveal_results_at: string | null;
+    has_reveal_date: boolean;
     questions: Question[];
 }
 
@@ -49,13 +57,27 @@ export default function TestCreator() {
     const { t, locale } = useLocale();
     const searchParams = useSearchParams();
     const subjectId = searchParams.get('subject');
+    const templateSectionId = searchParams.get('template_section');
+    const courseId = searchParams.get('course');
+    const isTemplate = searchParams.get('template') === 'true';
+    const testId = searchParams.get('testId'); // For editing existing test
     const [subject, setSubject] = useState<{
         id: number;
         course_name: string;
         course_code: string;
         classroom_display?: string;
     } | null>(null);
+    const [templateSection, setTemplateSection] = useState<{
+        id: number;
+        title: string;
+        course: number;
+    } | null>(null);
     const [loadingSubject, setLoadingSubject] = useState(true);
+    const [originalTest, setOriginalTest] = useState<{
+        template_test: number | null;
+        is_unlinked_from_template: boolean;
+        questions: any[];
+    } | null>(null);
 
     const [test, setTest] = useState<Test>({
         title: '',
@@ -66,34 +88,145 @@ export default function TestCreator() {
         time_limit_minutes: null,
         has_dates: false,
         is_published: true,
+        show_score_immediately: false,
+        reveal_results_at: null,
+        has_reveal_date: false,
         questions: [],
     });
 
-    // Fetch subject information from query params
+    // Fetch subject or template section information from query params, or existing test if editing
     React.useEffect(() => {
-        const fetchSubject = async () => {
-            if (!subjectId) {
-                setLoadingSubject(false);
+        const fetchData = async () => {
+            // If editing existing test, load it first
+            if (testId) {
+                try {
+                    setLoadingSubject(true);
+                    const testData = await testService.getTestById(Number(testId));
+                    
+                    // Store original test data for comparison
+                    setOriginalTest({
+                        template_test: testData.template_test,
+                        is_unlinked_from_template: testData.is_unlinked_from_template,
+                        questions: testData.questions || [],
+                    });
+                    
+                    // Set test data
+                    setTest({
+                        title: testData.title || '',
+                        description: testData.description || '',
+                        start_date: testData.start_date ? new Date(testData.start_date).toISOString().slice(0, 16) : null,
+                        end_date: testData.end_date ? new Date(testData.end_date).toISOString().slice(0, 16) : null,
+                        has_time_limit: !!testData.time_limit_minutes,
+                        time_limit_minutes: testData.time_limit_minutes || null,
+                        has_dates: !!(testData.start_date || testData.end_date),
+                        is_published: testData.is_published,
+                        show_score_immediately: testData.show_score_immediately || false,
+                        reveal_results_at: testData.reveal_results_at ? new Date(testData.reveal_results_at).toISOString().slice(0, 16) : null,
+                        has_reveal_date: !!testData.reveal_results_at,
+                        course_section: testData.course_section || undefined,
+                        subject_group: testData.subject_group || undefined,
+                        questions: testData.questions?.map((q: any) => ({
+                            id: q.id.toString(), // Keep as string for state management
+                            type: q.type,
+                            text: q.text,
+                            points: q.points,
+                            position: q.position,
+                            options: q.options?.map((opt: any) => ({
+                                id: opt.id ? opt.id.toString() : undefined, // Keep ID for existing options
+                                text: opt.text,
+                                is_correct: opt.is_correct,
+                                position: opt.position,
+                                image_url: opt.image_url,
+                            })) || [],
+                            correct_answer_text: q.correct_answer_text,
+                            key_words: q.key_words,
+                            matching_pairs_json: q.matching_pairs_json,
+                        })) || [],
+                    });
+                    
+                    // If test has course_section, fetch section info
+                    if (testData.course_section) {
+                        try {
+                            const sectionData = await courseService.getCourseSectionById(testData.course_section);
+                            setTemplateSection({
+                                id: sectionData.id,
+                                title: sectionData.title,
+                                course: sectionData.course || 0,
+                            });
+                        } catch (error) {
+                            console.error('Error fetching section:', error);
+                        }
+                    }
+                    
+                    // If test has subject_group, fetch subject info
+                    if (testData.subject_group) {
+                        try {
+                            const response = await axiosInstance.get(`/subject-groups/${testData.subject_group}/`);
+                            setSubject(response.data);
+                        } catch (error) {
+                            console.error('Error fetching subject:', error);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading test:', error);
+                    alert('Не удалось загрузить тест для редактирования');
+                } finally {
+                    setLoadingSubject(false);
+                }
                 return;
             }
-            try {
-                setLoadingSubject(true);
-                const response = await axiosInstance.get(
-                    `/subject-groups/${subjectId}/`
-                );
-                setSubject(response.data);
-                setTest(prev => ({
-                    ...prev,
-                    subject_group: response.data.id,
-                }));
-            } catch (error) {
-                console.error('Error fetching subject:', error);
-            } finally {
+            
+            if (templateSectionId) {
+                // Fetch template section data - use courseService to get section by ID
+                try {
+                    setLoadingSubject(true);
+                    // Use courseService.getCourseSectionById which properly handles template sections
+                    const sectionData = await courseService.getCourseSectionById(Number(templateSectionId));
+                    console.log('Loaded template section:', sectionData.id, sectionData.title);
+                    setTemplateSection({
+                        id: sectionData.id,
+                        title: sectionData.title,
+                        course: sectionData.course || 0,
+                    });
+                    setTest(prev => {
+                        console.log('Setting course_section to:', sectionData.id);
+                        return {
+                            ...prev,
+                            course_section: sectionData.id,
+                        };
+                    });
+                } catch (error) {
+                    console.error('Error fetching template section:', error);
+                    alert('Не удалось загрузить информацию о шаблонной секции');
+                } finally {
+                    setLoadingSubject(false);
+                }
+            } else if (isTemplate) {
+                // Template test without section - just set loading to false
+                setLoadingSubject(false);
+            } else if (subjectId) {
+                // Fetch subject group data (existing logic)
+                try {
+                    setLoadingSubject(true);
+                    const response = await axiosInstance.get(
+                        `/subject-groups/${subjectId}/`
+                    );
+                    setSubject(response.data);
+                    setTest(prev => ({
+                        ...prev,
+                        subject_group: response.data.id,
+                    }));
+                } catch (error) {
+                    console.error('Error fetching subject:', error);
+                } finally {
+                    setLoadingSubject(false);
+                }
+            } else {
                 setLoadingSubject(false);
             }
         };
-        fetchSubject();
-    }, [subjectId]);
+        fetchData();
+    }, [subjectId, templateSectionId, isTemplate, testId]);
 
     console.log(test, 'test');
 
@@ -235,9 +368,27 @@ export default function TestCreator() {
         }));
     };
 
+    const toggleRevealDate = () => {
+        setTest(prev => ({
+            ...prev,
+            has_reveal_date: !prev.has_reveal_date,
+            reveal_results_at: !prev.has_reveal_date
+                ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                      .toISOString()
+                      .slice(0, 16)
+                : null,
+        }));
+    };
+
     const saveTest = async () => {
-        if (!test.subject_group) {
-            alert(t('test.subjectGroupRequired'));
+        // For template tests (when template=true or templateSectionId), course_section can be null
+        const isTemplateTest = templateSectionId || searchParams.get('template') === 'true';
+        
+        // Check if we have either subject_group (for regular tests) or course_section/template flag (for template tests)
+        if (!test.subject_group && !test.course_section && !isTemplateTest) {
+            alert(templateSectionId 
+                ? 'Необходимо выбрать секцию курса' 
+                : t('test.subjectGroupRequired'));
             return;
         }
 
@@ -245,26 +396,58 @@ export default function TestCreator() {
         const testData: Record<string, unknown> = {
             title: test.title,
             description: test.description,
-            subject_group: test.subject_group,
             is_published: test.is_published,
-            questions: test.questions.map(q => ({
-                type: q.type,
-                text: q.text,
-                points: q.points,
-                position: q.position,
-                options: q.options || [],
-                correct_answer_text: q.correct_answer_text,
-                key_words: q.key_words,
-                matching_pairs_json: q.matching_pairs_json,
-            })),
+            questions: test.questions.map(q => {
+                // Include ID for existing questions (when editing)
+                const questionId = q.id && !q.id.toString().startsWith('temp') 
+                    ? parseInt(q.id.toString()) 
+                    : undefined;
+                
+                return {
+                    id: questionId, // Include ID for existing questions
+                    type: q.type,
+                    text: q.text,
+                    points: q.points,
+                    position: q.position,
+                    options: (q.options || []).map(opt => {
+                        // Include ID for existing options (when editing)
+                        const optionId = opt.id && !opt.id.toString().startsWith('temp')
+                            ? (typeof opt.id === 'number' ? opt.id : parseInt(opt.id.toString()))
+                            : undefined;
+                        
+                        return {
+                            id: optionId, // Include ID for existing options
+                            text: opt.text,
+                            is_correct: opt.is_correct,
+                            position: opt.position,
+                            image_url: opt.image_url,
+                        };
+                    }),
+                    correct_answer_text: q.correct_answer_text,
+                    key_words: q.key_words,
+                    matching_pairs_json: q.matching_pairs_json,
+                };
+            }),
         };
+
+        // Add course_section for template tests or subject_group for regular tests
+        // IMPORTANT: course_section must be set explicitly for template tests to prevent auto-assignment
+        // Set course_section FIRST before dates to ensure it's not overwritten
+        if (test.course_section) {
+            testData.course_section = test.course_section;
+            console.log('Sending course_section to backend:', test.course_section);
+        } else if (test.subject_group) {
+            testData.subject_group = test.subject_group;
+        }
 
         // Add time limit if enabled
         if (test.has_time_limit && test.time_limit_minutes) {
             testData.time_limit_minutes = test.time_limit_minutes;
         }
 
-        // Add dates if enabled - backend will auto-select course_section based on dates
+        // Add dates if enabled
+        // NOTE: For template tests with course_section already set, dates are just metadata
+        // Backend will NOT auto-assign course_section if it's already provided
         // Convert dates to ISO format before sending
         if (test.has_dates) {
             if (test.start_date) {
@@ -284,15 +467,81 @@ export default function TestCreator() {
                     testData.end_date = endDate.toISOString();
                 }
             }
+        } else {
+            // Explicitly set dates to null if has_dates is false
+            testData.start_date = null;
+            testData.end_date = null;
+            testData.scheduled_at = null;
+        }
+
+        // Add result visibility settings
+        testData.show_score_immediately = test.show_score_immediately;
+        if (test.has_reveal_date && test.reveal_results_at) {
+            const revealDate = new Date(test.reveal_results_at);
+            if (!isNaN(revealDate.getTime())) {
+                testData.reveal_results_at = revealDate.toISOString();
+            }
+        } else {
+            testData.reveal_results_at = null;
         }
 
         try {
-            const response = await axiosInstance.post(
-                'tests/create-full/',
-                testData
-            );
-            console.log(response.data, 'response');
-            alert(t('test.testSavedSuccess'));
+            let response;
+            if (testId) {
+                // Check if test is linked to template and questions were modified
+                if (originalTest && originalTest.template_test && !originalTest.is_unlinked_from_template) {
+                    // Check if questions were modified
+                    const questionsChanged = 
+                        test.questions.length !== originalTest.questions.length ||
+                        test.questions.some((q, index) => {
+                            const originalQ = originalTest.questions[index];
+                            if (!originalQ) return true;
+                            return (
+                                q.text !== originalQ.text ||
+                                q.type !== originalQ.type ||
+                                q.points !== originalQ.points ||
+                                q.correct_answer_text !== originalQ.correct_answer_text ||
+                                q.key_words !== originalQ.key_words ||
+                                JSON.stringify(q.matching_pairs_json) !== JSON.stringify(originalQ.matching_pairs_json) ||
+                                (q.options?.length || 0) !== (originalQ.options?.length || 0) ||
+                                q.options?.some((opt, optIndex) => {
+                                    const originalOpt = originalQ.options?.[optIndex];
+                                    if (!originalOpt) return true;
+                                    return (
+                                        opt.text !== originalOpt.text ||
+                                        opt.is_correct !== originalOpt.is_correct ||
+                                        opt.image_url !== originalOpt.image_url
+                                    );
+                                })
+                            );
+                        });
+                    
+                    if (questionsChanged) {
+                        // Automatically unlink from template
+                        await testService.unlinkFromTemplate(Number(testId));
+                        alert('Тест автоматически отвязан от шаблона, так как были изменены вопросы.');
+                    }
+                }
+                
+                // Update existing test
+                response = await testService.updateTest(Number(testId), testData);
+                alert('Тест успешно обновлен');
+            } else {
+                // Create new test
+                response = await testService.createTest(testData);
+                alert(t('test.testSavedSuccess'));
+            }
+            console.log(response, 'response');
+            
+            // Redirect back to course page if template test, or to subject page if regular test
+            if (templateSectionId && courseId) {
+                window.location.href = `/admin/courses/${courseId}`;
+            } else if (subjectId) {
+                window.location.href = `/subjects/${subjectId}/contents`;
+            } else if (testId && courseId) {
+                // If editing template test, redirect back to course
+                window.location.href = `/admin/courses/${courseId}`;
+            }
         } catch (error: unknown) {
             console.error('Error saving test:', error);
             const errorMessage =
@@ -321,11 +570,15 @@ export default function TestCreator() {
         );
     }
 
-    if (!subject && subjectId) {
+    if (!subject && !templateSection && !isTemplate && (subjectId || templateSectionId)) {
         return (
             <div className="mx-auto p-6">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                    <p className="text-red-600">{t('test.subjectNotFound')}</p>
+                    <p className="text-red-600">
+                        {templateSectionId 
+                            ? 'Шаблонная секция не найдена' 
+                            : t('test.subjectNotFound')}
+                    </p>
                 </div>
             </div>
         );
@@ -339,8 +592,20 @@ export default function TestCreator() {
                         <div>
                             <h2 className="flex items-center gap-2 text-[#694CFD] font-semibold text-xl mb-1">
                                 <Calendar className="w-5 h-5" />
-                                {t('test.testInformation')}
+                                {testId 
+                                    ? 'Редактирование теста' 
+                                    : (templateSection || isTemplate ? 'Создание шаблонного теста' : t('test.testInformation'))}
                             </h2>
+                            {templateSection && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Шаблонная секция: {templateSection.title}
+                                </p>
+                            )}
+                            {isTemplate && !templateSection && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Шаблонный тест без привязки к секции
+                                </p>
+                            )}
                             {subject && (
                                 <p className="text-sm text-gray-600 mt-1">
                                     {subject.course_name} ({subject.course_code}
@@ -533,6 +798,98 @@ export default function TestCreator() {
                                         {t('test.openTest')}
                                     </p>
                                 )}
+                            </div>
+
+                            {/* Result Visibility Card */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-[#694CFD]/30 transition-colors">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Eye className="w-5 h-5 text-[#694CFD]" />
+                                        <label className="text-sm font-medium text-gray-900">
+                                            {t('test.resultVisibility')}
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    {/* Show score immediately */}
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm text-gray-700">
+                                            Показывать результаты сразу после завершения
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleTestUpdate('show_score_immediately', !test.show_score_immediately)}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                test.show_score_immediately
+                                                    ? 'bg-[#694CFD]'
+                                                    : 'bg-gray-300'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                    test.show_score_immediately
+                                                        ? 'translate-x-6'
+                                                        : 'translate-x-1'
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
+                                    
+                                    {!test.show_score_immediately && (
+                                        <>
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-sm text-gray-700">
+                                                    Установить дату открытия результатов
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={toggleRevealDate}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                        test.has_reveal_date
+                                                            ? 'bg-[#694CFD]'
+                                                            : 'bg-gray-300'
+                                                    }`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                            test.has_reveal_date
+                                                                ? 'translate-x-6'
+                                                                : 'translate-x-1'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </div>
+                                            {test.has_reveal_date && (
+                                                <div>
+                                                    <label className="block text-xs text-gray-600 mb-1">
+                                                        Дата и время открытия результатов
+                                                    </label>
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={test.reveal_results_at || ''}
+                                                        onChange={e =>
+                                                            handleTestUpdate(
+                                                                'reveal_results_at',
+                                                                e.target.value || null
+                                                            )
+                                                        }
+                                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#694CFD] focus:border-transparent"
+                                                    />
+                                                </div>
+                                            )}
+                                            {!test.has_reveal_date && (
+                                                <p className="text-xs text-gray-500">
+                                                    Результаты будут скрыты до открытия преподавателем
+                                                </p>
+                                            )}
+                                        </>
+                                    )}
+                                    {test.show_score_immediately && (
+                                        <p className="text-xs text-gray-500">
+                                            Студенты увидят результаты сразу после завершения теста
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

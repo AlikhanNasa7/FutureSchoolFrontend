@@ -68,6 +68,11 @@ export type WeekItem =
           grade_value?: number;
           max_grade?: number;
           icon?: React.ReactNode;
+          // Template fields
+          template_test?: number | null;
+          is_unlinked_from_template?: boolean;
+          // Test settings
+          is_published?: boolean;
       };
 
 export type WeekMaterialsData = {

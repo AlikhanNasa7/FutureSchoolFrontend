@@ -216,9 +216,12 @@ export default function CoursesPage() {
                                         onClick={() => router.push(`/admin/courses/${course.id}`)}
                                         className="flex-1 cursor-pointer"
                                     >
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                                            {course.name}
-                                        </h3>
+                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                            <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                                                {course.name}
+                                            </h3>
+                                            
+                                        </div>
                                         <p className="text-sm text-gray-500">
                                             {course.course_code}
                                         </p>
@@ -227,6 +230,20 @@ export default function CoursesPage() {
                                         <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">
                                             {course.grade} класс
                                         </span>
+                                        {course.language && (
+                                                <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                                    course.language === 'kazakh' 
+                                                        ? 'bg-blue-100 text-blue-700' 
+                                                        : course.language === 'russian'
+                                                        ? 'bg-red-100 text-red-700'
+                                                        : 'bg-green-100 text-green-700'
+                                                }`}>
+                                                    {course.language === 'kazakh' ? 'Қаз' : 
+                                                     course.language === 'russian' ? 'Рус' : 
+                                                     course.language === 'english' ? 'Eng' : 
+                                                     course.language}
+                                                </span>
+                                            )}
                                         <button
                                             onClick={(e) => handleEdit(e, course)}
                                             className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"

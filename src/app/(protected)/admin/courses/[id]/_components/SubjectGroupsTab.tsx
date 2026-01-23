@@ -1,20 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, ExternalLink, Plus, User, Edit, Trash2 } from 'lucide-react';
+import { Users, ExternalLink, Plus, User, Edit, Trash2, RefreshCw, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import type { SubjectGroup } from '@/types/course';
 import CreateSubjectGroupModal from './CreateSubjectGroupModal';
 import { courseService } from '@/services/courseService';
 
 interface SubjectGroupsTabProps {
     courseId: number;
+    courseLanguage?: string;
     subjectGroups: SubjectGroup[];
     onSubjectGroupsChange: () => void;
 }
 
+interface SyncStatus {
+    is_synced: boolean;
+    missing_count: number;
+    outdated_count: number;
+    message: string;
+}
+
 export default function SubjectGroupsTab({
     courseId,
+    courseLanguage,
     subjectGroups,
     onSubjectGroupsChange,
 }: SubjectGroupsTabProps) {
@@ -22,6 +31,47 @@ export default function SubjectGroupsTab({
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<SubjectGroup | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [syncStatuses, setSyncStatuses] = useState<Record<number, SyncStatus>>({});
+    const [loadingStatuses, setLoadingStatuses] = useState<Record<number, boolean>>({});
+    const [syncingIds, setSyncingIds] = useState<Set<number>>(new Set());
+
+    // Fetch sync statuses for all subject groups
+    useEffect(() => {
+        const fetchSyncStatuses = async () => {
+            const statuses: Record<number, SyncStatus> = {};
+            const loading: Record<number, boolean> = {};
+            
+            for (const group of subjectGroups) {
+                loading[group.id] = true;
+                try {
+                    const status = await courseService.getSubjectGroupSyncStatus(group.id);
+                    statuses[group.id] = {
+                        is_synced: status.is_synced,
+                        missing_count: status.missing_count,
+                        outdated_count: status.outdated_count,
+                        message: status.message,
+                    };
+                } catch (error) {
+                    console.error(`Error fetching sync status for group ${group.id}:`, error);
+                    statuses[group.id] = {
+                        is_synced: false,
+                        missing_count: 0,
+                        outdated_count: 0,
+                        message: 'Ошибка загрузки статуса',
+                    };
+                } finally {
+                    loading[group.id] = false;
+                }
+            }
+            
+            setSyncStatuses(statuses);
+            setLoadingStatuses(loading);
+        };
+
+        if (subjectGroups.length > 0) {
+            fetchSyncStatuses();
+        }
+    }, [subjectGroups]);
 
     const handleDelete = async (id: number) => {
         if (!confirm('Вы уверены, что хотите удалить эту связь? Это удалит все секции и материалы предмета.')) {
@@ -37,6 +87,71 @@ export default function SubjectGroupsTab({
             alert('Не удалось удалить связь');
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleSync = async (groupId: number) => {
+        if (!confirm('Синхронизировать контент из шаблона курса в этот класс?')) {
+            return;
+        }
+
+        try {
+            setSyncingIds(prev => new Set(prev).add(groupId));
+            await courseService.syncSubjectGroup(groupId);
+            alert('Синхронизация завершена успешно');
+            
+            // Refresh sync status
+            const status = await courseService.getSubjectGroupSyncStatus(groupId);
+            setSyncStatuses(prev => ({
+                ...prev,
+                [groupId]: {
+                    is_synced: status.is_synced,
+                    missing_count: status.missing_count,
+                    outdated_count: status.outdated_count,
+                    message: status.message,
+                },
+            }));
+        } catch (error) {
+            console.error('Error syncing subject group:', error);
+            alert('Не удалось синхронизировать класс');
+        } finally {
+            setSyncingIds(prev => {
+                const next = new Set(prev);
+                next.delete(groupId);
+                return next;
+            });
+        }
+    };
+
+    const getSyncStatusIcon = (groupId: number) => {
+        const status = syncStatuses[groupId];
+        if (!status) {
+            return loadingStatuses[groupId] ? (
+                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+            ) : null;
+        }
+        
+        if (status.is_synced) {
+            return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+        } else if (status.missing_count > 0 || status.outdated_count > 0) {
+            return <AlertCircle className="w-4 h-4 text-yellow-600" />;
+        } else {
+            return <XCircle className="w-4 h-4 text-red-600" />;
+        }
+    };
+
+    const getSyncStatusText = (groupId: number) => {
+        const status = syncStatuses[groupId];
+        if (!status) {
+            return loadingStatuses[groupId] ? 'Загрузка...' : 'Неизвестно';
+        }
+        
+        if (status.is_synced) {
+            return 'Синхронизировано';
+        } else if (status.missing_count > 0 || status.outdated_count > 0) {
+            return `Требуется синхронизация (${status.missing_count + status.outdated_count})`;
+        } else {
+            return 'Не синхронизировано';
         }
     };
 
@@ -93,9 +208,31 @@ export default function SubjectGroupsTab({
                                                 Учитель не назначен
                                             </p>
                                         )}
+                                        {/* Sync Status */}
+                                        <div className="flex items-center gap-1.5 mt-2">
+                                            {getSyncStatusIcon(group.id)}
+                                            <span className="text-xs text-gray-600">
+                                                {getSyncStatusText(group.id)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 ml-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSync(group.id);
+                                        }}
+                                        disabled={syncingIds.has(group.id)}
+                                        className="p-1.5 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+                                        title="Синхронизировать класс"
+                                    >
+                                        {syncingIds.has(group.id) ? (
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <RefreshCw className="w-4 h-4" />
+                                        )}
+                                    </button>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -140,6 +277,7 @@ export default function SubjectGroupsTab({
                         setEditingGroup(null);
                     }}
                     courseId={courseId}
+                    courseLanguage={courseLanguage}
                     subjectGroup={editingGroup}
                     onSuccess={() => {
                         setIsCreateModalOpen(false);

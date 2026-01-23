@@ -69,7 +69,10 @@ export default function SubjectContents() {
                                 // Preserve template fields
                                 template_resource: item.template_resource,
                                 template_assignment: item.template_assignment,
+                                template_test: item.template_test,
                                 is_unlinked_from_template: item.is_unlinked_from_template,
+                                // Preserve test settings
+                                is_published: item.is_published,
                                 // Preserve student submission for assignments
                                 student_submission: item.student_submission,
                             }));

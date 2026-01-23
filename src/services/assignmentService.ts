@@ -36,4 +36,12 @@ export const assignmentService = {
         const response = await axiosInstance.get(`/assignments/${assignmentId}/sync-status/`);
         return response.data;
     },
+
+    /**
+     * Sync assignment from its template (superadmin only)
+     */
+    async syncFromTemplate(assignmentId: number): Promise<Assignment> {
+        const response = await axiosInstance.post(`/assignments/${assignmentId}/sync-from-template/`);
+        return response.data;
+    },
 };

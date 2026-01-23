@@ -9,6 +9,7 @@ import Image from 'next/image';
 import TemplateLinkIndicator from '@/components/courseTemplates/TemplateLinkIndicator';
 import { resourceService } from '@/services/resourceService';
 import { useUser } from '@/contexts/UserContext';
+import { RefreshCw } from 'lucide-react';
 
 interface SharedLinkItemProps {
     item: {
@@ -47,6 +48,7 @@ export function SharedLinkItem({
 }: SharedLinkItemProps) {
     const { state } = useUser();
     const isAdmin = state.user?.role === 'superadmin' || state.user?.role === 'schooladmin';
+    const isSuperAdmin = state.user?.role === 'superadmin';
     const [syncStatus, setSyncStatus] = useState<{
         isOutdated: boolean;
         isLoading: boolean;
@@ -155,6 +157,36 @@ export function SharedLinkItem({
         });
     }
 
+    async function handleSync() {
+        if (!item.template_resource || item.is_unlinked_from_template) {
+            return;
+        }
+
+        modalController.open('confirmation', {
+            title: 'Синхронизировать с шаблоном',
+            message: `Вы уверены, что хотите синхронизировать "${item.title}" с шаблоном? Все изменения в шаблоне будут применены к этому ресурсу.`,
+            confirmText: 'Синхронизировать',
+            cancelText: 'Отмена',
+            confirmVariant: 'default',
+            onConfirm: async () => {
+                try {
+                    await resourceService.syncFromTemplate(Number(item.id));
+                    // Reload sync status after syncing
+                    if (isTeacher || isAdmin) {
+                        const status = await resourceService.getSyncStatus(Number(item.id));
+                        setSyncStatus({ isOutdated: status.is_outdated, isLoading: false });
+                    }
+                    onRefresh?.();
+                    alert('Ресурс успешно синхронизирован с шаблоном');
+                } catch (error: any) {
+                    console.error('Error syncing resource:', error);
+                    const errorMessage = error?.response?.data?.error || error?.formattedMessage || 'Не удалось синхронизировать ресурс';
+                    alert(errorMessage);
+                }
+            },
+        });
+    }
+
     function handleClick() {
         console.log(item, 'item inside handleClick');
         if (item.file && onFileView) {
@@ -220,6 +252,16 @@ export function SharedLinkItem({
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
+                    {isSuperAdmin && item.template_resource && !item.is_unlinked_from_template && (
+                        <button
+                            onClick={handleSync}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                            title="Синхронизировать с шаблоном"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            <span>Синхронизировать</span>
+                        </button>
+                    )}
                     {isTeacher && (
                         <DeleteButton
                             onDelete={handleDelete}

@@ -11,7 +11,7 @@ interface TemplateLinkIndicatorProps {
     onUnlink?: () => void;
     onRelink?: () => void;
     showButton?: boolean;
-    type?: 'resource' | 'assignment';
+    type?: 'resource' | 'assignment' | 'test';
     itemId?: number;
 }
 

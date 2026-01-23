@@ -4,9 +4,10 @@ import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import axiosInstance from '@/lib/axios';
-import { Plus } from 'lucide-react';
+import { Plus, Copy } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
 import { useLocale } from '@/contexts/LocaleContext';
+import CopyTestFromTemplateModal from '@/components/modals/CopyTestFromTemplateModal';
 
 interface SubjectData {
     id: string;
@@ -72,6 +73,8 @@ export default function SubjectSectionsLayout({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [subjectGroupMembers, setSubjectGroupMembers] = useState([]);
+    const [isCopyTestModalOpen, setIsCopyTestModalOpen] = useState(false);
+    const [courseId, setCourseId] = useState<number | null>(null);
     console.log(subject, 'subject');
     console.log(subjectGroupMembers, 'subjectGroupMembers');
 
@@ -83,6 +86,10 @@ export default function SubjectSectionsLayout({
                 `/subject-groups/${subjectId}/`
             );
             setSubject(response.data);
+            // Extract course_id from subject
+            if (response.data.course) {
+                setCourseId(response.data.course);
+            }
             setLoading(false);
         };
         const fetchSubjectGroupMembers = async () => {
@@ -168,12 +175,23 @@ export default function SubjectSectionsLayout({
                         })}
                     </ul>
                     {user?.role === 'teacher' && (
-                        <Link
-                            href={`/create-test/?subject=${subjectId}`}
-                            className="bg-[#694CFD] flex items-center gap-2 px-4 py-1 rounded-md transition-colors text-white font-bold w-fit"
-                        >
-                            {t('test.createTest')}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                            {courseId && (
+                                <button
+                                    onClick={() => setIsCopyTestModalOpen(true)}
+                                    className="bg-green-600 flex items-center gap-2 px-4 py-1 rounded-md transition-colors text-white font-bold hover:bg-green-700"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                    Скопировать из шаблона
+                                </button>
+                            )}
+                            <Link
+                                href={`/create-test/?subject=${subjectId}`}
+                                className="bg-[#694CFD] flex items-center gap-2 px-4 py-1 rounded-md transition-colors text-white font-bold w-fit"
+                            >
+                                {t('test.createTest')}
+                            </Link>
+                        </div>
                     )}
                 </div>
             </div>
@@ -182,6 +200,20 @@ export default function SubjectSectionsLayout({
             >
                 {children}
             </SubjectContext.Provider>
+
+            {/* Copy Test From Template Modal */}
+            {courseId && subject && (
+                <CopyTestFromTemplateModal
+                    isOpen={isCopyTestModalOpen}
+                    onClose={() => setIsCopyTestModalOpen(false)}
+                    courseId={courseId}
+                    subjectGroupId={parseInt(subjectId)}
+                    onTestCopied={() => {
+                        // Refresh page or show success message
+                        window.location.reload();
+                    }}
+                />
+            )}
         </div>
     );
 }

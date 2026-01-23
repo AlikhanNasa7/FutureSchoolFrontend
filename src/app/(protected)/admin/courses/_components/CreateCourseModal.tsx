@@ -26,6 +26,7 @@ export default function CreateCourseModal({
         name: '',
         description: '',
         grade: 1,
+        language: 'kazakh',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
@@ -38,6 +39,7 @@ export default function CreateCourseModal({
                 name: course.name || '',
                 description: course.description || '',
                 grade: course.grade || 1,
+                language: (course as any).language || 'kazakh',
             });
         } else {
             setFormData({
@@ -45,6 +47,7 @@ export default function CreateCourseModal({
                 name: '',
                 description: '',
                 grade: 1,
+                language: 'kazakh',
             });
         }
         setErrors({});
@@ -81,6 +84,7 @@ export default function CreateCourseModal({
                     name: formData.name.trim(),
                     description: formData.description.trim() || undefined,
                     grade: formData.grade,
+                    language: formData.language,
                 });
             } else {
                 await courseService.createCourse({
@@ -88,6 +92,7 @@ export default function CreateCourseModal({
                     name: formData.name.trim(),
                     description: formData.description.trim() || undefined,
                     grade: formData.grade,
+                    language: formData.language,
                 });
             }
             onSuccess();
@@ -98,6 +103,7 @@ export default function CreateCourseModal({
                     name: '',
                     description: '',
                     grade: 1,
+                    language: 'kazakh',
                 });
             }
         } catch (error: any) {
@@ -219,6 +225,23 @@ export default function CreateCourseModal({
                         {errors.grade && (
                             <p className="text-sm text-red-600 mt-1">{errors.grade}</p>
                         )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Язык обучения <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={formData.language}
+                            onChange={(e) =>
+                                setFormData({ ...formData, language: e.target.value })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                            <option value="kazakh">Қазақша</option>
+                            <option value="russian">Русский</option>
+                            <option value="english">English</option>
+                        </select>
                     </div>
 
                     <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">

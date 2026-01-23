@@ -30,6 +30,7 @@ export const courseService = {
         name: string;
         description?: string;
         grade: number;
+        language?: string;
     }): Promise<Course> {
         const response = await axiosInstance.post('/courses/', data);
         return response.data;
@@ -69,6 +70,48 @@ export const courseService = {
             academic_start_date: academicStartDate,
         });
         return response.data;
+    },
+
+    /**
+     * Get course section by ID
+     * Tries both template and regular sections
+     */
+    async getCourseSectionById(id: number): Promise<CourseSection> {
+        // Try direct ID access first (most reliable)
+        try {
+            const response = await axiosInstance.get(`/course-sections/${id}/`);
+            return response.data;
+        } catch (error) {
+            // If direct access fails, try filtered list and find by ID
+        }
+        
+        // Try to get as template section
+        try {
+            const response = await axiosInstance.get(`/course-sections/?subject_group__isnull=True`);
+            if (response.data && Array.isArray(response.data)) {
+                const section = response.data.find((s: CourseSection) => s.id === id);
+                if (section) {
+                    return section;
+                }
+            }
+        } catch (error) {
+            // If not found as template, try as regular section
+        }
+        
+        // Try as regular section
+        try {
+            const response = await axiosInstance.get(`/course-sections/?subject_group__isnull=False`);
+            if (response.data && Array.isArray(response.data)) {
+                const section = response.data.find((s: CourseSection) => s.id === id);
+                if (section) {
+                    return section;
+                }
+            }
+        } catch (error) {
+            // If still not found, throw error
+        }
+        
+        throw new Error(`Course section with ID ${id} not found`);
     },
 
     /**
@@ -150,6 +193,44 @@ export const courseService = {
      */
     async deleteSubjectGroup(id: number): Promise<void> {
         await axiosInstance.delete(`/subject-groups/${id}/`);
+    },
+
+    /**
+     * Get sync status for a subject group
+     */
+    async getSubjectGroupSyncStatus(subjectGroupId: number): Promise<{
+        is_synced: boolean;
+        missing_items: Array<{
+            type: string;
+            template_id?: number;
+            template_title: string;
+            section_title: string;
+        }>;
+        outdated_items: Array<{
+            type: string;
+            id: number;
+            title: string;
+            section_title: string;
+        }>;
+        missing_count: number;
+        outdated_count: number;
+        message: string;
+    }> {
+        const response = await axiosInstance.get(`/subject-groups/${subjectGroupId}/sync-status/`);
+        return response.data;
+    },
+
+    /**
+     * Sync content from course template to a specific subject group
+     */
+    async syncSubjectGroup(
+        subjectGroupId: number,
+        academicStartDate?: string
+    ): Promise<{ detail: string }> {
+        const response = await axiosInstance.post(`/subject-groups/${subjectGroupId}/sync/`, {
+            academic_start_date: academicStartDate,
+        });
+        return response.data;
     },
 };
 

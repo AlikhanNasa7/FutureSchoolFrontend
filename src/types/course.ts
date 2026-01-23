@@ -8,6 +8,7 @@ export interface Course {
     name: string;
     description: string | null;
     grade: number; // 1-12
+    language?: string; // Language of instruction (e.g., 'kazakh', 'russian', 'english')
 }
 
 export interface CourseSection {

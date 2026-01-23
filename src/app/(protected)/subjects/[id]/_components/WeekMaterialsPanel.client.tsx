@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Trash2, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import type { WeekMaterialsData, WeekItem } from './WeekMaterialsSection';
 import { useUserState, useUser } from '@/contexts/UserContext';
 import { modalController } from '@/lib/modalController';
@@ -12,6 +12,7 @@ import axiosInstance from '@/lib/axios';
 import { useLocale } from '@/contexts/LocaleContext';
 import TemplateLinkIndicator from '@/components/courseTemplates/TemplateLinkIndicator';
 import { assignmentService } from '@/services/assignmentService';
+import { testService } from '@/services/testService';
 interface WeekMaterialsPanelProps {
     data: WeekMaterialsData;
     courseSectionId?: number;
@@ -273,6 +274,31 @@ function TaskItem({
         });
     }
 
+    async function handleSync() {
+        if (!item.template_assignment || item.is_unlinked_from_template) {
+            return;
+        }
+
+        if (!confirm(`Вы уверены, что хотите синхронизировать "${item.title}" с шаблоном? Все изменения в шаблоне будут применены к этому заданию.`)) {
+            return;
+        }
+
+        try {
+            await assignmentService.syncFromTemplate(Number(item.id));
+            // Reload sync status after syncing
+            if (isTeacher || isAdmin) {
+                const status = await assignmentService.getSyncStatus(Number(item.id));
+                setSyncStatus({ isOutdated: status.is_outdated, isLoading: false });
+            }
+            onRefresh?.();
+            alert('Задание успешно синхронизировано с шаблоном');
+        } catch (error: any) {
+            console.error('Error syncing assignment:', error);
+            const errorMessage = error?.response?.data?.error || error?.formattedMessage || 'Не удалось синхронизировать задание';
+            alert(errorMessage);
+        }
+    }
+
     return (
         <div className="flex items-center justify-between gap-3 p-2">
             <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -307,6 +333,16 @@ function TaskItem({
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
+                {isSuperAdmin && item.template_assignment && !item.is_unlinked_from_template && (
+                    <button
+                        onClick={handleSync}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                        title="Синхронизировать с шаблоном"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        <span>Синхронизировать</span>
+                    </button>
+                )}
                 <Link
                     target="_blank"
                     href={`/assignments/${item.id}`}
@@ -330,31 +366,112 @@ function TestItem({
     item,
     isTeacher,
     onDelete,
+    onRefresh,
     t,
 }: {
     item: Extract<WeekItem, { kind: 'test' }>;
     isTeacher: boolean;
     onDelete?: (itemId: string, itemType: 'resource' | 'test') => void;
+    onRefresh?: () => void;
     t: (key: string) => string;
 }) {
-    console.log(
-        'TestItem - item:',
-        item,
-        'is_available:',
-        'is_available' in item ? item.is_available : 'no is_available',
-        'is_deadline_passed:',
-        'is_deadline_passed' in item
-            ? item.is_deadline_passed
-            : 'no is_deadline_passed',
-        'is_submitted:',
-        'is_submitted' in item ? item.is_submitted : 'no is_submitted',
-        'isTeacher:',
-        isTeacher
-    );
+    const { state } = useUser();
+    const isAdmin = state.user?.role === 'superadmin' || state.user?.role === 'schooladmin';
+    const isSuperAdmin = state.user?.role === 'superadmin';
+    const [syncStatus, setSyncStatus] = useState<{
+        isOutdated: boolean;
+        isLoading: boolean;
+    }>({ isOutdated: false, isLoading: false });
+
+    // Load sync status for teachers and admins
+    useEffect(() => {
+        if ((isTeacher || isAdmin) && item.template_test && !item.is_unlinked_from_template) {
+            setSyncStatus({ isOutdated: false, isLoading: true });
+            testService
+                .getSyncStatus(Number(item.id))
+                .then((status) => {
+                    setSyncStatus({ isOutdated: status.is_outdated, isLoading: false });
+                })
+                .catch((error) => {
+                    console.error('Error loading sync status:', error);
+                    setSyncStatus({ isOutdated: false, isLoading: false });
+                });
+        }
+    }, [isTeacher, isAdmin, item.id, item.template_test, item.is_unlinked_from_template]);
+
+    const handleUnlink = async () => {
+        if (!confirm('Вы уверены, что хотите отвязать этот тест от шаблона? После отвязки он больше не будет автоматически синхронизироваться.')) {
+            return;
+        }
+        try {
+            await testService.unlinkFromTemplate(Number(item.id));
+            if (onRefresh) onRefresh();
+        } catch (error) {
+            console.error('Error unlinking test:', error);
+            alert('Не удалось отвязать тест от шаблона');
+        }
+    };
+
+    const handleRelink = async () => {
+        try {
+            await testService.relinkToTemplate(Number(item.id));
+            if (onRefresh) onRefresh();
+        } catch (error) {
+            console.error('Error relinking test:', error);
+            alert('Не удалось привязать тест к шаблону');
+        }
+    };
+
+    async function handleSync() {
+        if (!item.template_test || item.is_unlinked_from_template) {
+            return;
+        }
+
+        if (!confirm(`Вы уверены, что хотите синхронизировать "${item.title}" с шаблоном? Все изменения в шаблоне будут применены к этому тесту.`)) {
+            return;
+        }
+
+        try {
+            await testService.syncFromTemplate(Number(item.id));
+            // Reload sync status after syncing
+            if (isTeacher || isAdmin) {
+                const status = await testService.getSyncStatus(Number(item.id));
+                setSyncStatus({ isOutdated: status.is_outdated, isLoading: false });
+            }
+            onRefresh?.();
+            alert('Тест успешно синхронизирован с шаблоном');
+        } catch (error: any) {
+            console.error('Error syncing test:', error);
+            const errorMessage = error?.response?.data?.error || error?.formattedMessage || 'Не удалось синхронизировать тест';
+            alert(errorMessage);
+        }
+    }
+
+    async function handleTogglePublish() {
+        const isPublished = 'is_published' in item ? item.is_published : false;
+        
+        try {
+            if (isPublished) {
+                await testService.unpublishTest(Number(item.id));
+                alert('Тест закрыт для доступа');
+            } else {
+                await testService.publishTest(Number(item.id));
+                alert('Тест открыт для доступа');
+            }
+            onRefresh?.();
+        } catch (error: any) {
+            console.error('Error toggling test publish status:', error);
+            const errorMessage = error?.response?.data?.error || error?.formattedMessage || 'Не удалось изменить статус публикации теста';
+            alert(errorMessage);
+        }
+    }
 
     const testHref = isTeacher
         ? `/tests/${item.id}/results`
         : `/tests/${item.id}`;
+    const previewHref = isTeacher
+        ? `/tests/${item.id}/preview`
+        : null;
     const buttonText = isTeacher
         ? t('status.viewAnswers')
         : getStatusText(item, isTeacher, t);
@@ -374,10 +491,59 @@ function TestItem({
 
                 <div className="flex-1 min-w-0 px-2 py-1">
                     <span className="text-gray-900 truncate">{item.title}</span>
+                    {(isTeacher || isAdmin) && (
+                        <div className="mt-1">
+                            <TemplateLinkIndicator
+                                isLinked={!!item.template_test}
+                                isUnlinked={!!item.is_unlinked_from_template}
+                                isOutdated={syncStatus.isOutdated}
+                                onUnlink={handleUnlink}
+                                onRelink={handleRelink}
+                                showButton={!!item.template_test}
+                                type="test"
+                                itemId={Number(item.id)}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
+                {isSuperAdmin && item.template_test && !item.is_unlinked_from_template && (
+                    <button
+                        onClick={handleSync}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                        title="Синхронизировать с шаблоном"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        <span>Синхронизировать</span>
+                    </button>
+                )}
+                {isTeacher && (
+                    <button
+                        onClick={handleTogglePublish}
+                        className={`p-2 rounded transition-colors ${
+                            ('is_published' in item && item.is_published)
+                                ? 'text-green-600 hover:bg-green-50'
+                                : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                        title={('is_published' in item && item.is_published) ? 'Закрыть доступ' : 'Открыть доступ'}
+                    >
+                        {('is_published' in item && item.is_published) ? (
+                            <Eye className="w-4 h-4" />
+                        ) : (
+                            <EyeOff className="w-4 h-4" />
+                        )}
+                    </button>
+                )}
+                {isTeacher && previewHref && (
+                    <Link
+                        href={previewHref}
+                        className="px-4 py-2 rounded-xl bg-gray-600 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                    >
+                        Предпросмотр
+                    </Link>
+                )}
                 <Link
                     href={testHref}
                     className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
@@ -572,6 +738,7 @@ export default function WeekMaterialsPanel({
                                         }
                                         isTeacher={isTeacher}
                                         onDelete={handleDeleteItem}
+                                        onRefresh={onRefresh}
                                         t={t}
                                     />
                                 </div>

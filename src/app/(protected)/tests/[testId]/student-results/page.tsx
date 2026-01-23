@@ -1,9 +1,9 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import axiosInstance from '@/lib/axios';
-import { CheckCircle, ArrowRight, Check, X } from 'lucide-react';
+import { CheckCircle, ArrowRight, Check, X, ArrowLeft, AlertCircle } from 'lucide-react';
 
 interface QuestionOption {
     id: number;
@@ -75,6 +75,7 @@ interface AttemptResult {
 
 export default function StudentResultsPage() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const attemptId = searchParams.get('attempt');
 
     const [attemptData, setAttemptData] = useState<AttemptResult | null>(null);
@@ -94,6 +95,7 @@ export default function StudentResultsPage() {
                 // Check if student can view results
                 if (!attempt.can_view_results) {
                     setAttemptData(null);
+                    setLoading(false);
                     return;
                 }
 
@@ -171,12 +173,19 @@ export default function StudentResultsPage() {
         );
     }
 
-    if (!attemptData) {
+    if (!attemptData && !loading) {
         return (
             <div className="max-w-6xl mx-auto p-6">
-                <div className="bg-white rounded-lg shadow-md p-8">
-                    <p className="text-red-600">
-                        Не удалось загрузить результаты теста
+                <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                    <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                        Результаты пока недоступны
+                    </h2>
+                    <p className="text-gray-600 mb-4">
+                        Результаты теста будут доступны после того, как преподаватель откроет их для просмотра.
+                    </p>
+                    <p className="text-sm text-gray-500">
+                        Пожалуйста, попробуйте позже или обратитесь к преподавателю.
                     </p>
                 </div>
             </div>
@@ -186,13 +195,22 @@ export default function StudentResultsPage() {
     return (
         <div className="max-w-6xl mx-auto p-6">
             {/* Header */}
-            <div className="mb-6 flex items-center gap-4">
-                <div className="w-9 h-9 bg-purple-600 rounded-lg flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-white" />
+            <div className="mb-6">
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                    <span className="text-sm font-medium">Назад</span>
+                </button>
+                <div className="flex items-center gap-4">
+                    <div className="w-9 h-9 bg-purple-600 rounded-lg flex items-center justify-center">
+                        <CheckCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <h1 className="text-2xl font-semibold text-gray-900">
+                        {attemptData.test_title}
+                    </h1>
                 </div>
-                <h1 className="text-2xl font-semibold text-gray-900">
-                    {attemptData.test_title}
-                </h1>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

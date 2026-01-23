@@ -74,4 +74,12 @@ export const resourceService = {
         const response = await axiosInstance.get(`/resources/${resourceId}/sync-status/`);
         return response.data;
     },
+
+    /**
+     * Sync resource from its template (superadmin only)
+     */
+    async syncFromTemplate(resourceId: number): Promise<Resource> {
+        const response = await axiosInstance.post(`/resources/${resourceId}/sync-from-template/`);
+        return response.data;
+    },
 };

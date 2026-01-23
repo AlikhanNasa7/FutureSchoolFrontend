@@ -334,8 +334,8 @@ export default function TeacherTestResultsPage() {
         }
     }, [testId, fetchTestResults]);
 
-    // Check if user is a teacher
-    if (user?.role !== 'teacher') {
+    // Check if user is a teacher or superadmin
+    if (user?.role !== 'teacher' && user?.role !== 'superadmin') {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
@@ -344,7 +344,7 @@ export default function TeacherTestResultsPage() {
                         Access Denied
                     </h2>
                     <p className="text-gray-600">
-                        Only teachers can view test results.
+                        Only teachers and administrators can view test results.
                     </p>
                 </div>
             </div>
@@ -438,64 +438,63 @@ export default function TeacherTestResultsPage() {
                             </div>
 
                             {/* Open/Close to Review Button */}
-                            {!data.test.show_score_immediately && (
-                                <div className="flex items-center gap-3">
-                                    {data.test.is_opened_to_review ? (
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
-                                                <Eye className="w-5 h-5 text-green-600" />
-                                                <span className="text-sm font-medium text-green-700">
-                                                    Результаты открыты для
-                                                    просмотра
-                                                </span>
-                                            </div>
-                                            <button
-                                                onClick={closeToReview}
-                                                disabled={closingToReview}
-                                                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                                            >
-                                                {closingToReview ? (
-                                                    <>
-                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                                        <span className="text-sm font-medium">
-                                                            Закрытие...
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Lock className="w-5 h-5" />
-                                                        <span className="text-sm font-medium">
-                                                            Закрыть просмотр
-                                                        </span>
-                                                    </>
-                                                )}
-                                            </button>
+                            <div className="flex items-center gap-3">
+                                {data.test.is_opened_to_review ? (
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+                                            <Eye className="w-5 h-5 text-green-600" />
+                                            <span className="text-sm font-medium text-green-700">
+                                                Результаты открыты для
+                                                просмотра
+                                            </span>
                                         </div>
-                                    ) : (
                                         <button
-                                            onClick={openToReview}
-                                            disabled={openingToReview}
-                                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                                            onClick={closeToReview}
+                                            disabled={closingToReview}
+                                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                                         >
-                                            {openingToReview ? (
+                                            {closingToReview ? (
                                                 <>
                                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                                     <span className="text-sm font-medium">
-                                                        Открытие...
+                                                        Закрытие...
                                                     </span>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Unlock className="w-5 h-5" />
+                                                    <Lock className="w-5 h-5" />
                                                     <span className="text-sm font-medium">
-                                                        Открыть для просмотра
+                                                        Закрыть просмотр
                                                     </span>
                                                 </>
                                             )}
                                         </button>
-                                    )}
-                                </div>
-                            )}
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={openToReview}
+                                        disabled={openingToReview}
+                                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                                    >
+                                        {openingToReview ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                <span className="text-sm font-medium">
+                                                    Открытие...
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Unlock className="w-5 h-5" />
+                                                <span className="text-sm font-medium">
+                                                    Открыть результаты для
+                                                    просмотра
+                                                </span>
+                                            </>
+                                        )}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Statistics Cards */}

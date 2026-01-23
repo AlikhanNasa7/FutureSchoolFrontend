@@ -187,9 +187,25 @@ export default function ClassroomsPage() {
                         <div className="p-6 flex flex-col justify-between">
                             <div className="flex items-start justify-between mb-3">
                                 <div>
-                                    <h3 className="text-2xl font-semibold text-black leading-tight">
-                                        {classroom.grade} "{classroom.letter}"
-                                    </h3>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="text-2xl font-semibold text-black leading-tight">
+                                            {classroom.grade} "{classroom.letter}"
+                                        </h3>
+                                        {classroom.language && (
+                                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                                classroom.language === 'kazakh' 
+                                                    ? 'bg-blue-100 text-blue-700' 
+                                                    : classroom.language === 'russian'
+                                                    ? 'bg-red-100 text-red-700'
+                                                    : 'bg-green-100 text-green-700'
+                                            }`}>
+                                                {classroom.language === 'kazakh' ? 'Қаз' : 
+                                                 classroom.language === 'russian' ? 'Рус' : 
+                                                 classroom.language === 'english' ? 'Eng' : 
+                                                 classroom.language}
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-base font-semibold text-black/30 mt-2">
                                         {classroom.total_students} учеников
                                     </p>
