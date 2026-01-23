@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { Plus, Edit, Trash2, FileText, Calendar, FolderPlus } from 'lucide-react';
 import { courseService } from '@/services/courseService';
-import type { CourseSection } from '@/types/course';
+import { resourceService } from '@/services/resourceService';
+import type { CourseSection, Resource } from '@/types/course';
 import CreateTemplateSectionModal from './CreateTemplateSectionModal';
 import CourseSectionAddItemModal from '@/components/modals/CourseSectionAddItemModal';
+import EditResourceModal from '@/components/modals/EditResourceModal';
 
 interface TemplateSectionsTabProps {
     courseId: number;
@@ -22,6 +24,8 @@ export default function TemplateSectionsTab({
     const [editingSection, setEditingSection] = useState<CourseSection | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [addItemSectionId, setAddItemSectionId] = useState<number | null>(null);
+    const [editingResource, setEditingResource] = useState<{ resource: Resource; sectionId: number } | null>(null);
+    const [deletingResourceId, setDeletingResourceId] = useState<number | null>(null);
 
     const handleDelete = async (id: number) => {
         if (!confirm('Вы уверены, что хотите удалить эту секцию? Это может повлиять на синхронизацию.')) {
@@ -37,6 +41,28 @@ export default function TemplateSectionsTab({
             alert('Не удалось удалить секцию');
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleEditResource = (resource: Resource, sectionId: number) => {
+        setEditingResource({ resource, sectionId });
+    };
+
+    const handleDeleteResource = async (resourceId: number) => {
+        if (!confirm('Вы уверены, что хотите удалить этот ресурс? Это действие нельзя отменить.')) {
+            return;
+        }
+
+        try {
+            setDeletingResourceId(resourceId);
+            await resourceService.deleteResource(resourceId);
+            onSectionsChange();
+        } catch (error: any) {
+            console.error('Error deleting resource:', error);
+            const errorMessage = error?.formattedMessage || 'Не удалось удалить ресурс';
+            alert(errorMessage);
+        } finally {
+            setDeletingResourceId(null);
         }
     };
 
@@ -121,12 +147,31 @@ export default function TemplateSectionsTab({
                                                     </p>
                                                     <div className="flex flex-wrap gap-2">
                                                         {section.resources.map((resource) => (
-                                                            <span
+                                                            <div
                                                                 key={resource.id}
-                                                                className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200"
+                                                                className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200 group hover:bg-blue-100 transition-colors"
                                                             >
-                                                                {resource.title || `Ресурс #${resource.id}`}
-                                                            </span>
+                                                                <span className="flex-1">
+                                                                    {resource.title || `Ресурс #${resource.id}`}
+                                                                </span>
+                                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button
+                                                                        onClick={() => handleEditResource(resource, section.id)}
+                                                                        className="p-0.5 hover:bg-blue-200 rounded transition-colors"
+                                                                        title="Редактировать ресурс"
+                                                                    >
+                                                                        <Edit className="w-3 h-3" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteResource(resource.id)}
+                                                                        disabled={deletingResourceId === resource.id}
+                                                                        className="p-0.5 hover:bg-red-200 rounded transition-colors disabled:opacity-50"
+                                                                        title="Удалить ресурс"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -217,6 +262,20 @@ export default function TemplateSectionsTab({
                     onItemCreated={() => {
                         setAddItemSectionId(null);
                         onSectionsChange(); // Refresh sections to show new items
+                    }}
+                />
+            )}
+
+            {/* Edit Resource Modal */}
+            {editingResource && (
+                <EditResourceModal
+                    isOpen={!!editingResource}
+                    onClose={() => setEditingResource(null)}
+                    resource={editingResource.resource}
+                    courseSectionId={editingResource.sectionId}
+                    onSuccess={() => {
+                        setEditingResource(null);
+                        onSectionsChange();
                     }}
                 />
             )}

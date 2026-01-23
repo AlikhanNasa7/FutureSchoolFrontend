@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getIconByType, IconType } from './IconUtils';
 import { DeleteButton } from './WeekMaterialsPanel.client';
 import { modalController } from '@/lib/modalController';
@@ -8,6 +8,7 @@ import axiosInstance from '@/lib/axios';
 import Image from 'next/image';
 import TemplateLinkIndicator from '@/components/courseTemplates/TemplateLinkIndicator';
 import { resourceService } from '@/services/resourceService';
+import { useUser } from '@/contexts/UserContext';
 
 interface SharedLinkItemProps {
     item: {
@@ -44,6 +45,13 @@ export function SharedLinkItem({
     onDelete,
     onRefresh,
 }: SharedLinkItemProps) {
+    const { state } = useUser();
+    const isAdmin = state.user?.role === 'superadmin' || state.user?.role === 'schooladmin';
+    const [syncStatus, setSyncStatus] = useState<{
+        isOutdated: boolean;
+        isLoading: boolean;
+    }>({ isOutdated: false, isLoading: false });
+
     const isLink = item.type === 'link' && item.url;
     const isDirectory = item.type === 'directory';
     const isLessonLink = item.type === 'lesson_link';
@@ -53,6 +61,22 @@ export function SharedLinkItem({
     const isImage = item.type === 'image';
     const isRecording = item.type === 'recording';
     const isText = item.type === 'text';
+
+    // Load sync status for teachers and admins
+    useEffect(() => {
+        if ((isTeacher || isAdmin) && item.template_resource && !item.is_unlinked_from_template) {
+            setSyncStatus({ isOutdated: false, isLoading: true });
+            resourceService
+                .getSyncStatus(Number(item.id))
+                .then((status) => {
+                    setSyncStatus({ isOutdated: status.is_outdated, isLoading: false });
+                })
+                .catch((error) => {
+                    console.error('Error loading sync status:', error);
+                    setSyncStatus({ isOutdated: false, isLoading: false });
+                });
+        }
+    }, [isTeacher, isAdmin, item.id, item.template_resource, item.is_unlinked_from_template]);
 
     function handleDelete() {
         if (onDelete) {
@@ -91,10 +115,40 @@ export function SharedLinkItem({
             onConfirm: async () => {
                 try {
                     await resourceService.unlinkFromTemplate(Number(item.id));
+                    setSyncStatus({ isOutdated: false, isLoading: false });
                     onRefresh?.();
                 } catch (error: any) {
                     console.error('Error unlinking resource:', error);
                     const errorMessage = error?.formattedMessage || 'Не удалось отвязать ресурс от шаблона';
+                    alert(errorMessage);
+                }
+            },
+        });
+    }
+
+    async function handleRelink() {
+        if (!item.template_resource || !item.is_unlinked_from_template) {
+            return;
+        }
+
+        modalController.open('confirmation', {
+            title: 'Привязать к шаблону',
+            message: `Вы уверены, что хотите привязать "${item.title}" к шаблону? После привязки этот ресурс будет автоматически синхронизироваться с шаблоном при следующей синхронизации.`,
+            confirmText: 'Привязать',
+            cancelText: 'Отмена',
+            confirmVariant: 'default',
+            onConfirm: async () => {
+                try {
+                    await resourceService.relinkToTemplate(Number(item.id));
+                    // Reload sync status after relinking
+                    if (isTeacher || isAdmin) {
+                        const status = await resourceService.getSyncStatus(Number(item.id));
+                        setSyncStatus({ isOutdated: status.is_outdated, isLoading: false });
+                    }
+                    onRefresh?.();
+                } catch (error: any) {
+                    console.error('Error relinking resource:', error);
+                    const errorMessage = error?.formattedMessage || 'Не удалось привязать ресурс к шаблону';
                     alert(errorMessage);
                 }
             },
@@ -149,13 +203,17 @@ export function SharedLinkItem({
                     {isText && (
                         <span className="block break-all">{item.title}</span>
                     )}
-                    {isTeacher && (
+                    {(isTeacher || isAdmin) && (
                         <div className="mt-1">
                             <TemplateLinkIndicator
                                 isLinked={!!item.template_resource}
                                 isUnlinked={!!item.is_unlinked_from_template}
+                                isOutdated={syncStatus.isOutdated}
                                 onUnlink={handleUnlink}
-                                showButton={!!item.template_resource && !item.is_unlinked_from_template}
+                                onRelink={handleRelink}
+                                showButton={!!item.template_resource}
+                                type="resource"
+                                itemId={Number(item.id)}
                             />
                         </div>
                     )}

@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import type { WeekMaterialsData, WeekItem } from './WeekMaterialsSection';
-import { useUserState } from '@/contexts/UserContext';
+import { useUserState, useUser } from '@/contexts/UserContext';
 import { modalController } from '@/lib/modalController';
 import { SharedLinkItem } from './SharedLinkItem';
 import Image from 'next/image';
@@ -169,6 +169,28 @@ function TaskItem({
     onRefresh?: () => void;
     t: (key: string) => string;
 }) {
+    const { state } = useUser();
+    const isAdmin = state.user?.role === 'superadmin' || state.user?.role === 'schooladmin';
+    const [syncStatus, setSyncStatus] = useState<{
+        isOutdated: boolean;
+        isLoading: boolean;
+    }>({ isOutdated: false, isLoading: false });
+
+    // Load sync status for teachers and admins
+    useEffect(() => {
+        if ((isTeacher || isAdmin) && item.template_assignment && !item.is_unlinked_from_template) {
+            setSyncStatus({ isOutdated: false, isLoading: true });
+            assignmentService
+                .getSyncStatus(Number(item.id))
+                .then((status) => {
+                    setSyncStatus({ isOutdated: status.is_outdated, isLoading: false });
+                })
+                .catch((error) => {
+                    console.error('Error loading sync status:', error);
+                    setSyncStatus({ isOutdated: false, isLoading: false });
+                });
+        }
+    }, [isTeacher, isAdmin, item.id, item.template_assignment, item.is_unlinked_from_template]);
     console.log(
         'TaskItem - item:',
         item,
@@ -211,10 +233,40 @@ function TaskItem({
             onConfirm: async () => {
                 try {
                     await assignmentService.unlinkFromTemplate(Number(item.id));
+                    setSyncStatus({ isOutdated: false, isLoading: false });
                     onRefresh?.();
                 } catch (error: any) {
                     console.error('Error unlinking assignment:', error);
                     const errorMessage = error?.formattedMessage || 'Не удалось отвязать задание от шаблона';
+                    alert(errorMessage);
+                }
+            },
+        });
+    }
+
+    async function handleRelink() {
+        if (!item.template_assignment || !item.is_unlinked_from_template) {
+            return;
+        }
+
+        modalController.open('confirmation', {
+            title: 'Привязать к шаблону',
+            message: `Вы уверены, что хотите привязать "${item.title}" к шаблону? После привязки это задание будет автоматически синхронизироваться с шаблоном при следующей синхронизации.`,
+            confirmText: 'Привязать',
+            cancelText: 'Отмена',
+            confirmVariant: 'default',
+            onConfirm: async () => {
+                try {
+                    await assignmentService.relinkToTemplate(Number(item.id));
+                    // Reload sync status after relinking
+                    if (isTeacher || isAdmin) {
+                        const status = await assignmentService.getSyncStatus(Number(item.id));
+                        setSyncStatus({ isOutdated: status.is_outdated, isLoading: false });
+                    }
+                    onRefresh?.();
+                } catch (error: any) {
+                    console.error('Error relinking assignment:', error);
+                    const errorMessage = error?.formattedMessage || 'Не удалось привязать задание к шаблону';
                     alert(errorMessage);
                 }
             },
@@ -238,12 +290,16 @@ function TaskItem({
                         <span className="text-gray-900 truncate">
                             {item.title}
                         </span>
-                        {isTeacher && (
+                        {(isTeacher || isAdmin) && (
                             <TemplateLinkIndicator
                                 isLinked={!!item.template_assignment}
                                 isUnlinked={!!item.is_unlinked_from_template}
+                                isOutdated={syncStatus.isOutdated}
                                 onUnlink={handleUnlink}
-                                showButton={!!item.template_assignment && !item.is_unlinked_from_template}
+                                onRelink={handleRelink}
+                                showButton={!!item.template_assignment}
+                                type="assignment"
+                                itemId={Number(item.id)}
                             />
                         )}
                     </div>

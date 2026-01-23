@@ -6,39 +6,77 @@ import Image from 'next/image';
 import axiosInstance from '@/lib/axios';
 import { AxiosError } from 'axios';
 import { useLocale } from '@/contexts/LocaleContext';
-import { ResourceFormData, FormCallbacks } from './types';
+import { ResourceFormData, FormCallbacks, ResourceType } from './types';
 import { fileTypes, getFileAcceptTypes } from './utils';
 
 interface ResourceFormProps extends FormCallbacks {
     courseSectionId: number;
+    resourceId?: number | null; // For edit mode
+    initialData?: {
+        title?: string;
+        url?: string;
+        type?: ResourceType;
+    };
 }
 
 export default function ResourceForm({
     courseSectionId,
+    resourceId,
+    initialData,
     onSuccess,
     onError,
     onComplete,
 }: ResourceFormProps) {
     const { t } = useLocale();
+    const isEditMode = !!resourceId;
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [resourceForm, setResourceForm] = useState<ResourceFormData>({
-        title: '',
-        url: '',
-        type: 'file',
+        title: initialData?.title || '',
+        url: initialData?.url || '',
+        type: initialData?.type || 'file',
         file: null,
         files: [],
     });
 
-    // Reset file/files when type changes
+    // Load resource data if editing
     useEffect(() => {
-        setResourceForm(prev => ({
-            ...prev,
-            title: '',
-            url: '',
-            file: null,
-            files: [],
-        }));
-    }, [resourceForm.type]);
+        if (isEditMode && resourceId) {
+            loadResourceData();
+        }
+    }, [resourceId, isEditMode]);
+
+    const loadResourceData = async () => {
+        if (!resourceId) return;
+        setIsLoading(true);
+        try {
+            const response = await axiosInstance.get(`/resources/${resourceId}/`);
+            const resource = response.data;
+            setResourceForm({
+                title: resource.title || '',
+                url: resource.url || '',
+                type: resource.type || 'file',
+                file: null,
+                files: [],
+            });
+        } catch (error) {
+            console.error('Error loading resource:', error);
+            onError('Не удалось загрузить данные ресурса');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Reset file/files when type changes (only for create mode)
+    useEffect(() => {
+        if (!isEditMode) {
+            setResourceForm(prev => ({
+                ...prev,
+                file: null,
+                files: [],
+            }));
+        }
+    }, [resourceForm.type, isEditMode]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,78 +85,135 @@ export default function ResourceForm({
         try {
             let response;
 
-            if (
-                resourceForm.type === 'directory' &&
-                resourceForm.files &&
-                resourceForm.files.length > 0
-            ) {
-                // Handle directory with multiple files
-                const formData = new FormData();
-                formData.append('course_section', courseSectionId.toString());
-                formData.append('title', resourceForm.title);
+            if (isEditMode && resourceId) {
+                // Edit mode
+                if (
+                    fileTypes.includes(resourceForm.type) &&
+                    resourceForm.file
+                ) {
+                    // Update with new file
+                    const formData = new FormData();
+                    formData.append('type', resourceForm.type);
+                    formData.append('title', resourceForm.title);
+                    formData.append('file', resourceForm.file);
+                    if (resourceForm.url) {
+                        formData.append('url', resourceForm.url);
+                    }
 
-                resourceForm.files.forEach(file => {
-                    formData.append('files', file);
-                });
+                    response = await axiosInstance.patch(
+                        `/resources/${resourceId}/`,
+                        formData,
+                        {
+                            headers: {
+                                'Content-Type': 'multipart/form-data',
+                            },
+                        }
+                    );
+                } else {
+                    // Update without file change
+                    const resourceData: any = {
+                        type: resourceForm.type,
+                        title: resourceForm.title,
+                    };
+                    if (resourceForm.url) {
+                        resourceData.url = resourceForm.url;
+                    }
 
-                response = await axiosInstance.post(
-                    '/resources/create-directory-with-files/',
-                    formData,
-                    {
+                    response = await axiosInstance.patch(
+                        `/resources/${resourceId}/`,
+                        resourceData
+                    );
+                }
+            } else {
+                // Create mode
+                if (
+                    resourceForm.type === 'directory' &&
+                    resourceForm.files &&
+                    resourceForm.files.length > 0
+                ) {
+                    // Handle directory with multiple files
+                    const formData = new FormData();
+                    formData.append('course_section', courseSectionId.toString());
+                    formData.append('title', resourceForm.title);
+
+                    resourceForm.files.forEach(file => {
+                        formData.append('files', file);
+                    });
+
+                    response = await axiosInstance.post(
+                        '/resources/create-directory-with-files/',
+                        formData,
+                        {
+                            headers: {
+                                'Content-Type': 'multipart/form-data',
+                            },
+                        }
+                    );
+                } else if (
+                    fileTypes.includes(resourceForm.type) &&
+                    resourceForm.file
+                ) {
+                    // Handle single file upload
+                    const formData = new FormData();
+                    formData.append('course_section', courseSectionId.toString());
+                    formData.append('type', resourceForm.type);
+                    formData.append('title', resourceForm.title);
+                    formData.append('file', resourceForm.file);
+
+                    response = await axiosInstance.post('/resources/', formData, {
                         headers: {
                             'Content-Type': 'multipart/form-data',
                         },
-                    }
-                );
-            } else if (
-                fileTypes.includes(resourceForm.type) &&
-                resourceForm.file
-            ) {
-                // Handle single file upload
-                const formData = new FormData();
-                formData.append('course_section', courseSectionId.toString());
-                formData.append('type', resourceForm.type);
-                formData.append('title', resourceForm.title);
-                formData.append('file', resourceForm.file);
+                    });
+                } else {
+                    // Handle regular resource (link, text, directory without files)
+                    const resourceData = {
+                        course_section: courseSectionId,
+                        type: resourceForm.type,
+                        title: resourceForm.title,
+                        url: resourceForm.url,
+                    };
 
-                response = await axiosInstance.post('/resources/', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
-            } else {
-                // Handle regular resource (link, text, directory without files)
-                const resourceData = {
-                    course_section: courseSectionId,
-                    type: resourceForm.type,
-                    title: resourceForm.title,
-                    url: resourceForm.url,
-                };
-
-                response = await axiosInstance.post(
-                    '/resources/',
-                    resourceData
-                );
+                    response = await axiosInstance.post(
+                        '/resources/',
+                        resourceData
+                    );
+                }
             }
 
-            console.log('Resource created successfully:', response.data);
-            onSuccess(t('courseSectionModal.resourceCreatedSuccess'));
+            console.log(`Resource ${isEditMode ? 'updated' : 'created'} successfully:`, response.data);
+            onSuccess(
+                isEditMode
+                    ? t('courseSectionModal.resourceUpdatedSuccess') || 'Ресурс успешно обновлен'
+                    : t('courseSectionModal.resourceCreatedSuccess')
+            );
             setTimeout(() => {
                 onComplete();
             }, 1500);
         } catch (error: unknown) {
-            console.error('Error creating resource:', error);
+            console.error(`Error ${isEditMode ? 'updating' : 'creating'} resource:`, error);
             const errorMessage =
                 error instanceof AxiosError
-                    ? error.response?.data?.message ||
+                    ? error?.formattedMessage ||
+                      error.response?.data?.message ||
                       error.response?.data?.error ||
                       error.message
-                    : t('courseSectionModal.failedToCreateResource');
+                    : isEditMode
+                      ? 'Не удалось обновить ресурс'
+                      : t('courseSectionModal.failedToCreateResource');
             onError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -531,12 +626,18 @@ export default function ResourceForm({
             <div className="flex justify-end space-x-3 pt-4">
                 <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isLoading}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                    {isSubmitting
-                        ? t('courseSectionModal.creating')
-                        : t('courseSectionModal.createResource')}
+                    {isLoading
+                        ? 'Загрузка...'
+                        : isSubmitting
+                          ? isEditMode
+                              ? 'Сохранение...'
+                              : t('courseSectionModal.creating')
+                          : isEditMode
+                            ? 'Сохранить'
+                            : t('courseSectionModal.createResource')}
                 </button>
             </div>
         </form>

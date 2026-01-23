@@ -13,4 +13,27 @@ export const assignmentService = {
         const response = await axiosInstance.post(`/assignments/${assignmentId}/unlink-from-template/`);
         return response.data;
     },
+
+    /**
+     * Relink assignment to template
+     */
+    async relinkToTemplate(assignmentId: number): Promise<Assignment> {
+        const response = await axiosInstance.post(`/assignments/${assignmentId}/relink-to-template/`);
+        return response.data;
+    },
+
+    /**
+     * Get sync status of assignment with its template
+     */
+    async getSyncStatus(assignmentId: number): Promise<{
+        is_linked: boolean;
+        is_unlinked: boolean;
+        is_outdated: boolean;
+        outdated_fields?: string[];
+        template_id?: number;
+        message: string;
+    }> {
+        const response = await axiosInstance.get(`/assignments/${assignmentId}/sync-status/`);
+        return response.data;
+    },
 };
