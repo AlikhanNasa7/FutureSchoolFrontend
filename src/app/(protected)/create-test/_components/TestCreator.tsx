@@ -440,6 +440,12 @@ export default function TestCreator() {
             testData.subject_group = test.subject_group;
         }
 
+        // Add course for template tests
+        if (isTemplateTest && courseId) {
+            testData.course = parseInt(courseId);
+            console.log('Sending course to backend:', parseInt(courseId));
+        }
+
         // Add time limit if enabled
         if (test.has_time_limit && test.time_limit_minutes) {
             testData.time_limit_minutes = test.time_limit_minutes;

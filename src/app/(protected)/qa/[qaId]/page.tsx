@@ -14,14 +14,19 @@ import {
 import axiosInstance from '@/lib/axios';
 import { useUserState } from '@/contexts/UserContext';
 import { useLocale } from '@/contexts/LocaleContext';
+import ForumPostItem from '@/components/ForumPostItem';
 
 interface ForumPost {
     id: number;
     thread: number;
     author: number;
     author_username: string;
+    author_first_name: string;
+    author_last_name: string;
     content: string;
     is_answer: boolean;
+    parent_post?: number | null;
+    replies?: ForumPost[];
     created_at: string;
     updated_at: string;
 }
@@ -35,6 +40,7 @@ interface ForumThread {
     type: string;
     is_public: boolean;
     is_resolved: boolean;
+    allow_replies: boolean;
     created_at: string;
     updated_at: string;
     posts: ForumPost[];
@@ -51,6 +57,9 @@ export default function QADetailPage() {
     const [error, setError] = useState<string | null>(null);
     const [answerContent, setAnswerContent] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [replyingToPostId, setReplyingToPostId] = useState<number | null>(null);
+    const [replyingToAuthor, setReplyingToAuthor] = useState<string>('');
+    const [replyingToContent, setReplyingToContent] = useState<string>('');
 
     useEffect(() => {
         if (qaId) {
@@ -89,16 +98,15 @@ export default function QADetailPage() {
                 thread: parseInt(qaId),
                 content: answerContent,
                 is_answer: user?.role === 'teacher',
+                parent_post: replyingToPostId || undefined,
             });
             setAnswerContent('');
+            setReplyingToPostId(null);
+            setReplyingToAuthor('');
+            setReplyingToContent('');
             fetchThread();
-        } catch (err: unknown) {
-            const errorMessage =
-                err && typeof err === 'object' && 'response' in err
-                    ? (err as { response?: { data?: { message?: string } } })
-                          .response?.data?.message || t('qa.failedToPostAnswer')
-                    : t('qa.failedToPostAnswer');
-            alert(errorMessage);
+        } catch (err) {
+            alert(t('qa.failedToPost'));
             console.error('Error posting answer:', err);
         } finally {
             setSubmitting(false);
@@ -133,9 +141,15 @@ export default function QADetailPage() {
         });
     };
 
+    const handleReplyClick = (postId: number, authorUsername: string, content: string) => {
+        setReplyingToPostId(postId);
+        setReplyingToAuthor(authorUsername);
+        setReplyingToContent(content);
+    };
+
     const isTeacher = user?.role === 'teacher';
     const isStudent = user?.role === 'student';
-    const canAnswer = isTeacher;
+    const canAnswer = isTeacher || isStudent;
     const isAuthor = thread?.created_by === parseInt(user?.id || '0');
 
     if (loading) {
@@ -212,6 +226,11 @@ export default function QADetailPage() {
                         <Clock className="w-4 h-4" />
                         <span>{formatDate(thread.created_at)}</span>
                     </div>
+                    {thread.type === 'announcement' && !thread.allow_replies && (
+                        <div className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded inline-block mt-2">
+                            Комментарии отключены
+                        </div>
+                    )}
                 </div>
 
                 {questionPost && (
@@ -243,42 +262,21 @@ export default function QADetailPage() {
                 ) : (
                     <div className="space-y-4">
                         {answerPosts.map(post => (
-                            <div
+                            <ForumPostItem
                                 key={post.id}
-                                className={`bg-white rounded-lg shadow-sm border p-6 ${
-                                    post.is_answer
-                                        ? 'border-green-200 bg-green-50'
-                                        : 'border-gray-200'
-                                }`}
-                            >
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <User className="w-5 h-5 text-gray-500" />
-                                        <span className="font-medium text-gray-900">
-                                            {post.author_username}
-                                        </span>
-                                        {post.is_answer && (
-                                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                                                {t('qa.teacherAnswer')}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <span className="text-sm text-gray-500 flex items-center gap-1">
-                                        <Clock className="w-4 h-4" />
-                                        {formatDate(post.created_at)}
-                                    </span>
-                                </div>
-                                <p className="text-gray-800 whitespace-pre-wrap">
-                                    {post.content}
-                                </p>
-                            </div>
+                                post={post}
+                                depth={0}
+                                canAnswer={canAnswer}
+                                onReplyClick={handleReplyClick}
+                                formatDate={formatDate}
+                            />
                         ))}
                     </div>
                 )}
             </div>
 
             {/* Answer Form */}
-            {canAnswer && (
+            {canAnswer && thread.allow_replies && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                         {t('qa.yourAnswer')}
@@ -291,6 +289,29 @@ export default function QADetailPage() {
                         </div>
                     )}
                     <form onSubmit={handleSubmitAnswer}>
+                        {replyingToPostId && (
+                            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                                <div className="flex-1">
+                                    <p className="text-sm text-blue-800">
+                                        Ты отвечаешь на пост от <strong>{replyingToAuthor}</strong>
+                                    </p>
+                                    <p className="text-xs text-blue-700 mt-1 line-clamp-2">
+                                        "{replyingToContent}"
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setReplyingToPostId(null);
+                                        setReplyingToAuthor('');
+                                        setReplyingToContent('');
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 font-bold ml-2"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        )}
                         <textarea
                             value={answerContent}
                             onChange={e => setAnswerContent(e.target.value)}

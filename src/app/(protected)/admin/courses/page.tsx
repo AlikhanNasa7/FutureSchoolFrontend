@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, BookOpen, Users, FileText, Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { Plus, BookOpen, Users, FileText, Search, Filter, Edit, Trash2, Layers } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
 import { courseService } from '@/services/courseService';
 import type { CourseWithStats, Course } from '@/types/course';
 import { useLocale } from '@/contexts/LocaleContext';
 import CreateCourseModal from './_components/CreateCourseModal';
+import BulkCreateSubjectGroupsModal from './_components/BulkCreateSubjectGroupsModal';
 
 export default function CoursesPage() {
     const router = useRouter();
@@ -20,6 +21,7 @@ export default function CoursesPage() {
     const [gradeFilter, setGradeFilter] = useState<number | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+    const [isBulkCreateModalOpen, setIsBulkCreateModalOpen] = useState(false);
 
     // Check if user is SuperAdmin
     useEffect(() => {
@@ -140,13 +142,22 @@ export default function CoursesPage() {
                                 Создавайте и управляйте шаблонами курсов
                             </p>
                         </div>
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
-                        >
-                            <Plus className="w-5 h-5" />
-                            <span>Создать курс</span>
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setIsBulkCreateModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                            >
+                                <Layers className="w-5 h-5" />
+                                <span>Массовое создание SubjectGroup</span>
+                            </button>
+                            <button
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-5 h-5" />
+                                <span>Создать курс</span>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Filters */}
@@ -299,6 +310,16 @@ export default function CoursesPage() {
                 }}
                 onSuccess={handleCourseCreated}
                 course={editingCourse}
+            />
+
+            {/* Bulk Create SubjectGroups Modal */}
+            <BulkCreateSubjectGroupsModal
+                isOpen={isBulkCreateModalOpen}
+                onClose={() => setIsBulkCreateModalOpen(false)}
+                onSuccess={() => {
+                    setIsBulkCreateModalOpen(false);
+                    fetchCourses(); // Refresh to update stats
+                }}
             />
         </div>
     );

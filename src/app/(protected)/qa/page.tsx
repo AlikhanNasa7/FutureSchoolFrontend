@@ -7,6 +7,7 @@ import axiosInstance from '@/lib/axios';
 import { useUserState } from '@/contexts/UserContext';
 import { useLocale } from '@/contexts/LocaleContext';
 import CreateQuestionModal from '@/components/modals/CreateQuestionModal';
+import CreateAnnouncementModal from '@/components/modals/CreateAnnouncementModal';
 
 interface ForumPost {
     id: number;
@@ -28,6 +29,7 @@ interface ForumThread {
     type: string;
     is_public: boolean;
     is_resolved: boolean;
+    allow_replies: boolean;
     created_at: string;
     updated_at: string;
     posts: ForumPost[];
@@ -41,6 +43,7 @@ export default function QAListPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
     const fetchThreads = useCallback(async () => {
         try {
@@ -100,6 +103,12 @@ export default function QAListPage() {
     };
 
     const isStudent = user?.role === 'student';
+    const isTeacher = user?.role === 'teacher';
+
+    // Debug
+    useEffect(() => {
+        console.log('QA Page - User role:', user?.role, 'isStudent:', isStudent, 'isTeacher:', isTeacher);
+    }, [user?.role, isStudent, isTeacher]);
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -117,6 +126,15 @@ export default function QAListPage() {
                     >
                         <Plus className="w-5 h-5" />
                         {t('qa.askQuestion')}
+                    </button>
+                )}
+                {isTeacher && (
+                    <button
+                        onClick={() => setShowAnnouncementModal(true)}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                    >
+                        <Plus className="w-5 h-5" />
+                        📢 Объявление
                     </button>
                 )}
             </div>
@@ -155,11 +173,27 @@ export default function QAListPage() {
                                         <h3 className="text-xl font-semibold text-gray-900">
                                             {thread.title}
                                         </h3>
+                                        {thread.type === 'announcement' && (
+                                            <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+                                                Объявление
+                                            </span>
+                                        )}
+                                        {thread.type === 'question' && (
+                                            <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded">
+                                                Вопрос
+                                            </span>
+                                        )}
+                                        {thread.type === 'question' && !thread.is_resolved && (
+                                            <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded flex items-center gap-1">
+                                                <Clock className="w-3 h-3" />
+                                                Открыто
+                                            </span>
+                                        )}
                                         {thread.is_resolved && (
-                                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                            <CheckCircle2 className="w-5 h-5 text-green-600" title="Решено" />
                                         )}
                                         {!thread.is_public && (
-                                            <Lock className="w-5 h-5 text-gray-400" />
+                                            <Lock className="w-5 h-5 text-gray-400" title="Приватно" />
                                         )}
                                     </div>
                                     <p className="text-gray-600 mb-3 line-clamp-2">
@@ -204,6 +238,13 @@ export default function QAListPage() {
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onQuestionCreated={fetchThreads}
+            />
+
+            {/* Create Announcement Modal - для массовой рассылки */}
+            <CreateAnnouncementModal
+                isOpen={showAnnouncementModal}
+                onClose={() => setShowAnnouncementModal(false)}
+                onAnnouncementCreated={fetchThreads}
             />
         </div>
     );

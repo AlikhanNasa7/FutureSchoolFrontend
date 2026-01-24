@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, FileSpreadsheet } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
 import axiosInstance from '@/lib/axios';
 import UserModal from '@/components/users/UserModal';
 import { useRouter } from 'next/navigation';
 import ParentChildrenModal from '@/components/users/ParentChildrenModal';
+import ImportStudentsExcelModal from '@/components/users/ImportStudentsExcelModal';
+import ImportTeachersExcelModal from '@/components/users/ImportTeachersExcelModal';
 
 interface UserData {
     id: number;
@@ -30,6 +32,8 @@ export default function UsersPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
     const [parentForChildrenModal, setParentForChildrenModal] = useState<UserData | null>(null);
+    const [showImportStudentsModal, setShowImportStudentsModal] = useState(false);
+    const [showImportTeachersModal, setShowImportTeachersModal] = useState(false);
     const { user } = useUserState();
     const router = useRouter();
 
@@ -216,13 +220,29 @@ export default function UsersPage() {
                         </select>
                     </div>
                     {canEdit && (
-                        <button
-                            onClick={() => setShowCreateModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Добавить пользователя
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowImportStudentsModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                                <FileSpreadsheet className="w-4 h-4" />
+                                Импорт студентов
+                            </button>
+                            <button
+                                onClick={() => setShowImportTeachersModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                                <FileSpreadsheet className="w-4 h-4" />
+                                Импорт учителей
+                            </button>
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Добавить пользователя
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -389,6 +409,26 @@ export default function UsersPage() {
                     setEditingUser(null);
                 }}
                 loading={loading}
+            />
+
+            {/* Import Students Excel Modal */}
+            <ImportStudentsExcelModal
+                isOpen={showImportStudentsModal}
+                onClose={() => setShowImportStudentsModal(false)}
+                onImportComplete={() => {
+                    setShowImportStudentsModal(false);
+                    fetchUsers(); // Refresh users list
+                }}
+            />
+
+            {/* Import Teachers Excel Modal */}
+            <ImportTeachersExcelModal
+                isOpen={showImportTeachersModal}
+                onClose={() => setShowImportTeachersModal(false)}
+                onImportComplete={() => {
+                    setShowImportTeachersModal(false);
+                    fetchUsers(); // Refresh users list
+                }}
             />
 
             {/* Parent–Children Modal */}
