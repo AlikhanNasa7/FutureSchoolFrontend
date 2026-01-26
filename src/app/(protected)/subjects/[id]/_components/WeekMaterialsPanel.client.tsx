@@ -671,7 +671,7 @@ export default function WeekMaterialsPanel({
     return (
         <section
             ref={sectionRef}
-            className="relative rounded-2xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm w-full max-w-full overflow-hidden"
+            className="relative rounded-lg border border-gray-200 bg-white p-4 md:p-6 shadow-sm w-full overflow-hidden"
             aria-labelledby="week-title"
         >
             {data.is_current && (

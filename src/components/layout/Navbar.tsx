@@ -43,7 +43,7 @@ export default function Navbar() {
                         </select>
                         <Languages className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                     </div>
-                    <div
+                    {/* <div
                         className="bg-white rounded-2xl px-4 py-2 h-[60px] cursor-pointer xs:block hidden"
                         onClick={() =>
                             modalController.open('kundelik-integration')
@@ -56,7 +56,7 @@ export default function Navbar() {
                             height={50}
                             className="w-full"
                         />
-                    </div>
+                    </div> */}
                 </div>
             </div>
             {user && user.role == 'student' && (

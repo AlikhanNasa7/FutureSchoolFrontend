@@ -4,7 +4,7 @@ import { useSubject } from '../../layout';
 import WeekMaterialsSection from '../../_components/WeekMaterialsSection';
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, ChevronDown } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import SubjectOverviewPanel from '../../_components/SubjectOverviewPanel.client';
 import { useLocale } from '@/contexts/LocaleContext';
@@ -17,6 +17,7 @@ export default function SubjectContents() {
     const subjectId = params?.id as string;
     const [overviewData, setOverviewData] = useState<any>(null);
     const [weekMaterialsData, setWeekMaterialsData] = useState<any[]>([]);
+    const [showArchived, setShowArchived] = useState(false);
 
     const handleForumClick = () => {
         router.push(`/subjects/${subjectId}/qa`);
@@ -84,6 +85,9 @@ export default function SubjectContents() {
                                 section.title ||
                                 section.name ||
                                 'Untitled Section',
+                            start_date: section.start_date,
+                            end_date: section.end_date,
+                            is_current: section.is_current,
                             resources: addKindToItems(
                                 section.resources || section.materials || [],
                                 'link'
@@ -96,7 +100,6 @@ export default function SubjectContents() {
                                 section.tests || section.quizzes || [],
                                 'test'
                             ),
-                            is_current: section.is_current,
                         };
                     });
 
@@ -147,20 +150,22 @@ export default function SubjectContents() {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Forum Button */}
-            <div className="mb-4">
-                <button
-                    onClick={handleForumClick}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
-                >
-                    <MessageCircle className="w-5 h-5" />
-                    {t('qa.title')}
-                </button>
-            </div>
+        <div>
+            {/* Sticky Header Panel */}
+            <div className="sticky top-0 z-40 bg-white shadow-md border-b border-gray-200">
+                <div className="p-4">
+                    {/* Forum Button */}
+                    <div className="mb-3">
+                        <button
+                            onClick={handleForumClick}
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                        >
+                            <MessageCircle className="w-5 h-5" />
+                            {t('qa.title')}
+                        </button>
+                    </div>
 
-            <div className="mb-8">
-                <div className="relative">
+                    {/* Subject Overview Panel */}
                     {overviewData && (
                         <SubjectOverviewPanel
                             data={overviewData}
@@ -171,18 +176,78 @@ export default function SubjectContents() {
                 </div>
             </div>
 
-            <div className="mb-8">
+            {/* Content Sections */}
+            <div className="space-y-6 p-4">
                 <div className="relative flex flex-col gap-4">
-                    {weekMaterialsData &&
-                        weekMaterialsData.length > 0 &&
-                        weekMaterialsData.map((data: any) => (
-                            <WeekMaterialsSection
-                                data={data}
-                                key={data.id}
-                                courseSectionId={data?.id}
-                                onRefresh={fetchSections}
-                            />
-                        ))}
+                    {weekMaterialsData && weekMaterialsData.length > 0 && (() => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        // Separate sections: past, current+future
+                        const pastSections = weekMaterialsData.filter((data: any) => {
+                            if (data.end_date) {
+                                const endDate = new Date(data.end_date);
+                                endDate.setHours(0, 0, 0, 0);
+                                return endDate < today;
+                            }
+                            return false;
+                        });
+
+                        const currentAndFutureSections = weekMaterialsData.filter((data: any) => {
+                            if (data.end_date) {
+                                const endDate = new Date(data.end_date);
+                                endDate.setHours(0, 0, 0, 0);
+                                return endDate >= today;
+                            }
+                            return true;
+                        });
+
+                        return (
+                            <>
+                    {/* Show/Hide Archived Button */}
+                    {pastSections.length > 0 && (
+                        <button
+                            onClick={() => setShowArchived(!showArchived)}
+                            className={`w-full flex items-center justify-center gap-2 px-4 md:px-6 py-3 md:py-4 border-2 border-dashed rounded-lg font-medium transition-all ${
+                                showArchived
+                                    ? 'bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-200'
+                                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                                        <ChevronDown
+                                            className={`w-5 h-5 transition-transform ${
+                                                showArchived ? 'rotate-180' : ''
+                                            }`}
+                                        />
+                                        {showArchived
+                                            ? '📚 Скрыть предыдущие'
+                                            : `🕐 Показать предыдущие (${pastSections.length})`}
+                                    </button>
+                                )}
+
+                                {/* Past Sections (shown above current when expanded) */}
+                                {showArchived &&
+                                    pastSections.map((data: any) => (
+                                        <WeekMaterialsSection
+                                            data={data}
+                                            key={data.id}
+                                            courseSectionId={data?.id}
+                                            onRefresh={fetchSections}
+                                        />
+                                    ))}
+
+                                {/* Current and Future Sections */}
+                                {currentAndFutureSections.map((data: any) => (
+                                    <WeekMaterialsSection
+                                        data={data}
+                                        key={data.id}
+                                        courseSectionId={data?.id}
+                                        onRefresh={fetchSections}
+                                    />
+                                ))}
+                            </>
+                        );
+                    })()}
                 </div>
             </div>
         </div>

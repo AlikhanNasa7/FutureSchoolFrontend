@@ -36,8 +36,12 @@ interface ForumPost {
 interface ForumThread {
     id: number;
     subject_group: number;
+    subject_group_course_name?: string;
+    subject_group_classroom_display?: string;
     created_by: number;
     created_by_username: string;
+    created_by_first_name?: string;
+    created_by_last_name?: string;
     title: string;
     type: string;
     is_public: boolean;
@@ -215,15 +219,33 @@ export default function SubjectQADetailPage() {
             {/* Question Section */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                 <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            {thread.title}
-                        </h1>
-                        {thread.is_resolved && (
-                            <CheckCircle2 className="w-6 h-6 text-green-600" />
-                        )}
-                        {!thread.is_public && (
-                            <Lock className="w-6 h-6 text-gray-400" />
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {thread.title}
+                            </h1>
+                            {thread.is_resolved && (
+                                <CheckCircle2 className="w-6 h-6 text-green-600" />
+                            )}
+                            {!thread.is_public && (
+                                <Lock className="w-6 h-6 text-gray-400" />
+                            )}
+                        </div>
+                        {(thread.subject_group_course_name || thread.subject_group_classroom_display) && (
+                            <div className="flex items-center gap-2 text-sm text-purple-600 font-medium">
+                                <BookOpen className="w-4 h-4" />
+                                {thread.subject_group_course_name && thread.subject_group_classroom_display && (
+                                    <span>
+                                        {thread.subject_group_course_name} • {thread.subject_group_classroom_display}
+                                    </span>
+                                )}
+                                {thread.subject_group_course_name && !thread.subject_group_classroom_display && (
+                                    <span>{thread.subject_group_course_name}</span>
+                                )}
+                                {!thread.subject_group_course_name && thread.subject_group_classroom_display && (
+                                    <span>{thread.subject_group_classroom_display}</span>
+                                )}
+                            </div>
                         )}
                     </div>
                     {isTeacher && !thread.is_resolved && (

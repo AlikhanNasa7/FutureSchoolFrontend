@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, User, ChevronDown, ChevronRight } from 'lucide-react';
+import { Clock, User, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import axiosInstance from '@/lib/axios';
 
 interface ForumPost {
     id: number;
@@ -14,6 +15,8 @@ interface ForumPost {
     is_answer: boolean;
     parent_post?: number | null;
     replies?: ForumPost[];
+    reactions?: Record<string, number>;
+    user_reactions?: string[];
     created_at: string;
     updated_at: string;
 }
@@ -24,9 +27,11 @@ interface ForumPostItemProps {
     canAnswer: boolean;
     onReplyClick: (postId: number, authorUsername: string, content: string) => void;
     formatDate: (dateString: string) => string;
+    onReactionChange?: () => void;
 }
 
-const MAX_DEPTH = 10; // Максимальная глубина вложенности
+const MAX_DEPTH = 10;
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
 export default function ForumPostItem({
     post,
@@ -34,10 +39,46 @@ export default function ForumPostItem({
     canAnswer,
     onReplyClick,
     formatDate,
+    onReactionChange,
 }: ForumPostItemProps) {
-    const [isExpanded, setIsExpanded] = useState(depth === 0); // Только первый уровень раскрыт по умолчанию
+    const [isExpanded, setIsExpanded] = useState(depth === 0);
+    const [reactions, setReactions] = useState(post.reactions || {});
+    const [userReactions, setUserReactions] = useState(post.user_reactions || []);
+    const [showReactionMenu, setShowReactionMenu] = useState(false);
+    const [isLoadingReaction, setIsLoadingReaction] = useState(false);
+
     const hasReplies = post.replies && post.replies.length > 0;
-    const marginLeft = Math.min(depth * 16, 256); // Максимум 256px отступа
+
+    const handleReaction = async (emoji: string) => {
+        setIsLoadingReaction(true);
+        try {
+            await axiosInstance.post(`/forum/posts/${post.id}/react/`, {
+                reaction_type: emoji,
+            });
+
+            // Toggle reaction state
+            if (userReactions.includes(emoji)) {
+                setUserReactions(userReactions.filter(r => r !== emoji));
+                setReactions({
+                    ...reactions,
+                    [emoji]: (reactions[emoji] || 1) - 1,
+                });
+            } else {
+                setUserReactions([...userReactions, emoji]);
+                setReactions({
+                    ...reactions,
+                    [emoji]: (reactions[emoji] || 0) + 1,
+                });
+            }
+
+            setShowReactionMenu(false);
+            onReactionChange?.();
+        } catch (err) {
+            console.error('Error reacting:', err);
+        } finally {
+            setIsLoadingReaction(false);
+        }
+    };
 
     return (
         <div className="space-y-3">
@@ -109,7 +150,60 @@ export default function ForumPostItem({
                         <p className="text-gray-800 whitespace-pre-wrap text-sm mb-3">
                             {post.content}
                         </p>
-                        <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+
+                        {/* Reactions Bar - Telegram style */}
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                            {Object.entries(reactions)
+                                .filter(([_, count]) => count > 0)
+                                .map(([emoji, count]) => (
+                                    <button
+                                        key={emoji}
+                                        onClick={() => handleReaction(emoji)}
+                                        disabled={isLoadingReaction}
+                                        className={`px-2 py-1 rounded-full text-sm font-medium transition-all ${
+                                            userReactions.includes(emoji)
+                                                ? 'bg-blue-100 text-blue-700 border border-blue-300 scale-110'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        } ${isLoadingReaction ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {emoji} {count}
+                                    </button>
+                                ))}
+
+                            {/* Add Reaction Button */}
+                            {canAnswer && (
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowReactionMenu(!showReactionMenu)}
+                                        disabled={isLoadingReaction}
+                                        className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-600 hover:text-gray-900"
+                                        title="Add reaction"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+
+                                    {/* Reaction Menu - Dropdown */}
+                                    {showReactionMenu && (
+                                        <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-1 z-10">
+                                            {REACTION_EMOJIS.map(emoji => (
+                                                <button
+                                                    key={emoji}
+                                                    onClick={() => handleReaction(emoji)}
+                                                    disabled={isLoadingReaction}
+                                                    className="text-xl hover:scale-125 transition-transform hover:bg-gray-100 p-1 rounded"
+                                                    title={emoji}
+                                                >
+                                                    {emoji}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="pt-2 border-t border-gray-200 flex items-center justify-between gap-2 flex-wrap">
                             {canAnswer && depth < MAX_DEPTH && (
                                 <button
                                     onClick={() =>
@@ -139,6 +233,7 @@ export default function ForumPostItem({
                                     canAnswer={canAnswer}
                                     onReplyClick={onReplyClick}
                                     formatDate={formatDate}
+                                    onReactionChange={onReactionChange}
                                 />
                             ))}
                         </div>

@@ -73,15 +73,30 @@ export default function SubjectLayout({
 
     useEffect(() => {
         const fetchSubject = async () => {
+            if (!subjectId) {
+                setError('Subject ID is missing');
+                setLoading(false);
+                return;
+            }
+            
             setLoading(true);
             setError(null);
             try {
-                const response = await axiosInstance.get(
-                    `/subject-groups/${subjectId}/`
-                );
+                const url = `/subject-groups/${subjectId}/`;
+                console.log('Fetching subject from:', url);
+                const response = await axiosInstance.get(url);
+                console.log('Subject response:', response.data);
                 setSubject(response.data);
-            } catch {
-                setError('Failed to load subject');
+            } catch (err: any) {
+                const errorMessage = err.response?.data?.detail || err.message || 'Failed to load subject';
+                setError(errorMessage);
+                console.error('Error fetching subject:', {
+                    url: `/subject-groups/${subjectId}/`,
+                    status: err.response?.status,
+                    statusText: err.response?.statusText,
+                    data: err.response?.data,
+                    error: err
+                });
             } finally {
                 setLoading(false);
             }
@@ -92,12 +107,15 @@ export default function SubjectLayout({
                     `/subject-groups/${subjectId}/members/`
                 );
                 setSubjectGroupMembers(response.data);
-            } catch {
-                // Silently fail for members
+            } catch (err: any) {
+                // Silently fail for members, but log for debugging
+                console.warn('Error fetching subject group members:', err.response?.status, err.response?.data);
             }
         };
-        fetchSubject();
-        fetchSubjectGroupMembers();
+        if (subjectId) {
+            fetchSubject();
+            fetchSubjectGroupMembers();
+        }
     }, [subjectId]);
 
     return (

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, MessageCircle, CheckCircle2, Lock, Clock } from 'lucide-react';
+import { Plus, MessageCircle, CheckCircle2, Lock, Clock, BookOpen, Filter, X } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 import { useUserState } from '@/contexts/UserContext';
 import { useLocale } from '@/contexts/LocaleContext';
@@ -23,6 +23,8 @@ interface ForumPost {
 interface ForumThread {
     id: number;
     subject_group: number;
+    subject_group_course_name?: string;
+    subject_group_classroom_display?: string;
     created_by: number;
     created_by_username: string;
     title: string;
@@ -35,15 +37,25 @@ interface ForumThread {
     posts: ForumPost[];
 }
 
+interface SubjectGroup {
+    id: number;
+    course_name: string;
+    classroom_display: string;
+}
+
 export default function QAListPage() {
     const router = useRouter();
     const { user } = useUserState();
     const { t } = useLocale();
     const [threads, setThreads] = useState<ForumThread[]>([]);
+    const [allThreads, setAllThreads] = useState<ForumThread[]>([]);
+    const [subjectGroups, setSubjectGroups] = useState<SubjectGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+    const [selectedSubjectGroup, setSelectedSubjectGroup] = useState<number | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
 
     const fetchThreads = useCallback(async () => {
         try {
@@ -53,6 +65,7 @@ export default function QAListPage() {
             const threadsData = Array.isArray(response.data)
                 ? response.data
                 : response.data.results || response.data.data || [];
+            setAllThreads(threadsData);
             setThreads(threadsData);
             setError(null);
         } catch (err: unknown) {
@@ -87,9 +100,32 @@ export default function QAListPage() {
         }
     }, [t]);
 
+    const fetchSubjectGroups = useCallback(async () => {
+        if (user?.role !== 'teacher') return;
+        try {
+            const response = await axiosInstance.get('/subject-groups/?teacher=' + user.id);
+            const groupsData = Array.isArray(response.data)
+                ? response.data
+                : response.data.results || response.data.data || [];
+            setSubjectGroups(groupsData);
+        } catch (err) {
+            console.error('Error fetching subject groups:', err);
+        }
+    }, [user]);
+
     useEffect(() => {
         fetchThreads();
-    }, [fetchThreads]);
+        fetchSubjectGroups();
+    }, [fetchThreads, fetchSubjectGroups]);
+
+    useEffect(() => {
+        if (selectedSubjectGroup === null) {
+            setThreads(allThreads);
+        } else {
+            setThreads(allThreads.filter(t => t.subject_group === selectedSubjectGroup));
+        }
+    }, [selectedSubjectGroup, allThreads]);
+
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -115,29 +151,89 @@ export default function QAListPage() {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        {t('qa.title')}
+                        {isTeacher ? 'Все вопросы' : t('qa.title')}
                     </h1>
-                    <p className="text-gray-600">{t('qa.subtitle')}</p>
+                    <p className="text-gray-600">
+                        {isTeacher ? 'Вопросы из всех ваших предметов' : t('qa.subtitle')}
+                    </p>
                 </div>
-                {isStudent && (
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                    >
-                        <Plus className="w-5 h-5" />
-                        {t('qa.askQuestion')}
-                    </button>
-                )}
-                {isTeacher && (
-                    <button
-                        onClick={() => setShowAnnouncementModal(true)}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                    >
-                        <Plus className="w-5 h-5" />
-                        📢 Объявление
-                    </button>
-                )}
+                <div className="flex items-center gap-3">
+                    {isTeacher && (
+                        <>
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                    showFilters || selectedSubjectGroup !== null
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                <Filter className="w-4 h-4" />
+                                Фильтры
+                            </button>
+                            <button
+                                onClick={() => setShowAnnouncementModal(true)}
+                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                            >
+                                <Plus className="w-5 h-5" />
+                                📢 Объявление
+                            </button>
+                        </>
+                    )}
+                    {isStudent && (
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                        >
+                            <Plus className="w-5 h-5" />
+                            {t('qa.askQuestion')}
+                        </button>
+                    )}
+                </div>
             </div>
+
+            {/* Filters for teachers */}
+            {isTeacher && showFilters && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-900">Фильтр по предмету</h3>
+                        {selectedSubjectGroup !== null && (
+                            <button
+                                onClick={() => setSelectedSubjectGroup(null)}
+                                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+                            >
+                                <X className="w-4 h-4" />
+                                Сбросить
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setSelectedSubjectGroup(null)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                selectedSubjectGroup === null
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                            Все предметы
+                        </button>
+                        {subjectGroups.map(group => (
+                            <button
+                                key={group.id}
+                                onClick={() => setSelectedSubjectGroup(group.id)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                    selectedSubjectGroup === group.id
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                {group.course_name} • {group.classroom_display}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {loading ? (
                 <div className="flex justify-center items-center py-12">
@@ -164,12 +260,12 @@ export default function QAListPage() {
                     {threads.map(thread => (
                         <div
                             key={thread.id}
-                            onClick={() => router.push(`/qa/${thread.id}`)}
+                            onClick={() => router.push(`/subjects/${thread.subject_group}/qa/${thread.id}`)}
                             className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
                         >
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
+                                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                                         <h3 className="text-xl font-semibold text-gray-900">
                                             {thread.title}
                                         </h3>
@@ -190,17 +286,33 @@ export default function QAListPage() {
                                             </span>
                                         )}
                                         {thread.is_resolved && (
-                                            <CheckCircle2 className="w-5 h-5 text-green-600" title="Решено" />
+                                            <CheckCircle2 className="w-5 h-5 text-green-600" aria-label="Решено" />
                                         )}
                                         {!thread.is_public && (
-                                            <Lock className="w-5 h-5 text-gray-400" title="Приватно" />
+                                            <Lock className="w-5 h-5 text-gray-400" aria-label="Приватно" />
                                         )}
                                     </div>
+                                    {(thread.subject_group_course_name || thread.subject_group_classroom_display) && (
+                                        <div className="flex items-center gap-2 text-sm text-purple-600 font-medium mb-2">
+                                            <BookOpen className="w-4 h-4" />
+                                            {thread.subject_group_course_name && thread.subject_group_classroom_display && (
+                                                <span>
+                                                    {thread.subject_group_course_name} • {thread.subject_group_classroom_display}
+                                                </span>
+                                            )}
+                                            {thread.subject_group_course_name && !thread.subject_group_classroom_display && (
+                                                <span>{thread.subject_group_course_name}</span>
+                                            )}
+                                            {!thread.subject_group_course_name && thread.subject_group_classroom_display && (
+                                                <span>{thread.subject_group_classroom_display}</span>
+                                            )}
+                                        </div>
+                                    )}
                                     <p className="text-gray-600 mb-3 line-clamp-2">
                                         {thread.posts[0]?.content ||
                                             t('qa.noContent')}
                                     </p>
-                                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                                    <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
                                         <span>
                                             {t('qa.by')}{' '}
                                             {thread.created_by_username}

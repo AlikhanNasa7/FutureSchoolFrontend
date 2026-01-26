@@ -21,7 +21,8 @@
         "settings": "Settings",
         "profile": "Profile",
         "logout": "Logout",
-        "search": "Search"
+        "search": "Search",
+        "questions": "Questions"
     },
     "status": {
         "start": "Start",

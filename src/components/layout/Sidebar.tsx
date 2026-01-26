@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
     Home,
     Search,
@@ -15,11 +16,13 @@ import {
     BookOpen,
     Building2,
     Users,
+    MessageCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUserState, useUserActions } from '@/contexts/UserContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useLocale } from '@/contexts/LocaleContext';
+import axiosInstance from '@/lib/axios';
 
 const navigation = [
     {
@@ -33,6 +36,12 @@ const navigation = [
         href: '/subjects',
         icon: Box,
         roles: ['teacher', 'student'],
+    },
+    {
+        key: 'questions',
+        href: '/qa',
+        icon: MessageCircle,
+        roles: ['teacher'],
     },
     // {
     //     key: 'assignments',
@@ -73,7 +82,7 @@ const navigation = [
 ];
 
 const utilityItems = [
-    { key: 'notifications', href: '/notifications', icon: Bell, badge: 12 },
+    { key: 'notifications', href: '/notifications', icon: Bell },
     { key: 'support', href: '/support', icon: HelpCircle },
     { key: 'settings', href: '/settings', icon: Settings },
 ];
@@ -86,6 +95,25 @@ export default function Sidebar() {
     const { user } = useUserState();
     const { logout } = useUserActions();
     const { t } = useLocale();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        if (user) {
+            fetchUnreadCount();
+            // Refresh every 30 seconds
+            const interval = setInterval(fetchUnreadCount, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [user]);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const response = await axiosInstance.get('/notifications/unread_count/');
+            setUnreadCount(response.data.unread_count || 0);
+        } catch (error) {
+            console.error('Error fetching unread count:', error);
+        }
+    };
 
     const handleProfileClick = () => {
         router.push('/profile');
@@ -175,6 +203,7 @@ export default function Sidebar() {
                         <div className="mt-8 space-y-2">
                             {utilityItems.map(item => {
                                 const isActive = pathname === item.href;
+                                const showBadge = item.key === 'notifications' && unreadCount > 0;
                                 return (
                                     <Link
                                         key={item.key}
@@ -190,9 +219,9 @@ export default function Sidebar() {
                                             <item.icon className="mr-3 h-5 w-5 text-gray-500" />
                                             {t(`nav.${item.key}`)}
                                         </div>
-                                        {item.badge && (
-                                            <span className="bg-purple-600 text-white text-xs font-medium px-2 py-1 rounded-full">
-                                                {item.badge}
+                                        {showBadge && (
+                                            <span className="bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full min-w-[24px] text-center">
+                                                {unreadCount > 99 ? '99+' : unreadCount}
                                             </span>
                                         )}
                                     </Link>

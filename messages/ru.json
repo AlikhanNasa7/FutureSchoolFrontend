@@ -21,7 +21,8 @@
         "settings": "Настройки",
         "profile": "Профиль",
         "logout": "Выйти",
-        "search": "Поиск"
+        "search": "Поиск",
+        "questions": "Вопросы"
     },
     "status": {
         "start": "Начать",

@@ -9,6 +9,7 @@ import {
     Search,
 } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
+import { useUserState } from '@/contexts/UserContext';
 import { useSubject } from '../../layout';
 
 interface Member {
@@ -21,10 +22,22 @@ interface Member {
     last_login: string | null;
 }
 
+interface SubjectGroupData {
+    teacher: Member | null;
+    students: Member[];
+    subject_group: {
+        id: number;
+        course_name: string;
+        course_code: string;
+        classroom: string;
+    };
+}
+
 export default function ParticipantsPage() {
     const { subject } = useSubject();
+    const { user } = useUserState();
 
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<SubjectGroupData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +55,6 @@ export default function ParticipantsPage() {
             setLoading(true);
             const response = await axiosInstance.get(`/subject-groups/${subject.id}/members/`);
             setData(response.data);
-            console.log('Members data:', response.data);
             setError(null);
         } catch (err) {
             console.error('Error fetching members:', err);
@@ -74,12 +86,20 @@ export default function ParticipantsPage() {
         });
     };
 
+    const isOnline = (lastLogin: string | null) => {
+        if (!lastLogin) return false;
+        const date = new Date(lastLogin);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        return diff < 300000; // 5 минут
+    };
+
     const allMembers = [
         ...(data?.teacher ? [data.teacher] : []),
         ...(data?.students || []),
     ];
 
-    const filteredMembers = allMembers.filter((member: Member) => {
+    const filteredMembers = allMembers.filter(member => {
         const matchesSearch =
             `${member.first_name} ${member.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
             member.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -98,8 +118,17 @@ export default function ParticipantsPage() {
         );
     }
 
+    if (error) {
+        return (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+            </div>
+        );
+    }
+
     return (
-        <div className="px-4">
+        <div className="max-w-6xl mx-auto p-6">
+            {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
                     <Users className="w-8 h-8 text-blue-600" />
@@ -107,8 +136,10 @@ export default function ParticipantsPage() {
                 </div>
             </div>
 
+            {/* Filters */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    {/* Search */}
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                         <input
@@ -120,6 +151,7 @@ export default function ParticipantsPage() {
                         />
                     </div>
 
+                    {/* Role Filter */}
                     <div className="flex gap-2">
                         {(['all', 'teacher', 'student'] as const).map(role => (
                             <button
@@ -140,50 +172,106 @@ export default function ParticipantsPage() {
                 </div>
             </div>
 
+            {/* Members Count */}
             <div className="mb-6 text-sm text-gray-600">
                 Найдено: {filteredMembers.length} участников
             </div>
 
+            {/* Members List - Table View */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Участник</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Роль</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Последний вход</th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    Участник
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    Email
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    Роль
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    Последний вход
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    Статус
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredMembers.map((member: Member, idx: number) => (
-                                <tr key={`${member.role}-${member.id}`} className={`border-b border-gray-200 hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                            {filteredMembers.map((member, idx) => (
+                                <tr
+                                    key={`${member.role}-${member.id}`}
+                                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+                                        idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                    }`}
+                                >
+                                    {/* Name */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                                                 <User className="w-6 h-6 text-blue-600" />
                                             </div>
                                             <div>
-                                                <p className="font-medium text-gray-900">{member.first_name} {member.last_name}</p>
-                                                <p className="text-xs text-gray-500">@{member.username}</p>
+                                                <p className="font-medium text-gray-900">
+                                                    {member.first_name} {member.last_name}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    @{member.username}
+                                                </p>
                                             </div>
                                         </div>
                                     </td>
+
+                                    {/* Email */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <Mail className="w-4 h-4 text-gray-400" />
-                                            <a href={`mailto:${member.email}`} className="hover:text-blue-600">{member.email}</a>
+                                            <a
+                                                href={`mailto:${member.email}`}
+                                                className="hover:text-blue-600 hover:underline"
+                                            >
+                                                {member.email}
+                                            </a>
                                         </div>
                                     </td>
+
+                                    {/* Role */}
                                     <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${member.role === 'teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                                        <span
+                                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                member.role === 'teacher'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-blue-100 text-blue-800'
+                                            }`}
+                                        >
                                             {member.role === 'teacher' ? 'Учитель' : 'Студент'}
                                         </span>
                                     </td>
+
+                                    {/* Last Login */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <Clock className="w-4 h-4 text-gray-400" />
                                             {formatLastLogin(member.last_login)}
+                                        </div>
+                                    </td>
+
+                                    {/* Online Status */}
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className={`w-3 h-3 rounded-full ${
+                                                    isOnline(member.last_login)
+                                                        ? 'bg-green-500'
+                                                        : 'bg-gray-300'
+                                                }`}
+                                            ></div>
+                                            <span className="text-sm text-gray-600">
+                                                {isOnline(member.last_login) ? 'Онлайн' : 'Оффлайн'}
+                                            </span>
                                         </div>
                                     </td>
                                 </tr>
@@ -191,16 +279,34 @@ export default function ParticipantsPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {filteredMembers.length === 0 && (
+                    <div className="text-center py-12">
+                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-600">Участников не найдено</p>
+                    </div>
+                )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-6">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 mt-6">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                     <p className="text-sm text-gray-600 mb-1">Всего участников</p>
-                    <p className="text-2xl font-bold text-gray-900">{filteredMembers.length}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                        {filteredMembers.length}
+                    </p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <p className="text-sm text-gray-600 mb-1">Онлайн сейчас</p>
+                    <p className="text-2xl font-bold text-green-600">
+                        {filteredMembers.filter(m => isOnline(m.last_login)).length}
+                    </p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                     <p className="text-sm text-gray-600 mb-1">Никогда не заходили</p>
-                    <p className="text-2xl font-bold text-orange-600">{filteredMembers.filter((m: Member) => !m.last_login).length}</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                        {filteredMembers.filter(m => !m.last_login).length}
+                    </p>
                 </div>
             </div>
         </div>
