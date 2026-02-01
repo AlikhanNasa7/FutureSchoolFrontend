@@ -136,6 +136,33 @@ export default function EventModal({
                 </div>
             )}
 
+            {(event.target_audience || (event.target_users && event.target_users.length > 0)) && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        {locale === 'ru' ? 'Аудитория' : 'Audience'}
+                    </h4>
+                    <div className="text-gray-600 text-sm">
+                        {event.target_audience === 'all' && (locale === 'ru' ? 'Для всех' : 'For everyone')}
+                        {event.target_audience === 'teachers' && (locale === 'ru' ? 'Для учителей' : 'For teachers')}
+                        {event.target_audience === 'class' && event.subject_group_display && (
+                            <span>{locale === 'ru' ? 'Для класса: ' : 'For class: '}{event.subject_group_display}</span>
+                        )}
+                        {event.target_audience === 'specific' && event.target_users && event.target_users.length > 0 && (
+                            <div>
+                                <p className="mb-1">{locale === 'ru' ? 'Выбранным пользователям:' : 'Specific users:'}</p>
+                                <ul className="list-disc list-inside space-y-0.5">
+                                    {event.target_users.map((u) => (
+                                        <li key={u.id}>
+                                            {[u.first_name, u.last_name].filter(Boolean).join(' ').trim() || u.username} ({u.username})
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="mt-6 flex justify-end gap-3">
                 {event.url && (
                     <button

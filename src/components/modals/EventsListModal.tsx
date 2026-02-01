@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Modal from '@/components/ui/Modal';
-import type { EventsListModalData } from '@/lib/modalController';
+import type { EventsListModalData, EventModalData } from '@/lib/modalController';
+import { modalController } from '@/lib/modalController';
 import { useLocale } from '@/contexts/LocaleContext';
 
 interface EventsListModalProps {
@@ -16,7 +16,6 @@ export default function EventsListModal({
     isOpen,
     onClose,
 }: EventsListModalProps) {
-    const router = useRouter();
     const { t, locale } = useLocale();
 
     if (!isOpen || !data || !data.events || data.events.length === 0) return null;
@@ -43,11 +42,24 @@ export default function EventsListModal({
         return timeStr.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
     };
 
-    const handleEventClick = (event: any) => {
-        if (event.url) {
-            router.push(event.url);
-        }
+    const handleEventClick = (event: EventsListModalData['events'][0]) => {
         onClose();
+        const eventModalData: EventModalData = {
+            title: event.title,
+            start: event.start,
+            subject: event.subject,
+            teacher: event.teacher,
+            time: event.time,
+            description: event.description || '',
+            url: event.url,
+            type: event.type as EventModalData['type'],
+            room: event.room,
+            classroom: event.classroom,
+            target_audience: event.target_audience,
+            subject_group_display: event.subject_group_display,
+            target_users: event.target_users,
+        };
+        modalController.open('event-modal', eventModalData);
     };
 
     // Get time range from events

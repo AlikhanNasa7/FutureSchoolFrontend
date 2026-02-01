@@ -11,8 +11,9 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { EventClickArg } from '@fullcalendar/core';
-import { Settings, ChevronDown } from 'lucide-react';
+import { Settings, ChevronDown, Plus } from 'lucide-react';
 import { modalController } from '@/lib/modalController';
+import CreateEventModal from './CreateEventModal';
 import type { EventModalData } from '@/lib/modalController';
 import axiosInstance from '@/lib/axios';
 import { useLocale } from '@/contexts/LocaleContext';
@@ -75,6 +76,24 @@ interface AcademicYear {
     is_active?: boolean;
 }
 
+export interface CustomCalendarEvent {
+    id: number;
+    title: string;
+    description?: string;
+    type: string;
+    start_at: string;
+    end_at: string | null;
+    is_all_day: boolean;
+    location?: string;
+    target_audience: string;
+    school: number | null;
+    subject_group: number | null;
+    subject_group_display?: string;
+    target_users: number[];
+    target_users_details?: Array<{ id: number; username: string; first_name?: string; last_name?: string }>;
+    created_by?: number;
+}
+
 export interface DayScheduleEventFromCalendar {
     id: string;
     title: string;
@@ -87,6 +106,11 @@ export interface DayScheduleEventFromCalendar {
     borderColor: string;
     textColor: string;
     type?: string;
+    classroom?: string;
+    room?: string;
+    target_audience?: string;
+    subject_group_display?: string;
+    target_users?: Array<{ id: number; username: string; first_name?: string; last_name?: string }>;
 }
 
 interface CalendarProps {
@@ -99,6 +123,7 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
     const [tests, setTests] = useState<Test[]>([]);
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([]);
+    const [customEvents, setCustomEvents] = useState<CustomCalendarEvent[]>([]);
     const [academicYear, setAcademicYear] = useState<AcademicYear | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -116,6 +141,7 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
     }>({ start: null, end: null });
     const menuRef = useRef<HTMLDivElement>(null);
     const calendarRef = useRef<any>(null);
+    const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
     const { t, locale } = useLocale();
 
     useEffect(() => {
@@ -230,11 +256,12 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
             setLoading(true);
             setError(null);
 
-            // Fetch tests, assignments, schedule slots, and academic year in parallel
-            const [testsResponse, assignmentsResponse, scheduleResponse, academicYearResponse] = await Promise.allSettled([
+            // Fetch tests, assignments, schedule slots, custom events, and academic year in parallel
+            const [testsResponse, assignmentsResponse, scheduleResponse, eventsResponse, academicYearResponse] = await Promise.allSettled([
                 axiosInstance.get('/tests/'),
                 axiosInstance.get('/assignments/'),
                 axiosInstance.get('/schedule-slots/'),
+                axiosInstance.get('/events/'),
                 axiosInstance.get('/academic-years/current/'),
             ]);
 
@@ -259,12 +286,21 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                 const slots = scheduleResponse.value.data.results || scheduleResponse.value.data || [];
                 setScheduleSlots(slots);
             } else {
-                // 404 is expected if user doesn't have access or no schedule slots exist
-                // This is not a critical error, just log it silently
                 if (scheduleResponse.reason?.response?.status !== 404) {
                     console.error('Error fetching schedule slots:', scheduleResponse.reason);
                 }
                 setScheduleSlots([]);
+            }
+
+            // Handle custom calendar events
+            if (eventsResponse.status === 'fulfilled') {
+                const eventsData = eventsResponse.value.data.results ?? eventsResponse.value.data ?? [];
+                setCustomEvents(Array.isArray(eventsData) ? eventsData : []);
+            } else {
+                if (eventsResponse.reason?.response?.status !== 404) {
+                    console.error('Error fetching events:', eventsResponse.reason);
+                }
+                setCustomEvents([]);
             }
             
             // Handle academic year (активный учебный год — доступен всем авторизованным)
@@ -657,7 +693,6 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                 hour: '2-digit',
                 minute: '2-digit',
             });
-            // Default duration for assignments: 1 hour
             const endDate = new Date(assignmentDate.getTime() + 60 * 60 * 1000);
 
             events.push({
@@ -679,8 +714,42 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
             });
         });
 
+        customEvents.forEach(ev => {
+            const startDate = new Date(ev.start_at);
+            const endDate = ev.end_at ? new Date(ev.end_at) : new Date(startDate.getTime() + 60 * 60 * 1000);
+            const timeStr = startDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            const categoryLabels: Record<string, string> = {
+                meeting: 'Собрание',
+                gathering: 'Встреча',
+                school_event: 'Школьное событие',
+                other: 'Другое',
+            };
+            events.push({
+                id: `event-${ev.id}`,
+                title: ev.title,
+                start: ev.start_at,
+                end: endDate.toISOString(),
+                backgroundColor: 'rgb(233, 213, 255)',
+                borderColor: 'rgb(233, 213, 255)',
+                textColor: '#374151',
+                display: 'auto',
+                extendedProps: {
+                    description: ev.description || '',
+                    subject: ev.title,
+                    teacher: '',
+                    time: timeStr,
+                    type: ev.type,
+                    categoryLabel: categoryLabels[ev.type] || ev.type,
+                    location: ev.location,
+                    target_audience: ev.target_audience,
+                    subject_group_display: ev.subject_group_display,
+                    target_users_details: ev.target_users_details || [],
+                },
+            });
+        });
+
         return events;
-    }, [tests, assignments, scheduleSlots, academicYear, generateScheduleEvents, groupOverlappingEvents]);
+    }, [tests, assignments, scheduleSlots, customEvents, academicYear, generateScheduleEvents, groupOverlappingEvents]);
 
     // События на выбранный день для сайдбара (формат для DaySchedule)
     const getEventsForDay = useCallback(
@@ -754,6 +823,11 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                         borderColor: ev.borderColor || ev.backgroundColor || 'rgb(147, 197, 253)',
                         textColor: ev.textColor || '#374151',
                         type: props.type,
+                        classroom: props.classroom,
+                        room: props.room,
+                        target_audience: props.target_audience,
+                        subject_group_display: props.subject_group_display,
+                        target_users: props.target_users_details,
                     });
                 }
             }
@@ -858,7 +932,9 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                             `
                         };
                     }
-                    const compactText = room ? `${subject} | ${room}` : subject;
+                    const isTeacher = user?.role === 'teacher';
+                    const classInBrackets = isTeacher && classroom ? ` (${classroom})` : '';
+                    const compactText = room ? `${subject}${classInBrackets} | ${room}` : `${subject}${classInBrackets}`;
                     return {
                         html: `
                             <div class="fc-event-compact" title="${escapeTitle(fullTitle)}" style="padding: 2px 4px; font-size: 0.75rem;">
@@ -889,6 +965,31 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                             <div class="fc-event-compact" title="${escapeTitle(testFullTitle)}" style="padding: 2px 4px; font-size: 0.75rem;">
                                 <div style="font-weight: 600;">${escapeTitle(event.title || '')}</div>
                                 ${testSubject ? `<div style="font-size: 0.7rem; opacity: 0.9;">${escapeTitle(testSubject)}</div>` : ''}
+                            </div>
+                        `
+                    };
+                }
+
+                // Custom content for calendar events (meeting, gathering, other)
+                if (type === 'meeting' || type === 'gathering' || type === 'school_event' || type === 'other') {
+                    const categoryLabel = props?.categoryLabel || type;
+                    const loc = props?.location || '';
+                    if (isAdmin) {
+                        return {
+                            html: `
+                                <div style="padding: 2px 4px; font-size: 0.75rem;">
+                                    <div style="font-weight: 600; margin-bottom: 2px;">${escapeTitle(event.title || '')}</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.9;">${escapeTitle(categoryLabel)}</div>
+                                    ${loc ? `<div style="font-size: 0.7rem; opacity: 0.8;">${escapeTitle(loc)}</div>` : ''}
+                                </div>
+                            `
+                        };
+                    }
+                    return {
+                        html: `
+                            <div class="fc-event-compact" title="${escapeTitle([event.title, categoryLabel, loc].filter(Boolean).join(' • '))}" style="padding: 2px 4px; font-size: 0.75rem;">
+                                <div style="font-weight: 600;">${escapeTitle(event.title || '')}</div>
+                                ${loc ? `<div style="font-size: 0.7rem; opacity: 0.9;">${escapeTitle(loc)}</div>` : ''}
                             </div>
                         `
                     };
@@ -956,36 +1057,30 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                     if (isGrouped && groupedEvents.length > 0) {
                         const eventsForModal = groupedEvents.map((event: any) => {
                             const eventType = event.extendedProps?.type || 'schedule';
-                            let timeStr = event.extendedProps?.time || '';
-                            
+                            const ep = event.extendedProps || {};
+                            let timeStr = ep.time || '';
                             if (!timeStr && event.start) {
                                 const startTime = new Date(event.start);
-                                const endTime = event.end 
-                                    ? new Date(event.end)
-                                    : new Date(startTime.getTime() + 60 * 60 * 1000);
-                                timeStr = `${startTime.toLocaleTimeString('ru-RU', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })} - ${endTime.toLocaleTimeString('ru-RU', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })}`;
+                                const endTime = event.end ? new Date(event.end) : new Date(startTime.getTime() + 60 * 60 * 1000);
+                                timeStr = `${startTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
                             } else if (timeStr) {
                                 timeStr = timeStr.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
                             }
-                            
                             return {
                                 id: event.id,
                                 title: event.title || '',
-                                subject: event.extendedProps?.subject || '',
-                                classroom: event.extendedProps?.classroom || '',
-                                room: event.extendedProps?.room || '',
-                                teacher: event.extendedProps?.teacherFullName || event.extendedProps?.teacher || '',
+                                subject: ep.subject || '',
+                                classroom: ep.classroom || '',
+                                room: ep.room || '',
+                                teacher: ep.teacherFullName || ep.teacher || '',
                                 time: timeStr,
                                 type: eventType,
                                 start: event.start,
                                 end: event.end,
-                                description: event.extendedProps?.description || '',
+                                description: ep.description || '',
+                                target_audience: ep.target_audience,
+                                subject_group_display: ep.subject_group_display,
+                                target_users: ep.target_users_details,
                             };
                         });
                         
@@ -1039,17 +1134,22 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                     const eventData: EventModalData = {
                         title: eventInfo.event.title,
                         start: eventInfo.event.start
-                            .toISOString()
-                            .split('T')[0],
+                            ? (typeof eventInfo.event.start === 'string'
+                                ? eventInfo.event.start
+                                : eventInfo.event.start.toISOString()
+                              ).split('T')[0]
+                            : '',
                         subject: props?.subject || '',
                         teacher: teacherForModal,
                         time: timeStr,
-                        description:
-                            props?.description || '',
+                        description: props?.description || '',
                         url: url,
-                        type: eventType,
+                        type: eventType as EventModalData['type'],
                         room: props?.room,
                         classroom: props?.classroom,
+                        target_audience: props?.target_audience,
+                        subject_group_display: props?.subject_group_display,
+                        target_users: props?.target_users_details,
                     };
                     modalController.open('event-modal', eventData);
                 }
@@ -1088,65 +1188,40 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                 
                 // If more than one event, show list modal
                 if (overlappingEvents.length > 1) {
-                    const eventsData: EventModalData[] = overlappingEvents.map(event => {
+                    const eventsData = overlappingEvents.map(event => {
                         const props = (event as any).extendedProps || {};
                         const eventType = props.type || '';
                         const eventId = (event.id || '').replace(`${eventType}-`, '');
-                        
                         let url: string | undefined;
-                        if (eventType === 'test') {
-                            url = `/tests/${eventId}`;
-                        } else if (eventType === 'assignment') {
-                            url = `/assignments/${eventId}`;
-                        }
-                        
+                        if (eventType === 'test') url = `/tests/${eventId}`;
+                        else if (eventType === 'assignment') url = `/assignments/${eventId}`;
                         let timeStr = props.time || '';
                         if (!timeStr && event.start) {
                             const startTime = new Date(event.start);
-                            const endTime = event.end 
-                                ? new Date(event.end)
-                                : new Date(startTime.getTime() + 60 * 60 * 1000);
-                            timeStr = `${startTime.toLocaleTimeString('ru-RU', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })} - ${endTime.toLocaleTimeString('ru-RU', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })}`;
-                        } else if (timeStr) {
-                            // Remove seconds from time string if present (HH:MM:SS -> HH:MM)
-                            // Match pattern like "09:00:00" or "09:00:00 - 10:30:00" and remove :SS part
-                            timeStr = timeStr.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
-                        }
-                        
-                        // For schedule events, use full name in modal; for others, use what's available
-                        const teacherForModal = eventType === 'schedule' 
-                            ? (props.teacherFullName || props.teacher || '')
-                            : (props.teacher || '');
-                        
+                            const endTime = event.end ? new Date(event.end) : new Date(startTime.getTime() + 60 * 60 * 1000);
+                            timeStr = `${startTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+                        } else if (timeStr) timeStr = timeStr.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
+                        const teacherForModal = eventType === 'schedule' ? (props.teacherFullName || props.teacher || '') : (props.teacher || '');
                         return {
+                            id: event.id,
                             title: event.title || '',
-                            start: event.start || '',
+                            start: typeof event.start === 'string' ? event.start.split('T')[0] : (event.start as Date).toISOString().split('T')[0],
                             subject: props.subject || '',
                             teacher: teacherForModal,
                             time: timeStr,
                             description: props.description || '',
-                            url: url,
+                            url,
                             type: eventType,
                             room: props.room,
                             classroom: props.classroom,
+                            target_audience: props.target_audience,
+                            subject_group_display: props.subject_group_display,
+                            target_users: props.target_users_details,
                         };
                     });
-                    
-                    const timeStr = clickedDate.toLocaleTimeString('ru-RU', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    });
-                    
                     modalController.open('events-list-modal', {
                         events: eventsData,
                         date: clickedDate.toISOString().split('T')[0],
-                        time: timeStr,
                     });
                 } else if (overlappingEvents.length === 1) {
                     // Single event - show normal event modal
@@ -1194,9 +1269,12 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                         time: timeStr,
                         description: props.description || '',
                         url: url,
-                        type: eventType,
+                        type: eventType as EventModalData['type'],
                         room: props.room,
                         classroom: props.classroom,
+                        target_audience: props.target_audience,
+                        subject_group_display: props.subject_group_display,
+                        target_users: props.target_users_details,
                     };
                     modalController.open('event-modal', eventData);
                 }
@@ -1254,7 +1332,18 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                             </p>
                         )}
                     </div>
-                    <div className="relative" ref={menuRef}>
+                    <div className="flex items-center gap-2">
+                        {(user?.role === 'schooladmin' || user?.role === 'superadmin') && (
+                            <button
+                                type="button"
+                                onClick={() => setCreateEventModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                {locale === 'ru' ? 'Создать событие' : 'Create event'}
+                            </button>
+                        )}
+                        <div className="relative" ref={menuRef}>
                         <button
                             onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
                             className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -1316,6 +1405,7 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                                 </div>
                             </div>
                         )}
+                        </div>
                     </div>
                 </div>
                 <div className="calendar-container">
@@ -1326,6 +1416,11 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                     />
                 </div>
             </div>
+            <CreateEventModal
+                isOpen={createEventModalOpen}
+                onClose={() => setCreateEventModalOpen(false)}
+                onSuccess={fetchCalendarData}
+            />
         </div>
     );
 };

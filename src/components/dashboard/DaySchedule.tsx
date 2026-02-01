@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { modalController } from '@/lib/modalController';
 import type { EventModalData } from '@/lib/modalController';
 import { useLocale } from '@/contexts/LocaleContext';
+import { useUserState } from '@/contexts/UserContext';
 
 interface Event {
     id: string;
@@ -16,6 +17,11 @@ interface Event {
     backgroundColor: string;
     borderColor: string;
     textColor: string;
+    classroom?: string;
+    room?: string;
+    target_audience?: string;
+    subject_group_display?: string;
+    target_users?: Array<{ id: number; username: string; first_name?: string; last_name?: string }>;
 }
 
 interface DayScheduleProps {
@@ -28,6 +34,8 @@ export default function DaySchedule({
     events = [],
 }: DayScheduleProps) {
     const { t, locale } = useLocale();
+    const { user } = useUserState();
+    const isTeacher = user?.role === 'teacher';
 
     const dayEvents = useMemo(() => {
         const dateString = date.toISOString().split('T')[0];
@@ -53,6 +61,11 @@ export default function DaySchedule({
             teacher: event.teacher,
             time: event.time,
             description: event.description,
+            room: event.room,
+            classroom: event.classroom,
+            target_audience: event.target_audience,
+            subject_group_display: event.subject_group_display,
+            target_users: event.target_users,
         };
         modalController.open('event-modal', eventData);
     };
@@ -154,11 +167,16 @@ export default function DaySchedule({
                                         </div>
                                     </div>
 
-                                    {/* Right side - Subject and Teacher */}
+                                    {/* Right side - Subject, Class/Room (for teacher), Teacher */}
                                     <div className="flex-1 ml-4 text-right">
                                         <div className="text-sm font-medium text-gray-900 truncate">
                                             {event.subject}
                                         </div>
+                                        {isTeacher && (event.classroom || event.room) && (
+                                            <div className="text-xs text-gray-600 truncate">
+                                                {[event.classroom, event.room].filter(Boolean).join(' · ')}
+                                            </div>
+                                        )}
                                         <div className="text-xs text-gray-500 truncate">
                                             {event.teacher}
                                         </div>

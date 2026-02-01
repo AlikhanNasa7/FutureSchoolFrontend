@@ -20,9 +20,15 @@ export interface EventModalData {
     time: string;
     description: string;
     url?: string;
-    type?: 'test' | 'assignment' | 'schedule';
+    type?: 'test' | 'assignment' | 'schedule' | 'meeting' | 'gathering' | 'school_event' | 'other';
     room?: string;
     classroom?: string;
+    /** Аудитория события: all, teachers, class, specific */
+    target_audience?: string;
+    /** Для класса — название класса */
+    subject_group_display?: string;
+    /** Для выбранных пользователей — список с именами и username */
+    target_users?: Array<{ id: number; username: string; first_name?: string; last_name?: string }>;
 }
 
 export interface EventsListModalData {
@@ -38,6 +44,9 @@ export interface EventsListModalData {
         start: string;
         end?: string;
         description?: string;
+        target_audience?: string;
+        subject_group_display?: string;
+        target_users?: Array<{ id: number; username: string; first_name?: string; last_name?: string }>;
     }>;
     date: string;
 }
