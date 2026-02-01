@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Plus, CheckCircle2, AlertCircle, Users, BookOpen, GraduationCap } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
+import ScheduleBuilder from '@/components/schedule/ScheduleBuilder';
 
 interface Course {
     id: number;
@@ -51,6 +52,8 @@ export default function BulkCreateSubjectGroupsModal({
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [schools, setSchools] = useState<Array<{ id: number; name: string }>>([]);
+    // Schedule slots per classroom: { classroomId: [slots] }
+    const [scheduleSlotsByClassroom, setScheduleSlotsByClassroom] = useState<Record<number, any[]>>({});
 
     useEffect(() => {
         if (isOpen) {
@@ -62,6 +65,7 @@ export default function BulkCreateSubjectGroupsModal({
             setResult(null);
             setError(null);
             setSelectedSchool(0);
+            setScheduleSlotsByClassroom({});
         }
     }, [isOpen]);
 
@@ -146,6 +150,29 @@ export default function BulkCreateSubjectGroupsModal({
                 teacher_ids: selectedTeachers.length > 0 ? selectedTeachers : undefined,
             });
 
+            // Apply schedule to created subject groups based on classroom
+            if (response.data?.created) {
+                for (const createdItem of response.data.created) {
+                    const classroomId = createdItem.classroom_id;
+                    const subjectGroupId = createdItem.id;
+                    const slots = scheduleSlotsByClassroom[classroomId] || [];
+                    
+                    for (const slot of slots) {
+                        try {
+                            await axiosInstance.post('/schedule-slots/', {
+                                subject_group: subjectGroupId,
+                                day_of_week: slot.day_of_week,
+                                start_time: slot.start_time,
+                                end_time: slot.end_time,
+                                room: slot.room || undefined,
+                            });
+                        } catch (slotError) {
+                            console.error(`Error creating schedule slot for subject group ${subjectGroupId}:`, slotError);
+                        }
+                    }
+                }
+            }
+
             setResult(response.data);
             if (onSuccess) {
                 onSuccess();
@@ -174,11 +201,29 @@ export default function BulkCreateSubjectGroupsModal({
         }
     };
 
+    const handleScheduleChange = useCallback((classroomId: number, slots: any[]) => {
+        setScheduleSlotsByClassroom(prev => {
+            const currentSlots = prev[classroomId] || [];
+            // Deep comparison to avoid unnecessary updates
+            const currentStr = JSON.stringify(currentSlots);
+            const newStr = JSON.stringify(slots);
+            
+            if (currentStr === newStr) {
+                return prev; // No change, return same object
+            }
+            
+            return {
+                ...prev,
+                [classroomId]: slots
+            };
+        });
+    }, []);
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl max-h-[90vh] overflow-y-auto">
                 <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                     <h2 className="text-2xl font-bold text-gray-900">
                         Массовое создание SubjectGroup
@@ -362,6 +407,49 @@ export default function BulkCreateSubjectGroupsModal({
                                     SubjectGroup
                                 </span>
                             </p>
+                        </div>
+                    )}
+
+                    {/* Schedule Builder per Classroom */}
+                    {selectedClassrooms.length > 0 && (
+                        <div className="pt-4 border-t-2 border-purple-200">
+                            <div className="mb-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="text-xl font-bold text-gray-900">
+                                        📅 Расписание уроков по классам
+                                    </h3>
+                                    <span className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">
+                                        Опционально
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                    Укажите расписание для каждого класса отдельно. Если не указано, расписание можно будет добавить позже.
+                                </p>
+                            </div>
+                            <div className="space-y-6">
+                                {selectedClassrooms.map((classroomId) => {
+                                    const classroom = filteredClassrooms.find(c => c.id === classroomId);
+                                    if (!classroom) return null;
+                                    
+                                    return (
+                                        <div key={classroomId} className="bg-gradient-to-br from-purple-50 via-white to-blue-50 rounded-xl p-6 border-2 border-purple-300 shadow-lg">
+                                            <div className="mb-4 pb-3 border-b-2 border-purple-200">
+                                                <h4 className="text-lg font-bold text-gray-900">
+                                                    {classroom.grade}{classroom.letter}
+                                                    {classroom.school_name && ` (${classroom.school_name})`}
+                                                </h4>
+                                                <p className="text-sm text-gray-600 mt-1">
+                                                    Расписание для этого класса
+                                                </p>
+                                            </div>
+                                            <ScheduleBuilder
+                                                initialSlots={scheduleSlotsByClassroom[classroomId] || []}
+                                                onChange={(slots) => handleScheduleChange(classroomId, slots)}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
 

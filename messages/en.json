@@ -22,7 +22,9 @@
         "profile": "Profile",
         "logout": "Logout",
         "search": "Search",
-        "questions": "Questions"
+        "questions": "Questions",
+        "academic-years": "Academic Years",
+        "schedule": "Schedule"
     },
     "status": {
         "start": "Start",

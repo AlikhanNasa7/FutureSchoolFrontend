@@ -2,6 +2,7 @@ export type ModalType =
     | 'kundelik-integration'
     | 'other-modal'
     | 'event-modal'
+    | 'events-list-modal'
     | 'course-section-add-item'
     | 'course-section-create'
     | 'file-viewer'
@@ -19,7 +20,26 @@ export interface EventModalData {
     time: string;
     description: string;
     url?: string;
-    type?: 'test' | 'assignment';
+    type?: 'test' | 'assignment' | 'schedule';
+    room?: string;
+    classroom?: string;
+}
+
+export interface EventsListModalData {
+    events: Array<{
+        id: string;
+        title: string;
+        subject: string;
+        classroom: string;
+        room?: string;
+        teacher: string;
+        time: string;
+        type: string;
+        start: string;
+        end?: string;
+        description?: string;
+    }>;
+    date: string;
 }
 
 export interface CourseSectionAddItemModalData {

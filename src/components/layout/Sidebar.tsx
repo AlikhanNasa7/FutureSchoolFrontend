@@ -17,6 +17,7 @@ import {
     Building2,
     Users,
     MessageCircle,
+    Calendar,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUserState, useUserActions } from '@/contexts/UserContext';
@@ -78,6 +79,18 @@ const navigation = [
         href: '/admin/users',
         icon: Users,
         roles: ['superadmin'],
+    },
+    {
+        key: 'academic-years',
+        href: '/admin/academic-years',
+        icon: Calendar,
+        roles: ['superadmin'],
+    },
+    {
+        key: 'schedule',
+        href: '/admin/schedule',
+        icon: Calendar,
+        roles: ['superadmin', 'schooladmin'],
     },
 ];
 

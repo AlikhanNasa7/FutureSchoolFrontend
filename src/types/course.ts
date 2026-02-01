@@ -21,6 +21,7 @@ export interface CourseSection {
     is_general: boolean;
     start_date: string | null;
     end_date: string | null;
+    quarter: number | null; // 1, 2, 3, 4, or null for all quarters
     // Template fields (only for template sections)
     template_week_index?: number | null;
     template_start_offset_days?: number | null;

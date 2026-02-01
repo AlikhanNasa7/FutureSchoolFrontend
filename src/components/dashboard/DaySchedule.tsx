@@ -23,85 +23,9 @@ interface DayScheduleProps {
     events?: Event[];
 }
 
-// Sample events data (you can pass this as props or fetch from API)
-const sampleEvents: Event[] = [
-    {
-        id: '1',
-        title: 'Урок',
-        start: '2025-08-31',
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        description: 'Урок математики - алгебраические уравнения',
-        subject: 'Математика',
-        teacher: 'Иванова А.П.',
-        time: '08:00',
-    },
-    {
-        id: '2',
-        title: 'Экзамен',
-        start: '2025-08-31',
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        description: 'Итоговый экзамен по русскому языку',
-        subject: 'Русский язык',
-        teacher: 'Петрова М.С.',
-        time: '10:30',
-    },
-    {
-        id: '3',
-        title: 'Тест',
-        start: '2025-08-31',
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        description: 'Контрольная работа по физике',
-        subject: 'Физика',
-        teacher: 'Сидоров В.К.',
-        time: '13:00',
-    },
-    {
-        id: '4',
-        title: 'Урок',
-        start: '2025-08-31',
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        description: 'Урок биологии - клеточное строение',
-        subject: 'Биология',
-        teacher: 'Волкова Л.Н.',
-        time: '15:30',
-    },
-    {
-        id: '5',
-        title: 'Экзамен',
-        start: '2025-08-31',
-        backgroundColor: 'rgb(254, 226, 226)',
-        borderColor: 'rgb(254, 226, 226)',
-        textColor: '#374151',
-        description: 'Экзамен по истории России',
-        subject: 'История',
-        teacher: 'Козлова Е.В.',
-        time: '17:00',
-    },
-    {
-        id: '6',
-        title: 'Урок',
-        start: '2025-08-31',
-        backgroundColor: 'rgb(224, 242, 254)',
-        borderColor: 'rgb(224, 242, 254)',
-        textColor: '#374151',
-        description: 'Урок английского языка - грамматика',
-        subject: 'Английский язык',
-        teacher: 'Морозова Т.А.',
-        time: '18:30',
-    },
-];
-
 export default function DaySchedule({
     date = new Date(),
-    events = sampleEvents,
+    events = [],
 }: DayScheduleProps) {
     const { t, locale } = useLocale();
 

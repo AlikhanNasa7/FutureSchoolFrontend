@@ -438,6 +438,7 @@ export default function TestCreator() {
             console.log('Sending course_section to backend:', test.course_section);
         } else if (test.subject_group) {
             testData.subject_group = test.subject_group;
+            console.log('Sending subject_group to backend:', test.subject_group);
         }
 
         // Add course for template tests
@@ -474,10 +475,20 @@ export default function TestCreator() {
                 }
             }
         } else {
-            // Explicitly set dates to null if has_dates is false
-            testData.start_date = null;
-            testData.end_date = null;
-            testData.scheduled_at = null;
+            // If has_dates is false but we have subject_group and no course_section,
+            // we need to provide start_date for auto-assignment of course_section
+            // Check testData.subject_group (already set above) instead of test.subject_group
+            if (testData.subject_group && !testData.course_section) {
+                // Use current date/time for auto-assignment
+                testData.start_date = new Date().toISOString();
+                testData.scheduled_at = testData.start_date;
+                console.log('Setting start_date for auto-assignment:', testData.start_date);
+            } else {
+                // Explicitly set dates to null if has_dates is false and we have course_section
+                testData.start_date = null;
+                testData.end_date = null;
+                testData.scheduled_at = null;
+            }
         }
 
         // Add result visibility settings

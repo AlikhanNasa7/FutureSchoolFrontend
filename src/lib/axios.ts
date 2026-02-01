@@ -32,7 +32,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
         const refreshToken = localStorage.getItem('refreshToken');
 
         if (!refreshToken) {
-            throw new Error('No refresh token available');
+            return null;
         }
 
         const response = await axios.post(
@@ -173,25 +173,28 @@ axiosInstance.interceptors.response.use(
                 }
             }
 
-            console.error('❌ Response Error:', {
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                url: error.config?.url,
-                baseURL: error.config?.baseURL,
-                fullUrl: error.config?.baseURL
-                    ? `${error.config.baseURL}${error.config.url}`
-                    : error.config?.url,
-                duration: `${duration}ms`,
-                message: errorMessage,
-                rawData: errorData,
-                details: errorDetails,
-            });
+            const isLogin401 = error.response?.status === 401 && error.config?.url?.includes('/auth/login');
+            if (!isLogin401) {
+                console.error('❌ Response Error:', {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    url: error.config?.url,
+                    baseURL: error.config?.baseURL,
+                    fullUrl: error.config?.baseURL
+                        ? `${error.config.baseURL}${error.config.url}`
+                        : error.config?.url,
+                    duration: `${duration}ms`,
+                    message: errorMessage,
+                    rawData: errorData,
+                    details: errorDetails,
+                });
+            }
 
             // Attach formatted error message to error object for easier access
             (error as any).formattedMessage = errorMessage;
         }
 
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
             console.error(
                 '🔒 Authentication Error - Token may be invalid or expired'
             );
@@ -204,6 +207,10 @@ axiosInstance.interceptors.response.use(
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
 
+                return Promise.reject(error);
+            }
+            // Не пытаться обновлять токен при ошибке логина (ещё нет refresh)
+            if (originalRequest?.url?.includes('/auth/login')) {
                 return Promise.reject(error);
             }
 

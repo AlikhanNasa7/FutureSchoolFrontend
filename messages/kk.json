@@ -22,7 +22,9 @@
         "profile": "Профиль",
         "logout": "Шығу",
         "search": "Іздеу",
-        "questions": "Сұрақтар"
+        "questions": "Сұрақтар",
+        "academic-years": "Оқу жылдары",
+        "schedule": "Кесте"
     },
     "status": {
         "start": "Бастау",

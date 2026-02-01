@@ -16,6 +16,7 @@ interface CourseSectionCreateModalProps {
 
 interface SectionFormData {
     title: string;
+    quarter: number | null;
 }
 
 export default function CourseSectionCreateModal({
@@ -31,6 +32,7 @@ export default function CourseSectionCreateModal({
 
     const [sectionForm, setSectionForm] = useState<SectionFormData>({
         title: '',
+        quarter: null,
     });
 
     const handleSectionSubmit = async (e: React.FormEvent) => {
@@ -40,10 +42,14 @@ export default function CourseSectionCreateModal({
         setSuccess(null);
 
         try {
-            const sectionData = {
+            const sectionData: any = {
                 subject_group: subjectId,
                 title: sectionForm.title,
             };
+            
+            if (sectionForm.quarter) {
+                sectionData.quarter = sectionForm.quarter;
+            }
 
             console.log('Creating section:', sectionData);
 
@@ -75,6 +81,7 @@ export default function CourseSectionCreateModal({
     const resetForm = () => {
         setSectionForm({
             title: '',
+            quarter: null,
         });
         setError(null);
         setSuccess(null);
@@ -127,6 +134,28 @@ export default function CourseSectionCreateModal({
                                 )}
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Четверть (необязательно)
+                        </label>
+                        <select
+                            value={sectionForm.quarter || ''}
+                            onChange={e =>
+                                setSectionForm(prev => ({
+                                    ...prev,
+                                    quarter: e.target.value === '' ? null : parseInt(e.target.value),
+                                }))
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Все четверти</option>
+                            <option value="1">1 четверть</option>
+                            <option value="2">2 четверть</option>
+                            <option value="3">3 четверть</option>
+                            <option value="4">4 четверть</option>
+                        </select>
                     </div>
 
                     <div className="flex justify-end space-x-3 pt-4">

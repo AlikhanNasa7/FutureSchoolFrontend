@@ -28,18 +28,26 @@ export default function EventModal({
         }
     };
 
-    const getEventTypeColor = (title: string) => {
-        if (title === 'Домашнее Задание') return 'rgb(255, 237, 213)';
-        if (title === 'Экзамен') return 'rgb(254, 226, 226)';
-        if (title === 'Тест') return 'rgb(224, 242, 254)';
+    const getEventTypeColor = (type?: string) => {
+        if (type === 'schedule') return 'rgb(219, 234, 254)';
+        if (type === 'assignment') return 'rgb(255, 237, 213)';
+        if (type === 'test') return 'rgb(224, 242, 254)';
         return 'rgb(255, 237, 213)';
     };
 
-    const getEventTypeText = (title: string) => {
-        if (title === 'Домашнее Задание') return 'Домашнее задание';
-        if (title === 'Экзамен') return 'Экзамен';
-        if (title === 'Тест') return 'Тест';
-        return title;
+    const getEventTypeText = (type?: string) => {
+        if (type === 'schedule') return 'Расписание';
+        if (type === 'assignment') return 'Домашнее задание';
+        if (type === 'test') return 'Тест';
+        return 'Событие';
+    };
+
+    // Format time string to remove seconds (HH:MM:SS -> HH:MM)
+    const formatTimeString = (timeStr: string) => {
+        if (!timeStr) return '';
+        // Remove seconds from time string (HH:MM:SS -> HH:MM)
+        // Match pattern like "09:00:00" or "09:00:00 - 10:30:00" and remove :SS part
+        return timeStr.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
     };
 
     return (
@@ -48,11 +56,11 @@ export default function EventModal({
                 <div
                     className="px-3 py-1 rounded-full text-sm font-medium"
                     style={{
-                        backgroundColor: getEventTypeColor(event.title),
+                        backgroundColor: getEventTypeColor(event.type),
                         color: '#374151',
                     }}
                 >
-                    {getEventTypeText(event.title)}
+                    {getEventTypeText(event.type)}
                 </div>
             </div>
 
@@ -62,28 +70,48 @@ export default function EventModal({
 
             <div className="space-y-3">
                 <div className="flex items-center">
-                    <span className="text-gray-500 w-20">
+                    <span className="text-gray-500 w-24">
                         {t('modals.event.subject')}
                     </span>
                     <span className="font-medium">{event.subject}</span>
                 </div>
 
-                <div className="flex items-center">
-                    <span className="text-gray-500 w-20">
-                        {t('modals.event.teacher')}
-                    </span>
-                    <span className="font-medium">{event.teacher}</span>
-                </div>
+                {event.type === 'schedule' && event.classroom && (
+                    <div className="flex items-center">
+                        <span className="text-gray-500 w-24">
+                            Класс
+                        </span>
+                        <span className="font-medium">{event.classroom}</span>
+                    </div>
+                )}
+
+                {event.type === 'schedule' && event.room && (
+                    <div className="flex items-center">
+                        <span className="text-gray-500 w-24">
+                            Кабинет
+                        </span>
+                        <span className="font-medium">{event.room}</span>
+                    </div>
+                )}
+
+                {event.teacher && (
+                    <div className="flex items-center">
+                        <span className="text-gray-500 w-24">
+                            {t('modals.event.teacher')}
+                        </span>
+                        <span className="font-medium">{event.teacher}</span>
+                    </div>
+                )}
 
                 <div className="flex items-center">
-                    <span className="text-gray-500 w-20">
+                    <span className="text-gray-500 w-24">
                         {t('modals.event.time')}
                     </span>
-                    <span className="font-medium">{event.time}</span>
+                    <span className="font-medium">{formatTimeString(event.time)}</span>
                 </div>
 
                 <div className="flex items-center">
-                    <span className="text-gray-500 w-20">
+                    <span className="text-gray-500 w-24">
                         {t('modals.event.date')}
                     </span>
                     <span className="font-medium">
@@ -99,12 +127,14 @@ export default function EventModal({
                 </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-200">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    {t('modals.event.description')}
-                </h4>
-                <p className="text-gray-600 text-sm">{event.description}</p>
-            </div>
+            {event.description && event.type !== 'schedule' && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        {t('modals.event.description')}
+                    </h4>
+                    <p className="text-gray-600 text-sm">{event.description}</p>
+                </div>
+            )}
 
             <div className="mt-6 flex justify-end gap-3">
                 {event.url && (

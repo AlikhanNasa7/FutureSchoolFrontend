@@ -22,7 +22,9 @@
         "profile": "Профиль",
         "logout": "Выйти",
         "search": "Поиск",
-        "questions": "Вопросы"
+        "questions": "Вопросы",
+        "academic-years": "Учебные годы",
+        "schedule": "Расписание"
     },
     "status": {
         "start": "Начать",

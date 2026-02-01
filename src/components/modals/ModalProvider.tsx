@@ -15,6 +15,7 @@ import AddFileToDirectoryModal from './AddFileToDirectoryModal';
 import type {
     ModalState,
     EventModalData,
+    EventsListModalData,
     CourseSectionAddItemModalData,
     CourseSectionCreateModalData,
     FileViewerModalData,
@@ -24,6 +25,7 @@ import type {
     AddStudentModalData,
     AddFileToDirectoryModalData,
 } from '@/lib/modalController';
+import EventsListModal from './EventsListModal';
 
 export default function ModalProvider() {
     const [modalState, setModalState] = useState<ModalState>({
@@ -52,6 +54,14 @@ export default function ModalProvider() {
             return (
                 <EventModal
                     event={modalState.data as EventModalData}
+                    isOpen={modalState.isOpen}
+                    onClose={() => modalController.close()}
+                />
+            );
+        case 'events-list-modal':
+            return (
+                <EventsListModal
+                    data={modalState.data as EventsListModalData}
                     isOpen={modalState.isOpen}
                     onClose={() => modalController.close()}
                 />

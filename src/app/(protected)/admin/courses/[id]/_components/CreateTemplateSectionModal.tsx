@@ -26,6 +26,7 @@ export default function CreateTemplateSectionModal({
         title: '',
         position: 0,
         is_general: false,
+        quarter: null as number | null,
         scheduleType: 'week' as ScheduleType,
         template_week_index: null as number | null,
         template_start_offset_days: null as number | null,
@@ -41,6 +42,7 @@ export default function CreateTemplateSectionModal({
                 title: section.title,
                 position: section.position,
                 is_general: section.is_general,
+                quarter: section.quarter ?? null,
                 scheduleType:
                     section.template_week_index !== null &&
                     section.template_week_index !== undefined
@@ -56,6 +58,7 @@ export default function CreateTemplateSectionModal({
                 title: '',
                 position: 0,
                 is_general: false,
+                quarter: null,
                 scheduleType: 'week',
                 template_week_index: null,
                 template_start_offset_days: null,
@@ -115,6 +118,10 @@ export default function CreateTemplateSectionModal({
 
             if (formData.position > 0) {
                 payload.position = formData.position;
+            }
+
+            if (formData.quarter) {
+                payload.quarter = formData.quarter;
             }
 
             if (formData.scheduleType === 'week') {
@@ -228,6 +235,32 @@ export default function CreateTemplateSectionModal({
                                 <span className="text-sm text-gray-700">Общая секция</span>
                             </label>
                         </div>
+                    </div>
+
+                    {/* Quarter Selection */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Четверть (необязательно)
+                        </label>
+                        <select
+                            value={formData.quarter || ''}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    quarter: e.target.value === '' ? null : parseInt(e.target.value),
+                                })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                            <option value="">Все четверти</option>
+                            <option value="1">1 четверть</option>
+                            <option value="2">2 четверть</option>
+                            <option value="3">3 четверть</option>
+                            <option value="4">4 четверть</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Выберите четверть, к которой относится эта секция
+                        </p>
                     </div>
 
                     {/* Schedule Type Selection */}

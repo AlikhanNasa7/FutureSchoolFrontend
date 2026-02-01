@@ -172,6 +172,7 @@ function TaskItem({
 }) {
     const { state } = useUser();
     const isAdmin = state.user?.role === 'superadmin' || state.user?.role === 'schooladmin';
+    const isSuperAdmin = state.user?.role === 'superadmin';
     const [syncStatus, setSyncStatus] = useState<{
         isOutdated: boolean;
         isLoading: boolean;
