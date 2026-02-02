@@ -179,6 +179,17 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
         setIsViewMenuOpen(false);
     };
 
+    const handleTodayClick = () => {
+        const api = calendarRef.current?.getApi?.();
+        if (!api) return;
+        api.today();
+        const today = new Date();
+        if (onDateChange) {
+            const dayEvents = getEventsForDay(today);
+            onDateChange(today, dayEvents);
+        }
+    };
+
     // Format date range for display
     const formatDateRange = useCallback(() => {
         if (!currentDateRange.start || !currentDateRange.end) {
@@ -188,43 +199,127 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
         const startDate = currentDateRange.start;
         const endDate = currentDateRange.end;
 
-        // Get locale string based on current locale
-        const localeMap: Record<string, string> = {
-            en: 'en-US',
-            ru: 'ru-RU',
-            kk: 'kk-KZ',
-        };
-        const dateLocale = localeMap[locale] || 'en-US';
+        if (locale === 'kk') {
+            const monthsLong = [
+                'қаңтар',
+                'ақпан',
+                'наурыз',
+                'сәуір',
+                'мамыр',
+                'маусым',
+                'шілде',
+                'тамыз',
+                'қыркүйек',
+                'қазан',
+                'қараша',
+                'желтоқсан',
+            ];
+            const monthsShort = [
+                'қаңт',
+                'ақп',
+                'нау',
+                'сәу',
+                'мам',
+                'мау',
+                'шіл',
+                'там',
+                'қыр',
+                'қаз',
+                'қар',
+                'жел',
+            ];
+            const weekdays = [
+                'жексенбі',
+                'дүйсенбі',
+                'сейсенбі',
+                'сәрсенбі',
+                'бейсенбі',
+                'жұма',
+                'сенбі',
+            ];
 
-        if (view === 'timeGridDay') {
-            // For daily view, show full date with weekday
-            return startDate.toLocaleDateString(dateLocale, {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-            });
-        } else if (view === 'timeGridWeek') {
-            // For weekly view, show date range in a readable format
-            const startDay = startDate.getDate();
-            const endDay = endDate.getDate();
-            const startMonth = startDate.toLocaleDateString(dateLocale, {
-                month: 'long',
-            });
-            const endMonth = endDate.toLocaleDateString(dateLocale, {
-                month: 'long',
-            });
-            const year = startDate.getFullYear();
+            if (view === 'timeGridDay') {
+                const w = weekdays[startDate.getDay()];
+                const m = monthsLong[startDate.getMonth()];
+                return `${w}, ${startDate.getDate()} ${m} ${startDate.getFullYear()} ж.`;
+            } else if (view === 'timeGridWeek') {
+                const startDay = startDate.getDate();
+                const endDay = endDate.getDate();
+                const startMonthIdx = startDate.getMonth();
+                const endMonthIdx = endDate.getMonth();
+                const year = startDate.getFullYear();
 
-            // If same month and year
-            if (
-                startDate.getMonth() === endDate.getMonth() &&
-                startDate.getFullYear() === endDate.getFullYear()
-            ) {
-                return `${startDay} - ${endDay} ${startMonth} ${year}`;
+                if (
+                    startMonthIdx === endMonthIdx &&
+                    startDate.getFullYear() === endDate.getFullYear()
+                ) {
+                    const m = monthsLong[startMonthIdx];
+                    return `${startDay} - ${endDay} ${m} ${year} ж.`;
+                }
+                if (startDate.getFullYear() === endDate.getFullYear()) {
+                    const sm = monthsShort[startMonthIdx];
+                    const em = monthsShort[endMonthIdx];
+                    return `${startDay} ${sm} - ${endDay} ${em} ${year} ж.`;
+                }
+                const sm = monthsShort[startMonthIdx];
+                const em = monthsShort[endMonthIdx];
+                const startYear = startDate.getFullYear();
+                const endYear = endDate.getFullYear();
+                return `${startDay} ${sm} ${startYear} ж. - ${endDay} ${em} ${endYear} ж.`;
             }
-            // If same year but different months
-            if (startDate.getFullYear() === endDate.getFullYear()) {
+        } else {
+            // Get locale string based on current locale
+            const localeMap: Record<string, string> = {
+                en: 'en-US',
+                ru: 'ru-RU',
+                kk: 'kk-KZ',
+            };
+            const dateLocale = localeMap[locale] || 'en-US';
+
+            if (view === 'timeGridDay') {
+                // For daily view, show full date with weekday
+                return startDate.toLocaleDateString(dateLocale, {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                });
+            } else if (view === 'timeGridWeek') {
+                // For weekly view, show date range in a readable format
+                const startDay = startDate.getDate();
+                const endDay = endDate.getDate();
+                const startMonth = startDate.toLocaleDateString(dateLocale, {
+                    month: 'long',
+                });
+                const endMonth = endDate.toLocaleDateString(dateLocale, {
+                    month: 'long',
+                });
+                const year = startDate.getFullYear();
+
+                // If same month and year
+                if (
+                    startDate.getMonth() === endDate.getMonth() &&
+                    startDate.getFullYear() === endDate.getFullYear()
+                ) {
+                    return `${startDay} - ${endDay} ${startMonth} ${year}`;
+                }
+                // If same year but different months
+                if (startDate.getFullYear() === endDate.getFullYear()) {
+                    const startMonthShort = startDate.toLocaleDateString(
+                        dateLocale,
+                        {
+                            month: 'short',
+                        }
+                    );
+                    const endMonthShort = endDate.toLocaleDateString(
+                        dateLocale,
+                        {
+                            month: 'short',
+                        }
+                    );
+                    return `${startDay} ${startMonthShort} - ${endDay} ${endMonthShort} ${year}`;
+                }
+                // Different years
                 const startMonthShort = startDate.toLocaleDateString(
                     dateLocale,
                     {
@@ -234,18 +329,10 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                 const endMonthShort = endDate.toLocaleDateString(dateLocale, {
                     month: 'short',
                 });
-                return `${startDay} ${startMonthShort} - ${endDay} ${endMonthShort} ${year}`;
+                const startYear = startDate.getFullYear();
+                const endYear = endDate.getFullYear();
+                return `${startDay} ${startMonthShort} ${startYear} - ${endDay} ${endMonthShort} ${endYear}`;
             }
-            // Different years
-            const startMonthShort = startDate.toLocaleDateString(dateLocale, {
-                month: 'short',
-            });
-            const endMonthShort = endDate.toLocaleDateString(dateLocale, {
-                month: 'short',
-            });
-            const startYear = startDate.getFullYear();
-            const endYear = endDate.getFullYear();
-            return `${startDay} ${startMonthShort} ${startYear} - ${endDay} ${endMonthShort} ${endYear}`;
         }
         return '';
     }, [currentDateRange, view, locale]);
@@ -854,7 +941,7 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
             plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
             initialView: view,
             headerToolbar: {
-                left: 'title',
+                left: '',
                 center: '',
                 right: 'prev,next',
             },
@@ -903,8 +990,8 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                         return {
                             html: `
                                 <div style="padding: 2px 4px; font-size: 0.75rem;">
-                                    <div style="font-weight: 600; margin-bottom: 2px;">${groupedCount} урока</div>
-                                    <div style="font-size: 0.7rem; opacity: 0.8;">Нажмите для просмотра</div>
+                                    <div style="font-weight: 600; margin-bottom: 2px;">${groupedCount} ${t('schedule.lessonsCount')}</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.8;">${t('schedule.clickToView')}</div>
                                 </div>
                             `
                         };
@@ -912,7 +999,7 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                     return {
                         html: `
                             <div class="fc-event-compact" title="${escapeTitle(groupedTooltip)}" style="padding: 2px 4px; font-size: 0.75rem;">
-                                <div style="font-weight: 600;">${groupedCount} урока</div>
+                                <div style="font-weight: 600;">${groupedCount} ${t('schedule.lessonsCount')}</div>
                             </div>
                         `
                     };
@@ -1027,6 +1114,24 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
             dayHeaderFormat: {
                 weekday: 'short' as const,
             },
+            dayHeaderContent: (arg: any) => {
+                const day = arg.date.getDay(); // 0=Sun,1=Mon...
+                const key =
+                    day === 1
+                        ? 'mon'
+                        : day === 2
+                          ? 'tue'
+                          : day === 3
+                            ? 'wed'
+                            : day === 4
+                              ? 'thu'
+                              : day === 5
+                                ? 'fri'
+                                : day === 6
+                                  ? 'sat'
+                                  : 'sun';
+                return t(`calendar.daysShort.${key}`);
+            },
             titleFormat: {
                 month: 'long',
                 week: 'short',
@@ -1062,7 +1167,8 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                             if (!timeStr && event.start) {
                                 const startTime = new Date(event.start);
                                 const endTime = event.end ? new Date(event.end) : new Date(startTime.getTime() + 60 * 60 * 1000);
-                                timeStr = `${startTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+                                const localeCode = locale === 'en' ? 'en-US' : 'ru-RU';
+                                timeStr = `${startTime.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' })}`;
                             } else if (timeStr) {
                                 timeStr = timeStr.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
                             }
@@ -1325,9 +1431,8 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                         <h2 className="text-xl font-semibold text-gray-800">
                             {t('dashboard.calendar')}
                         </h2>
-                        {(view === 'timeGridWeek' ||
-                            view === 'timeGridDay') && (
-                            <p className="text-sm text-gray-600 mt-1">
+                        {formatDateRange() && (
+                            <p className="mt-1 text-base sm:text-lg font-semibold text-gray-800">
                                 {formatDateRange()}
                             </p>
                         )}
@@ -1340,9 +1445,16 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                                 className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
-                                {locale === 'ru' ? 'Создать событие' : 'Create event'}
+                                {t('schedule.createEvent')}
                             </button>
                         )}
+                        <button
+                            type="button"
+                            onClick={handleTodayClick}
+                            className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700"
+                        >
+                            {t('dashboard.calendarButtons.today')}
+                        </button>
                         <div className="relative" ref={menuRef}>
                         <button
                             onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}

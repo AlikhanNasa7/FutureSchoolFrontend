@@ -64,7 +64,7 @@ export default function Navbar() {
                     {user?.student_data?.classrooms?.[0] && (
                         <p className="bg-[rgba(105,76,253,0.1)] px-6 py-2 rounded-xl text-[rgba(105,76,253,1)] font-bold text-md whitespace-nowrap">
                             {`${user?.student_data?.classrooms[0].grade}${user?.student_data?.classrooms[0].letter}`}{' '}
-                            класс
+                            {t('navbar.classShort')}
                         </p>
                     )}
                 </div>

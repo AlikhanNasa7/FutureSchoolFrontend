@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Calender from '@/components/dashboard/Calender';
 import DaySchedule from '@/components/dashboard/DaySchedule';
 import PendingAssignments from '@/components/dashboard/PendingAssignments';
+import AverageGradeBlock from '@/components/dashboard/AverageGradeBlock';
 
 export interface DayScheduleEvent {
     id: string;
@@ -52,11 +53,16 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1/4 flex flex-col gap-6 sm:flex-row md:flex-col order-1 md:order-2">
                 {user?.role === 'student' && (
-                    <div className="order-1">
-                        <PendingAssignments />
-                    </div>
+                    <>
+                        <div className="order-1">
+                            <AverageGradeBlock />
+                        </div>
+                        <div className="order-2">
+                            <PendingAssignments />
+                        </div>
+                    </>
                 )}
-                <div className={user?.role === 'student' ? 'order-2' : ''}>
+                <div className={user?.role === 'student' ? 'order-3' : ''}>
                     <DaySchedule date={selectedDate} events={dayEvents} />
                 </div>
             </div>

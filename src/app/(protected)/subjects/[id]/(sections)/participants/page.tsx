@@ -9,6 +9,7 @@ import {
     Search,
 } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
+import { useLocale } from '@/contexts/LocaleContext';
 import { useSubject } from '../../layout';
 
 interface Member {
@@ -23,6 +24,7 @@ interface Member {
 
 export default function ParticipantsPage() {
     const { subject } = useSubject();
+    const { t } = useLocale();
 
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -46,14 +48,14 @@ export default function ParticipantsPage() {
             setError(null);
         } catch (err) {
             console.error('Error fetching members:', err);
-            setError('Ошибка при загрузке участников');
+            setError(t('participantsPage.loadError'));
         } finally {
             setLoading(false);
         }
     };
 
     const formatLastLogin = (lastLogin: string | null) => {
-        if (!lastLogin) return 'Никогда';
+        if (!lastLogin) return t('participantsPage.lastLoginNever');
         const date = new Date(lastLogin);
         const now = new Date();
         const diff = now.getTime() - date.getTime();
@@ -62,10 +64,10 @@ export default function ParticipantsPage() {
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
 
-        if (minutes < 1) return 'Только что';
-        if (minutes < 60) return `${minutes} мин назад`;
-        if (hours < 24) return `${hours} часов назад`;
-        if (days < 7) return `${days} дней назад`;
+        if (minutes < 1) return t('participantsPage.lastLoginJustNow');
+        if (minutes < 60) return t('participantsPage.lastLoginMinutesAgo', { minutes });
+        if (hours < 24) return t('participantsPage.lastLoginHoursAgo', { hours });
+        if (days < 7) return t('participantsPage.lastLoginDaysAgo', { days });
 
         return date.toLocaleDateString('ru-RU', {
             year: 'numeric',
@@ -90,20 +92,14 @@ export default function ParticipantsPage() {
         return matchesSearch && matchesRole;
     });
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
-
     return (
         <div className="px-4">
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
                     <Users className="w-8 h-8 text-blue-600" />
-                    <h1 className="text-3xl font-bold text-gray-900">Участники</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        {t('participantsPage.title')}
+                    </h1>
                 </div>
             </div>
 
@@ -113,7 +109,7 @@ export default function ParticipantsPage() {
                         <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Поиск по имени, логину или email..."
+                            placeholder={t('participantsPage.searchPlaceholder')}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -131,9 +127,9 @@ export default function ParticipantsPage() {
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                             >
-                                {role === 'all' && 'Все'}
-                                {role === 'teacher' && 'Учителя'}
-                                {role === 'student' && 'Студенты'}
+                                {role === 'all' && t('participantsPage.filterAll')}
+                                {role === 'teacher' && t('participantsPage.filterTeachers')}
+                                {role === 'student' && t('participantsPage.filterStudents')}
                             </button>
                         ))}
                     </div>
@@ -141,7 +137,7 @@ export default function ParticipantsPage() {
             </div>
 
             <div className="mb-6 text-sm text-gray-600">
-                Найдено: {filteredMembers.length} участников
+                {t('participantsPage.foundCount', { count: filteredMembers.length })}
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -149,10 +145,18 @@ export default function ParticipantsPage() {
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Участник</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Роль</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Последний вход</th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    {t('participantsPage.columnParticipant')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    {t('participantsPage.columnEmail')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    {t('participantsPage.columnRole')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                    {t('participantsPage.columnLastLogin')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -177,7 +181,9 @@ export default function ParticipantsPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${member.role === 'teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                                            {member.role === 'teacher' ? 'Учитель' : 'Студент'}
+                                            {member.role === 'teacher'
+                                                ? t('participantsPage.roleTeacher')
+                                                : t('participantsPage.roleStudent')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
@@ -195,11 +201,15 @@ export default function ParticipantsPage() {
 
             <div className="grid grid-cols-2 gap-4 mt-6">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-sm text-gray-600 mb-1">Всего участников</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                        {t('participantsPage.cardTotal')}
+                    </p>
                     <p className="text-2xl font-bold text-gray-900">{filteredMembers.length}</p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-sm text-gray-600 mb-1">Никогда не заходили</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                        {t('participantsPage.cardNeverLoggedIn')}
+                    </p>
                     <p className="text-2xl font-bold text-orange-600">{filteredMembers.filter((m: Member) => !m.last_login).length}</p>
                 </div>
             </div>

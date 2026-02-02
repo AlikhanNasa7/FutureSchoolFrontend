@@ -36,10 +36,10 @@ export default function EventModal({
     };
 
     const getEventTypeText = (type?: string) => {
-        if (type === 'schedule') return 'Расписание';
-        if (type === 'assignment') return 'Домашнее задание';
-        if (type === 'test') return 'Тест';
-        return 'Событие';
+        if (type === 'schedule') return t('events.schedule');
+        if (type === 'assignment') return t('events.assignment');
+        if (type === 'test') return t('events.test');
+        return t('events.event');
     };
 
     // Format time string to remove seconds (HH:MM:SS -> HH:MM)

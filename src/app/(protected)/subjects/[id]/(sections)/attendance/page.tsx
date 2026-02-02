@@ -16,6 +16,7 @@ import {
 import axiosInstance from '@/lib/axios';
 import { useSubject } from '../../layout';
 import AttendanceModal from '@/components/modals/AttendanceModal';
+import { useLocale } from '@/contexts/LocaleContext';
 
 interface AttendanceRecord {
     id: number;
@@ -59,6 +60,7 @@ interface AttendanceDate {
 
 export default function AttendancePage() {
     const { subject } = useSubject();
+    const { t, locale } = useLocale();
     const [loading, setLoading] = useState(true);
     const [sessions, setSessions] = useState<AttendanceSession[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -191,7 +193,9 @@ export default function AttendancePage() {
             <div className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Calendar className="w-8 h-8 text-blue-600" />
-                    <h1 className="text-3xl font-bold text-gray-900">Посещаемость</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        {t('attendancePage.title')}
+                    </h1>
                 </div>
                 <button
                     onClick={() => {
@@ -208,30 +212,40 @@ export default function AttendancePage() {
                     }`}
                 >
                     <Plus className="w-5 h-5" />
-                    Взять посещаемость
+                    {t('attendancePage.takeAttendance')}
                 </button>
             </div>
 
             {/* Overall Statistics Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-600 mb-1">Посещаемость класса</p>
+                    <p className="text-xs text-gray-600 mb-1">
+                        {t('attendancePage.classAttendance')}
+                    </p>
                     <p className="text-2xl font-bold text-blue-600">{overallPercentage}%</p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-600 mb-1">Присутствовали</p>
+                    <p className="text-xs text-gray-600 mb-1">
+                        {t('attendancePage.present')}
+                    </p>
                     <p className="text-2xl font-bold text-green-600">{totalPresent}</p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-600 mb-1">С уважительной</p>
+                    <p className="text-xs text-gray-600 mb-1">
+                        {t('attendancePage.excused')}
+                    </p>
                     <p className="text-2xl font-bold text-yellow-600">{totalExcused}</p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-600 mb-1">Отсутствовали</p>
+                    <p className="text-xs text-gray-600 mb-1">
+                        {t('attendancePage.absent')}
+                    </p>
                     <p className="text-2xl font-bold text-red-600">{totalNotPresent}</p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-600 mb-1">Дней учёта</p>
+                    <p className="text-xs text-gray-600 mb-1">
+                        {t('attendancePage.daysCounted')}
+                    </p>
                     <p className="text-2xl font-bold text-purple-600">{uniqueDates}</p>
                 </div>
             </div>
@@ -241,7 +255,7 @@ export default function AttendancePage() {
                 <div className="p-4 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <BarChart3 className="w-5 h-5" />
-                        Статистика студентов
+                        {t('attendancePage.studentStatsTitle')}
                     </h2>
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -249,7 +263,7 @@ export default function AttendancePage() {
                             <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Поиск..."
+                                placeholder={t('attendancePage.searchPlaceholder')}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
@@ -260,8 +274,12 @@ export default function AttendancePage() {
                             onChange={e => setSortBy(e.target.value as any)}
                             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                         >
-                            <option value="percentage">По посещаемости</option>
-                            <option value="name">По имени</option>
+                            <option value="percentage">
+                                {t('attendancePage.sortByAttendance')}
+                            </option>
+                            <option value="name">
+                                {t('attendancePage.sortByName')}
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -271,7 +289,9 @@ export default function AttendancePage() {
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th className="px-4 py-3 text-left font-semibold text-gray-900">Студент</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-900">Количество</th>
+                                <th className="px-4 py-3 text-center font-semibold text-gray-900">
+                                    {t('attendancePage.columnCount')}
+                                </th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">✓</th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">○</th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">✗</th>
@@ -282,7 +302,7 @@ export default function AttendancePage() {
                             {students.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                                        Нет данных о посещаемости
+                                        {t('attendancePage.noStudentData')}
                                     </td>
                                 </tr>
                             ) : (
@@ -343,7 +363,7 @@ export default function AttendancePage() {
                 <div className="p-4 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                         <TrendingUp className="w-5 h-5" />
-                        История посещаемости
+                        {t('attendancePage.historyTitle')}
                     </h2>
                 </div>
 
@@ -351,11 +371,15 @@ export default function AttendancePage() {
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-900">Дата и время</th>
+                                <th className="px-4 py-3 text-left font-semibold text-gray-900">
+                                    {t('attendancePage.columnDateTime')}
+                                </th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">✓</th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">○</th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">✗</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-900">Всего</th>
+                                <th className="px-4 py-3 text-center font-semibold text-gray-900">
+                                    {t('attendancePage.columnTotal')}
+                                </th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">Процент</th>
                             </tr>
                         </thead>
@@ -363,7 +387,7 @@ export default function AttendancePage() {
                             {dates.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                                        Нет данных
+                                        {t('attendancePage.noDates')}
                                     </td>
                                 </tr>
                             ) : (
@@ -453,20 +477,29 @@ export default function AttendancePage() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
                         <h2 className="text-xl font-bold text-gray-900 mb-2">
-                            ⚠️ Посещаемость уже взята
+                            ⚠️ {t('attendancePage.confirmTitle')}
                         </h2>
                         <p className="text-gray-600 mb-4">
-                            Посещаемость для этого класса уже была зафиксирована сегодня в {todayAttendance ? new Date(todayAttendance.taken_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}.
+                            {t('attendancePage.confirmText', {
+                                time: todayAttendance
+                                    ? new Date(
+                                          todayAttendance.taken_at
+                                      ).toLocaleTimeString(
+                                          locale === 'en' ? 'en-US' : 'ru-RU',
+                                          { hour: '2-digit', minute: '2-digit' }
+                                      )
+                                    : '',
+                            })}
                         </p>
                         <p className="text-sm text-gray-500 mb-6">
-                            Если был дополнительный урок, вы можете всё равно взять посещаемость ещё раз.
+                            {t('attendancePage.confirmHint')}
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setIsConfirmModalOpen(false)}
                                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
                             >
-                                Отмена
+                                {t('attendancePage.confirmCancel')}
                             </button>
                             <button
                                 onClick={() => {
@@ -475,7 +508,7 @@ export default function AttendancePage() {
                                 }}
                                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                             >
-                                Всё равно взять
+                                {t('attendancePage.confirmContinue')}
                             </button>
                         </div>
                     </div>
@@ -488,7 +521,19 @@ export default function AttendancePage() {
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-2xl font-bold text-gray-900">
-                                Посещаемость {new Date(selectedSession.taken_at).toLocaleDateString('ru-RU')} в {new Date(selectedSession.taken_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                {t('attendancePage.sessionTitle', {
+                                    date: new Date(
+                                        selectedSession.taken_at
+                                    ).toLocaleDateString(
+                                        locale === 'en' ? 'en-US' : 'ru-RU'
+                                    ),
+                                    time: new Date(
+                                        selectedSession.taken_at
+                                    ).toLocaleTimeString(
+                                        locale === 'en' ? 'en-US' : 'ru-RU',
+                                        { hour: '2-digit', minute: '2-digit' }
+                                    ),
+                                })}
                             </h2>
                             <button
                                 onClick={() => setIsSessionDetailOpen(false)}
@@ -500,7 +545,18 @@ export default function AttendancePage() {
 
                         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                             <p className="text-sm text-gray-600">
-                                <span className="font-medium">Преподаватель:</span> {selectedSession.taken_by} ({new Date(selectedSession.taken_at).toLocaleTimeString('ru-RU')})
+                                <span className="font-medium">
+                                    {t('attendancePage.teacherLabel')}
+                                </span>{' '}
+                                {selectedSession.taken_by}{' '}
+                                (
+                                {new Date(
+                                    selectedSession.taken_at
+                                ).toLocaleTimeString(
+                                    locale === 'en' ? 'en-US' : 'ru-RU',
+                                    { hour: '2-digit', minute: '2-digit' }
+                                )}
+                                )
                             </p>
                         </div>
 
@@ -508,9 +564,15 @@ export default function AttendancePage() {
                             <table className="w-full text-sm">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
-                                        <th className="px-4 py-3 text-left font-semibold text-gray-900">Студент</th>
-                                        <th className="px-4 py-3 text-center font-semibold text-gray-900">Статус</th>
-                                        <th className="px-4 py-3 text-left font-semibold text-gray-900">Примечание</th>
+                                        <th className="px-4 py-3 text-left font-semibold text-gray-900">
+                                            {t('attendancePage.columnStudent')}
+                                        </th>
+                                        <th className="px-4 py-3 text-center font-semibold text-gray-900">
+                                            {t('attendancePage.columnStatus')}
+                                        </th>
+                                        <th className="px-4 py-3 text-left font-semibold text-gray-900">
+                                            {t('attendancePage.columnNote')}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -525,22 +587,22 @@ export default function AttendancePage() {
                                             <td className="px-4 py-3 text-center">
                                                 {record.status === 'present' && (
                                                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                                                        ✓ Присутствовал
+                                                        ✓ {t('attendancePage.statusPresent')}
                                                     </span>
                                                 )}
                                                 {record.status === 'excused' && (
                                                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
-                                                        ○ Уважительная
+                                                        ○ {t('attendancePage.statusExcused')}
                                                     </span>
                                                 )}
                                                 {record.status === 'not_present' && (
                                                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
-                                                        ✗ Отсутствовал
+                                                        ✗ {t('attendancePage.statusAbsent')}
                                                     </span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
-                                                {record.notes || '—'}
+                                                {record.notes || t('attendancePage.noNote')}
                                             </td>
                                         </tr>
                                     ))}
@@ -553,7 +615,7 @@ export default function AttendancePage() {
                                 onClick={() => setIsSessionDetailOpen(false)}
                                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
                             >
-                                Закрыть
+                                {t('attendancePage.close')}
                             </button>
                         </div>
                     </div>

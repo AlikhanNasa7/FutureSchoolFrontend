@@ -25,6 +25,19 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { useLocale } from '@/contexts/LocaleContext';
 import axiosInstance from '@/lib/axios';
 
+// Те же ключи аватаров, что и на странице профиля
+const AVATAR_OPTIONS: { key: string; emoji: string }[] = [
+    { key: '', emoji: '' },
+    { key: '1', emoji: '👤' },
+    { key: '2', emoji: '🧑' },
+    { key: '3', emoji: '👩' },
+    { key: '4', emoji: '👨' },
+    { key: '5', emoji: '🧒' },
+    { key: '6', emoji: '👴' },
+    { key: '7', emoji: '👵' },
+    { key: '8', emoji: '🦊' },
+];
+
 const navigation = [
     {
         key: 'home',
@@ -251,10 +264,36 @@ export default function Sidebar() {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
                                     <div className="relative">
-                                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                                            <div className="w-6 h-6 bg-gray-400 rounded-full"></div>
-                                        </div>
-                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                                        {(() => {
+                                            const avatarKey = user?.avatar ?? '';
+                                            const baseName =
+                                                (user?.first_name &&
+                                                    `${user.first_name} ${user.last_name || ''}`.trim()) ||
+                                                user?.name ||
+                                                user?.username ||
+                                                '';
+                                            const firstLetter =
+                                                baseName.trim().charAt(0).toUpperCase() || '?';
+                                            const option = AVATAR_OPTIONS.find(
+                                                o => o.key === avatarKey
+                                            );
+                                            const showLetter =
+                                                !avatarKey || !option?.emoji;
+                                            return (
+                                                <>
+                                                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-lg">
+                                                        {showLetter ? (
+                                                            <span className="font-semibold text-gray-700">
+                                                                {firstLetter}
+                                                            </span>
+                                                        ) : (
+                                                            <span>{option?.emoji}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                                                </>
+                                            );
+                                        })()}
                                     </div>
 
                                     <div className="flex-1">

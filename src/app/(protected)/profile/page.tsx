@@ -1,10 +1,10 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import {
     User,
     Mail,
     Phone,
-    Calendar,
     BookOpen,
     Award,
     Settings,
@@ -12,9 +12,25 @@ import {
     CheckCircle,
     Clock,
     LogOut,
+    Save,
+    X,
 } from 'lucide-react';
 import { useUserState, useUserActions } from '@/contexts/UserContext';
 import { useLocale } from '@/contexts/LocaleContext';
+import axiosInstance from '@/lib/axios';
+
+// Список аватарок: '' = первая буква имени, '1'-'8' = эмодзи
+const AVATAR_OPTIONS: { key: string; emoji: string }[] = [
+    { key: '', emoji: '' },
+    { key: '1', emoji: '👤' },
+    { key: '2', emoji: '🧑' },
+    { key: '3', emoji: '👩' },
+    { key: '4', emoji: '👨' },
+    { key: '5', emoji: '🧒' },
+    { key: '6', emoji: '👴' },
+    { key: '7', emoji: '👵' },
+    { key: '8', emoji: '🦊' },
+];
 
 const getRoleInfo = (role: string, t: (key: string) => string) => {
     switch (role) {
@@ -53,8 +69,13 @@ const getRoleInfo = (role: string, t: (key: string) => string) => {
 
 export default function ProfilePage() {
     const { user, isAuthenticated, isLoading, error } = useUserState();
-    const { logout, clearError } = useUserActions();
+    const { logout, clearError, loginSuccess } = useUserActions();
     const { t } = useLocale();
+    const [isEditing, setIsEditing] = useState(false);
+    const [editPhone, setEditPhone] = useState('');
+    const [editAvatar, setEditAvatar] = useState<string>('');
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     const profileData = user
         ? {
@@ -87,11 +108,50 @@ export default function ProfilePage() {
               ...(user.role === 'superadmin' && {
                   bio: t('profile.superadminBio'),
               }),
-              avatar: user.avatar || '/avatars/default.jpg',
+              avatarKey: user.avatar ?? '',
           }
         : null;
 
     const roleInfo = profileData ? getRoleInfo(profileData.role, t) : null;
+
+    const displayAvatarKey = isEditing ? editAvatar : (profileData?.avatarKey ?? '');
+    const firstLetter = profileData?.name?.trim().charAt(0)?.toUpperCase() || '?';
+    const avatarOption = AVATAR_OPTIONS.find((o) => o.key === displayAvatarKey);
+    const showFirstLetter = !displayAvatarKey || !avatarOption?.emoji;
+
+    const startEditing = useCallback(() => {
+        setEditPhone(user?.phone_number ?? '');
+        setEditAvatar(user?.avatar ?? '');
+        setSaveError(null);
+        setIsEditing(true);
+    }, [user?.phone_number, user?.avatar]);
+
+    const cancelEditing = useCallback(() => {
+        setIsEditing(false);
+        setSaveError(null);
+    }, []);
+
+    const saveProfile = useCallback(async () => {
+        if (!user?.id) return;
+        setSaving(true);
+        setSaveError(null);
+        try {
+            const payload: { phone_number?: string; avatar?: string } = {};
+            if (editPhone !== (user.phone_number ?? '')) payload.phone_number = editPhone || '';
+            if (editAvatar !== (user.avatar ?? '')) payload.avatar = editAvatar || '';
+            const { data } = await axiosInstance.patch(`/users/${user.id}/`, payload);
+            const merged = { ...user, ...data };
+            loginSuccess(merged);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('user', JSON.stringify(merged));
+            }
+            setIsEditing(false);
+        } catch (err: any) {
+            setSaveError(err?.formattedMessage || t('profile.saveError'));
+        } finally {
+            setSaving(false);
+        }
+    }, [user?.id, user?.phone_number, user?.avatar, editPhone, editAvatar, loginSuccess, t]);
 
     if (isLoading) {
         return (
@@ -153,12 +213,25 @@ export default function ProfilePage() {
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                             <div className="text-center mb-6">
                                 <div className="relative inline-block">
-                                    <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <div className="w-16 h-16 bg-gray-400 rounded-full"></div>
+                                    <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 bg-gray-200 text-4xl">
+                                        {showFirstLetter ? (
+                                            <span className="font-semibold text-gray-600">
+                                                {firstLetter}
+                                            </span>
+                                        ) : (
+                                            <span>{avatarOption?.emoji}</span>
+                                        )}
                                     </div>
-                                    <button className="absolute bottom-4 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors">
-                                        <Edit className="w-4 h-4" />
-                                    </button>
+                                    {!isEditing ? (
+                                        <button
+                                            type="button"
+                                            onClick={startEditing}
+                                            className="absolute bottom-4 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                                            aria-label={t('profile.edit')}
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+                                    ) : null}
                                 </div>
 
                                 <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -171,25 +244,90 @@ export default function ProfilePage() {
                                     {roleInfo?.icon && (
                                         <roleInfo.icon className="w-4 h-4 mr-2" />
                                     )}
-                                    {roleInfo?.label || 'Пользователь'}
+                                    {roleInfo?.label || t('profile.userBio')}
                                 </div>
                             </div>
 
+                            {isEditing ? (
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t('profile.phone')}
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            value={editPhone}
+                                            onChange={(e) => setEditPhone(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                            placeholder={t('profile.phonePlaceholder')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            {t('profile.avatar')}
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {AVATAR_OPTIONS.map((opt) => (
+                                                <button
+                                                    key={opt.key || 'default'}
+                                                    type="button"
+                                                    onClick={() => setEditAvatar(opt.key)}
+                                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 transition-colors ${
+                                                        editAvatar === opt.key
+                                                            ? 'border-blue-600 bg-blue-50'
+                                                            : 'border-gray-200 bg-gray-100 hover:border-gray-300'
+                                                    }`}
+                                                    title={opt.key ? opt.emoji : t('profile.firstLetter')}
+                                                >
+                                                    {opt.key ? opt.emoji : firstLetter}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {t('profile.firstLetter')}
+                                        </p>
+                                    </div>
+                                    {saveError && (
+                                        <p className="text-sm text-red-600">{saveError}</p>
+                                    )}
+                                    <div className="flex gap-2 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={saveProfile}
+                                            disabled={saving}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+                                        >
+                                            <Save className="w-4 h-4" />
+                                            {saving ? '...' : t('profile.save')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={cancelEditing}
+                                            disabled={saving}
+                                            className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+                                        >
+                                            <X className="w-4 h-4" />
+                                            {t('profile.cancel')}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
+
                             <div className="space-y-4">
                                 <div className="flex items-center">
-                                    <Mail className="w-5 h-5 text-gray-400 mr-3" />
-                                    <div>
+                                    <Mail className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
+                                    <div className="min-w-0">
                                         <p className="text-sm text-gray-500">
                                             {t('profile.email')}
                                         </p>
-                                        <p className="text-sm font-medium text-gray-900">
+                                        <p className="text-sm font-medium text-gray-900 truncate">
                                             {profileData.email}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center">
-                                    <Phone className="w-5 h-5 text-gray-400 mr-3" />
+                                    <Phone className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
                                     <div>
                                         <p className="text-sm text-gray-500">
                                             {t('profile.phone')}
@@ -200,23 +338,9 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
 
-                                {/* <div className="flex items-center">
-                                    <Calendar className="w-5 h-5 text-gray-400 mr-3" />
-                                    <div>
-                                        <p className="text-sm text-gray-500">
-                                            Дата регистрации
-                                        </p>
-                                        <p className="text-sm font-medium text-gray-900">
-                                            {new Date(
-                                                profileData.joinDate
-                                            ).toLocaleDateString('ru-RU')}
-                                        </p>
-                                    </div>
-                                </div> */}
-
                                 {profileData.grade && (
                                     <div className="flex items-center">
-                                        <BookOpen className="w-5 h-5 text-gray-400 mr-3" />
+                                        <BookOpen className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
                                         <div>
                                             <p className="text-sm text-gray-500">
                                                 {t('profile.class')}

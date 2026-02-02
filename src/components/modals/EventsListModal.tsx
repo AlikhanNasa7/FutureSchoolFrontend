@@ -28,10 +28,10 @@ export default function EventsListModal({
     };
 
     const getEventTypeText = (type?: string) => {
-        if (type === 'schedule') return 'Расписание';
-        if (type === 'assignment') return 'Домашнее задание';
-        if (type === 'test') return 'Тест';
-        return 'Событие';
+        if (type === 'schedule') return t('events.schedule');
+        if (type === 'assignment') return t('events.assignment');
+        if (type === 'test') return t('events.test');
+        return t('events.event');
     };
 
     // Format time string to remove seconds (HH:MM:SS -> HH:MM)
@@ -79,18 +79,49 @@ export default function EventsListModal({
         <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
             <div className="mb-4">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {data.events.length} {data.events.length === 1 ? 'событие' : data.events.length < 5 ? 'события' : 'событий'}
+                    {t('events.eventCount', { count: data.events.length })}
                 </h3>
                 <p className="text-sm text-gray-600">
-                    {new Date(data.date).toLocaleDateString(
-                        locale === 'en' ? 'en-US' : 'ru-RU',
-                        {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
+                    {(() => {
+                        const d = new Date(data.date);
+                        if (locale === 'kk') {
+                            const weekdays = [
+                                'жексенбі',
+                                'дүйсенбі',
+                                'сейсенбі',
+                                'сәрсенбі',
+                                'бейсенбі',
+                                'жұма',
+                                'сенбі',
+                            ];
+                            const months = [
+                                'қаңтар',
+                                'ақпан',
+                                'наурыз',
+                                'сәуір',
+                                'мамыр',
+                                'маусым',
+                                'шілде',
+                                'тамыз',
+                                'қыркүйек',
+                                'қазан',
+                                'қараша',
+                                'желтоқсан',
+                            ];
+                            const w = weekdays[d.getDay()];
+                            const m = months[d.getMonth()];
+                            return `${w}, ${d.getDate()} ${m} ${d.getFullYear()} ж.`;
                         }
-                    )}
+                        return d.toLocaleDateString(
+                            locale === 'en' ? 'en-US' : 'ru-RU',
+                            {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                            }
+                        );
+                    })()}
                     {getTimeRange() && ` • ${getTimeRange()}`}
                 </p>
             </div>
