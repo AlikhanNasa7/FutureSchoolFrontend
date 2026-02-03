@@ -9,14 +9,14 @@ interface Grade {
     id: number;
     grade_value: number;
     max_grade: number;
-    submission: {
-        assignment: {
+    submission?: {
+        assignment?: {
             id: number;
-            title: string;
-            course_section_title: string;
-            course_name: string;
-        };
-    };
+            title?: string;
+            course_section_title?: string;
+            course_name?: string;
+        } | null;
+    } | null;
     graded_at: string;
 }
 
@@ -111,18 +111,18 @@ export default function ParentChildDiaryPage() {
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                        {grade.submission.assignment.title}
+                                        {grade.submission?.assignment?.title ?? 'Оценка'}
                                     </h3>
                                     <div className="flex items-center gap-6 text-sm text-gray-600 mb-2">
                                         <div className="flex items-center gap-2">
                                             <BookOpen className="w-4 h-4" />
                                             <span>
-                                                {grade.submission.assignment.course_name}
+                                                {grade.submission?.assignment?.course_name ?? '—'}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span>
-                                                {grade.submission.assignment.course_section_title}
+                                                {grade.submission?.assignment?.course_section_title ?? '—'}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">

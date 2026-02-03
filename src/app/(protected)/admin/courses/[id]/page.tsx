@@ -41,7 +41,7 @@ export default function CourseDetailsPage() {
     const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
     useEffect(() => {
-        if (user && user.role !== 'superadmin') {
+        if (user && !['superadmin', 'schooladmin'].includes(user.role)) {
             router.push('/');
         }
     }, [user, router]);
@@ -77,7 +77,7 @@ export default function CourseDetailsPage() {
     };
 
 
-    if (user?.role !== 'superadmin') {
+    if (user && !['superadmin', 'schooladmin'].includes(user.role)) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
@@ -85,7 +85,7 @@ export default function CourseDetailsPage() {
                         Доступ запрещен
                     </h2>
                     <p className="text-gray-600">
-                        Только супер-администратор может просматривать эту страницу.
+                        Только администраторы школы и супер-администратор могут просматривать эту страницу.
                     </p>
                 </div>
             </div>

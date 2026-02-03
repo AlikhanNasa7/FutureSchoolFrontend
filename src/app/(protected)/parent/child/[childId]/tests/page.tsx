@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Award, CheckCircle, Clock, Eye } from 'lucide-react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Award, CheckCircle, Clock, Eye, Filter } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 
 interface Test {
@@ -22,84 +22,59 @@ interface Test {
 export default function ParentChildTestsPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const childId = params.childId as string;
+    const subjectGroupId = searchParams.get('subject_group');
     const [tests, setTests] = useState<Test[]>([]);
     const [loading, setLoading] = useState(true);
     const [childName, setChildName] = useState<string>('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'attempted' | 'not_attempted'>('all');
 
     useEffect(() => {
+        if (!childId) return;
+        let cancelled = false;
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // Get child info
-                const childResponse = await axiosInstance.get(`/users/${childId}/`);
-                setChildName(`${childResponse.data.first_name} ${childResponse.data.last_name}`);
+                const [childResponse, testsResponse, attemptsResponse] = await Promise.all([
+                    axiosInstance.get(`/users/${childId}/`),
+                    axiosInstance.get('/tests/', { params: { student: childId } }),
+                    axiosInstance.get('/attempts/', { params: { student: childId } }),
+                ]);
+                if (cancelled) return;
 
-                // Get tests for the child's classrooms
-                // Get subject groups for the child
-                const subjectGroupsResponse = await axiosInstance.get('/subject-groups/', {
-                    params: { student: childId }
-                });
-                const subjectGroups = subjectGroupsResponse.data.results || subjectGroupsResponse.data;
-                
-                // Get course sections for all subject groups
-                const allSections: any[] = [];
-                for (const sg of subjectGroups) {
-                    try {
-                        const sectionsResponse = await axiosInstance.get('/course-sections/', {
-                            params: { subject_group: sg.id }
-                        });
-                        const sections = sectionsResponse.data.results || sectionsResponse.data;
-                        allSections.push(...sections);
-                    } catch (error) {
-                        console.error(`Failed to fetch sections for subject group ${sg.id}:`, error);
-                    }
+                setChildName(`${childResponse.data.first_name} ${childResponse.data.last_name}`);
+                let allTests = testsResponse.data.results || testsResponse.data;
+                const sgId = subjectGroupId ? parseInt(subjectGroupId, 10) : null;
+                if (sgId != null) {
+                    allTests = allTests.filter((t: { subject_group?: number }) => t.subject_group === sgId);
                 }
-                
-                // Get tests for all sections
-                const allTests: any[] = [];
-                for (const section of allSections) {
-                    try {
-                        const testsResponse = await axiosInstance.get('/tests/', {
-                            params: { course_section: section.id }
-                        });
-                        const tests = testsResponse.data.results || testsResponse.data;
-                        allTests.push(...tests);
-                    } catch (error) {
-                        console.error(`Failed to fetch tests for section ${section.id}:`, error);
-                    }
-                }
-                
-                // Get attempts to check status
-                const attemptsResponse = await axiosInstance.get('/attempts/', {
-                    params: { student: childId }
-                });
+
                 const attempts = attemptsResponse.data.results || attemptsResponse.data;
                 const attemptsMap = new Map(attempts.map((a: any) => [a.test, a]));
-                
-                // Merge test data with attempt data
-                const testsWithStatus = allTests.map(test => {
+
+                const testsWithStatus = allTests.map((test: any) => {
                     const attempt = attemptsMap.get(test.id);
                     return {
                         ...test,
                         has_attempted: !!attempt,
                         last_submitted_attempt_id: attempt?.id || null,
-                        my_latest_attempt_can_view_results: attempt?.can_view_results || false,
+                        my_latest_attempt_can_view_results: attempt?.can_view_results ?? false,
                     };
                 });
-                
+
                 setTests(testsWithStatus);
             } catch (error) {
-                console.error('Failed to fetch tests:', error);
+                if (!cancelled) console.error('Failed to fetch tests:', error);
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
-
-        if (childId) {
-            fetchData();
-        }
-    }, [childId]);
+        fetchData();
+        return () => {
+            cancelled = true;
+        };
+    }, [childId, subjectGroupId]);
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return 'Не указано';
@@ -111,6 +86,18 @@ export default function ParentChildTestsPage() {
             minute: '2-digit',
         });
     };
+
+    const testDisplayTitle = (test: Test) => {
+        const t = (test.title || '').trim();
+        if (t && t.toLowerCase() !== 'test') return test.title;
+        return `${test.course_name} — ${test.course_section_title}`;
+    };
+
+    const filteredTests = tests.filter((t) => {
+        if (statusFilter === 'attempted') return t.has_attempted;
+        if (statusFilter === 'not_attempted') return !t.has_attempted;
+        return true;
+    });
 
     if (loading) {
         return (
@@ -133,20 +120,37 @@ export default function ParentChildTestsPage() {
             <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                     Тесты {childName}
+                    {subjectGroupId ? ' (по предмету)' : ''}
                 </h1>
-                <p className="text-gray-600">
-                    Просмотр тестов и результатов
-                </p>
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <p className="text-gray-600">
+                        {subjectGroupId
+                            ? 'Тесты только по выбранному предмету'
+                            : 'Просмотр тестов и результатов'}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm">
+                        <Filter className="w-4 h-4 text-gray-500" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value as any)}
+                            className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                        >
+                            <option value="all">Все</option>
+                            <option value="attempted">Пройденные</option>
+                            <option value="not_attempted">Не пройденные</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            {tests.length === 0 ? (
+            {filteredTests.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-md p-8 text-center">
                     <Award className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Нет доступных тестов</p>
+                    <p className="text-gray-600">Нет тестов по выбранному фильтру</p>
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {tests.map((test) => (
+                    {filteredTests.map((test) => (
                         <div
                             key={test.id}
                             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
@@ -154,7 +158,7 @@ export default function ParentChildTestsPage() {
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                        {test.title}
+                                        {testDisplayTitle(test)}
                                     </h3>
                                     {test.description && (
                                         <p className="text-gray-600 mb-4">

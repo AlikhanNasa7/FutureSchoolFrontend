@@ -128,12 +128,7 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false);
-    const [view, setView] = useState<CalendarView>(() => {
-        if (typeof window !== 'undefined') {
-            return 'timeGridWeek';
-        }
-        return 'timeGridWeek';
-    });
+    const [view, setView] = useState<CalendarView>('timeGridWeek');
     const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
     const [currentDateRange, setCurrentDateRange] = useState<{
         start: Date | null;
@@ -146,12 +141,24 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
 
     useEffect(() => {
         const checkMobile = () => {
-            setIsMobile(window.innerWidth < 576);
+            const mobile = window.innerWidth < 576;
+            setIsMobile(mobile);
+            setView((prev) => {
+                // На мобилке по умолчанию дневной режим,
+                // но не трогаем, если пользователь уже выбрал другой режим вручную.
+                if (mobile && (prev === 'timeGridWeek' || prev === 'dayGridMonth')) {
+                    return 'timeGridDay';
+                }
+                // На десктопе ничего не меняем — остаётся то, что выбрал пользователь.
+                return prev;
+            });
         };
 
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        if (typeof window !== 'undefined') {
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+            return () => window.removeEventListener('resize', checkMobile);
+        }
     }, []);
 
     // Close menu when clicking outside
@@ -1425,8 +1432,8 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
 
     return (
         <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="pl-8 pr-6 pt-6">
-                <div className="flex items-center justify-between mb-4">
+            <div className="px-4 sm:px-6 lg:pl-8 lg:pr-6 pt-4 sm:pt-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800">
                             {t('dashboard.calendar')}
@@ -1437,7 +1444,7 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                             </p>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 justify-start sm:justify-end">
                         {(user?.role === 'schooladmin' || user?.role === 'superadmin') && (
                             <button
                                 type="button"
@@ -1451,14 +1458,14 @@ const Calendar = ({ selectedDate = new Date(), onDateChange }: CalendarProps) =>
                         <button
                             type="button"
                             onClick={handleTodayClick}
-                            className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700"
+                            className="flex items-center gap-1 sm:gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs sm:text-sm font-medium text-gray-700"
                         >
                             {t('dashboard.calendarButtons.today')}
                         </button>
                         <div className="relative" ref={menuRef}>
                         <button
                             onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                            className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                             aria-label={t('dashboard.selectView')}
                         >
                             <Settings className="w-5 h-5 text-gray-600" />

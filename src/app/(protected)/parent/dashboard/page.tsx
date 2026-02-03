@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUserState } from '@/contexts/UserContext';
-import { Users, BookOpen, FileText, Award, Calendar } from 'lucide-react';
+import { Users, FileText, Award, Calendar, BarChart3 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/lib/axios';
 
@@ -125,18 +125,18 @@ export default function ParentDashboardPage() {
 
             {/* Quick Actions for Selected Child */}
             {selectedChild && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                     <button
-                        onClick={() => router.push(`/parent/child/${selectedChild.id}/subjects`)}
+                        onClick={() => router.push(`/parent/child/${selectedChild.id}/overview`)}
                         className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
                     >
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <BookOpen className="w-6 h-6 text-blue-600" />
+                            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                <BarChart3 className="w-6 h-6 text-indigo-600" />
                             </div>
                             <div className="text-left">
-                                <p className="font-semibold text-gray-900">Предметы</p>
-                                <p className="text-sm text-gray-600">Просмотр предметов</p>
+                                <p className="font-semibold text-gray-900">Обзор</p>
+                                <p className="text-sm text-gray-600">Общий прогресс и посещаемость</p>
                             </div>
                         </div>
                     </button>

@@ -176,7 +176,17 @@
         "saved": "Профиль сохранён",
         "saveError": "Не удалось сохранить профиль",
         "phonePlaceholder": "Номер телефона",
-        "averageGrade": "Средний балл"
+        "averageGrade": "Средний балл",
+        "changePassword": "Изменить пароль",
+        "currentPassword": "Текущий пароль",
+        "newPassword": "Новый пароль",
+        "confirmPassword": "Подтвердите новый пароль",
+        "passwordRequired": "Введите текущий и новый пароль",
+        "passwordsMismatch": "Пароли не совпадают",
+        "passwordChanged": "Пароль успешно изменен",
+        "passwordChangeError": "Не удалось изменить пароль",
+        "savingPassword": "Изменение пароля...",
+        "changePasswordButton": "Изменить пароль"
     },
     "dashboard": {
         "welcome": "Добро пожаловать",
@@ -246,6 +256,39 @@
         "resource": "ресурс",
         "assignment": "задание",
         "testItem": "тест"
+    },
+    "parent": {
+        "dashboardTitle": "Родительский кабинет",
+        "dashboardSubtitle": "Выберите ребенка для просмотра его успеваемости и заданий",
+        "selectChild": "Выберите ребенка",
+        "noChildrenTitle": "Нет привязанных детей",
+        "noChildrenText": "Обратитесь к администратору для привязки детей к вашему аккаунту.",
+        "overview": "Обзор",
+        "overviewSubtitle": "Общий прогресс и посещаемость",
+        "subjects": "Предметы",
+        "subjectsSubtitle": "Материалы и темы",
+        "assignments": "Задания",
+        "assignmentsSubtitle": "Список заданий",
+        "tests": "Тесты",
+        "testsSubtitle": "Результаты тестов",
+        "attendance": "Посещаемость",
+        "attendanceSubtitle": "Детали посещения уроков",
+        "averageBySubjects": "Средний балл по предметам",
+        "attendanceShort": "Посещаемость",
+        "childOverviewTitle": "Обзор ребенка",
+        "childAttendanceTitle": "Посещаемость ребенка",
+        "childGradesTitle": "Оценки ребенка",
+        "noGrades": "Пока нет данных по оценкам.",
+        "noAttendance": "Пока нет данных о посещаемости.",
+        "noDataForFilter": "Нет данных по выбранному фильтру"
+    },
+    "parentFilters": {
+        "all": "Все",
+        "pending": "В процессе",
+        "overdue": "Просрочено",
+        "submitted": "Сдано",
+        "attempted": "Пройденные",
+        "notAttempted": "Не пройденные"
     },
     "courseSectionModal": {
         "title": "Добавить элемент в раздел курса",

@@ -7,9 +7,10 @@ import axiosInstance from '@/lib/axios';
 
 interface SubjectGroup {
     id: number;
+    course: number;
     course_name: string;
     course_code: string;
-    classroom_name: string;
+    classroom_display?: string;
 }
 
 export default function ParentChildSubjectsPage() {
@@ -32,7 +33,13 @@ export default function ParentChildSubjectsPage() {
                 const response = await axiosInstance.get('/subject-groups/', {
                     params: { student: childId }
                 });
-                setSubjects(response.data.results || response.data);
+                const raw = response.data.results || response.data || [];
+                // One card per course (same course can have multiple subject_groups)
+                const byCourse = new Map<number, SubjectGroup>();
+                for (const sg of raw) {
+                    if (!byCourse.has(sg.course)) byCourse.set(sg.course, sg);
+                }
+                setSubjects(Array.from(byCourse.values()));
             } catch (error) {
                 console.error('Failed to fetch subjects:', error);
             } finally {
@@ -96,9 +103,11 @@ export default function ParentChildSubjectsPage() {
                                     <p className="text-sm text-gray-600">
                                         {subject.course_code}
                                     </p>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        {subject.classroom_name}
-                                    </p>
+                                    {subject.classroom_display && (
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            {subject.classroom_display}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </button>

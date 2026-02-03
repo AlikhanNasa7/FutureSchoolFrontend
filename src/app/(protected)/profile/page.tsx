@@ -76,6 +76,12 @@ export default function ProfilePage() {
     const [editAvatar, setEditAvatar] = useState<string>('');
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [pwCurrent, setPwCurrent] = useState('');
+    const [pwNew, setPwNew] = useState('');
+    const [pwConfirm, setPwConfirm] = useState('');
+    const [pwSaving, setPwSaving] = useState(false);
+    const [pwError, setPwError] = useState<string | null>(null);
+    const [pwSuccess, setPwSuccess] = useState<string | null>(null);
 
     const profileData = user
         ? {
@@ -152,6 +158,56 @@ export default function ProfilePage() {
             setSaving(false);
         }
     }, [user?.id, user?.phone_number, user?.avatar, editPhone, editAvatar, loginSuccess, t]);
+
+    const handleChangePassword = useCallback(async () => {
+        if (!pwCurrent || !pwNew) {
+            setPwError(t('profile.passwordRequired'));
+            setPwSuccess(null);
+            return;
+        }
+        if (pwNew !== pwConfirm) {
+            setPwError(t('profile.passwordsMismatch'));
+            setPwSuccess(null);
+            return;
+        }
+        setPwSaving(true);
+        setPwError(null);
+        setPwSuccess(null);
+        try {
+            await axiosInstance.post('/auth/change-password/', {
+                current_password: pwCurrent,
+                new_password: pwNew,
+            });
+            setPwSuccess(t('profile.passwordChanged'));
+            setPwCurrent('');
+            setPwNew('');
+            setPwConfirm('');
+            // После смены пароля сразу выходим из системы
+            logout();
+        } catch (err: any) {
+            const data = err?.response?.data;
+            let message = t('profile.passwordChangeError');
+            if (data) {
+                if (typeof data === 'string') {
+                    message = data;
+                } else if (data.current_password) {
+                    message = Array.isArray(data.current_password)
+                        ? data.current_password[0]
+                        : String(data.current_password);
+                } else if (data.non_field_errors) {
+                    message = Array.isArray(data.non_field_errors)
+                        ? data.non_field_errors[0]
+                        : String(data.non_field_errors);
+                } else if (data.detail) {
+                    message = String(data.detail);
+                }
+            }
+            setPwError(message);
+            setPwSuccess(null);
+        } finally {
+            setPwSaving(false);
+        }
+    }, [pwCurrent, pwNew, pwConfirm, logout, t]);
 
     if (isLoading) {
         return (
@@ -380,6 +436,69 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                                {t('profile.changePassword')}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t('profile.currentPassword')}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={pwCurrent}
+                                        onChange={(e) => setPwCurrent(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t('profile.newPassword')}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={pwNew}
+                                        onChange={(e) => setPwNew(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t('profile.confirmPassword')}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={pwConfirm}
+                                        onChange={(e) => setPwConfirm(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    />
+                                </div>
+                            </div>
+                            {pwError && (
+                                <p className="mt-3 text-sm text-red-600">{pwError}</p>
+                            )}
+                            {pwSuccess && (
+                                <p className="mt-3 text-sm text-green-600">{pwSuccess}</p>
+                            )}
+                            <div className="mt-4">
+                                <button
+                                    type="button"
+                                    onClick={handleChangePassword}
+                                    disabled={pwSaving}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+                                >
+                                    {pwSaving ? (
+                                        <span>{t('profile.savingPassword') || '...'}</span>
+                                    ) : (
+                                        <>
+                                            <Settings className="w-4 h-4" />
+                                            <span>{t('profile.changePasswordButton') || t('profile.changePassword')}</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                         {profileData?.role === 'student' &&
                             profileData.subjects &&
                             profileData.subjects.length > 0 && (

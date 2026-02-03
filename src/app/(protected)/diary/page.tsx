@@ -436,10 +436,10 @@ export default function DiaryPage() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto px-4 py-6">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">{t('diary.title')}</h1>
-                <p className="text-gray-600 mt-1">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+            <div className="mb-4 sm:mb-6">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('diary.title')}</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">
                     {isStudent && t('diary.subtitleStudent')}
                     {isTeacher && t('diary.subtitleTeacher')}
                     {isAdmin && t('diary.subtitleAdmin')}
@@ -447,10 +447,10 @@ export default function DiaryPage() {
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
-                <div className="flex flex-wrap gap-4 items-end">
+            <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6 shadow-sm">
+                <div className="flex flex-col sm:flex-wrap sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-end">
                     {isAdmin && (
-                        <div className="min-w-[180px]">
+                        <div className="min-w-[160px] sm:min-w-[180px]">
                             <label className="block text-sm font-medium text-gray-700 mb-1">{t('diary.class')}</label>
                             <div className="relative">
                                 <select
@@ -471,7 +471,7 @@ export default function DiaryPage() {
                         </div>
                     )}
 
-                    <div className="min-w-[220px]">
+                    <div className="min-w-[180px] sm:min-w-[220px]">
                         <label className="block text-sm font-medium text-gray-700 mb-1">{t('diary.subject')}</label>
                         <div className="relative">
                             <select
@@ -495,27 +495,29 @@ export default function DiaryPage() {
                     </div>
 
                     {canAddGrade && selectedSubjectGroupId && (
-                        <button
-                            type="button"
-                            onClick={() => setShowAddGradeModal(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                        >
-                            <Plus className="w-5 h-5" />
-                            {t('diary.addGrade')}
-                        </button>
+                        <div className="sm:ml-auto">
+                            <button
+                                type="button"
+                                onClick={() => setShowAddGradeModal(true)}
+                                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
+                            >
+                                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                                {t('diary.addGrade')}
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* Веса оценок (только для учителя/админа) */}
             {canAddGrade && selectedSubjectGroupId && (
-                <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
+                <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6 shadow-sm">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">{t('diary.gradeWeightsTitle')}</h3>
                     <p className="text-xs text-gray-500 mb-3">
                         {t('diary.weightsHint')}
                     </p>
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[280px]">
+                        <table className="w-full min-w-[260px] text-sm">
                             <thead>
                                 <tr className="border-b border-gray-200">
                                     <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">{t('diary.gradeType')}</th>
@@ -582,15 +584,15 @@ export default function DiaryPage() {
                             <p>{t('diary.loadSubjectsError')}</p>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-                            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between flex-wrap gap-2">
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4 sm:mb-6">
+                            <div className="px-3 sm:px-4 py-3 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
                                 <span className="font-medium text-gray-800">{t('diary.avgBySubject')}</span>
                                 {studentOverallAvg != null && (
                                     <span className="text-sm font-semibold text-gray-900">{t('diary.overallAvg')}: {studentOverallAvg}%</span>
                                 )}
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[400px]">
+                                <table className="w-full min-w-[360px] text-sm">
                                     <thead>
                                         <tr className="border-b border-gray-200 bg-gray-50/80">
                                             <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">№</th>
@@ -636,21 +638,21 @@ export default function DiaryPage() {
                         </div>
                     )
                 ) : (
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center text-gray-500">
-                        <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-10 sm:p-12 text-center text-gray-500">
+                        <BookOpen className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 text-gray-300" />
                         <p>{t('diary.selectClassAndSubject')}</p>
                     </div>
                 )
             ) : loadingGradeBook ? (
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center py-16">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center py-12 sm:py-16">
+                    <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-blue-600" />
                 </div>
             ) : (
                 <>
                     {/* Class stats + table (admin/teacher) */}
                     {showClassView && (
-                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-                            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between flex-wrap gap-2">
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4 sm:mb-6">
+                            <div className="px-3 sm:px-4 py-3 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
                                 <span className="font-medium text-gray-800">{selectedSubject?.course_name}</span>
                                 <div className="flex items-center gap-4 text-sm text-gray-600">
                                     <span className="flex items-center gap-1">
@@ -665,7 +667,7 @@ export default function DiaryPage() {
                             </div>
 
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[500px]">
+                                <table className="w-full min-w-[460px] text-sm">
                                     <thead>
                                         <tr className="border-b border-gray-200 bg-gray-50/80">
                                             <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">№</th>
@@ -723,7 +725,7 @@ export default function DiaryPage() {
 
                     {/* Student detail: list of grades (when student selected or student view) */}
                     {(selectedStudentId && (isAdmin || isTeacher)) && (
-                        <div className="mb-4 flex items-center justify-between">
+                        <div className="mb-3 sm:mb-4 flex items-center justify-between">
                             <button
                                 type="button"
                                 onClick={() => setSelectedStudentId(null)}
@@ -749,7 +751,7 @@ export default function DiaryPage() {
                     )}
 
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                        <div className="px-3 sm:px-4 py-3 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
                             <span className="font-medium text-gray-800">
                                 {isStudent
                                     ? selectedSubject?.course_name ?? t('diary.myGrades')

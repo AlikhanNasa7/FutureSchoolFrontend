@@ -26,6 +26,31 @@ interface ImportResult {
         row: number;
         error: string;
     }>;
+    created_parent_username?: string;
+    created_parent_password?: string;
+    created_parents?: Array<{ username: string; password: string }>;
+}
+
+interface PreviewData {
+    preview: true;
+    summary: {
+        students_new: number;
+        students_existing: number;
+        parents_new: number;
+        parents_existing: number;
+        rows_count: number;
+        errors_count: number;
+    };
+    rows: Array<{
+        row: number;
+        class_name: string;
+        first_name: string;
+        last_name: string;
+        student_status: 'new' | 'existing';
+        parent_username: string | null;
+        parent_status: string | null;
+    }>;
+    errors: Array<{ row: number; error: string }>;
 }
 
 interface ImportStudentsExcelModalProps {
@@ -42,23 +67,55 @@ export default function ImportStudentsExcelModal({
     const [schools, setSchools] = useState<School[]>([]);
     const [selectedSchool, setSelectedSchool] = useState<number>(0);
     const [file, setFile] = useState<File | null>(null);
-    const [defaultPassword, setDefaultPassword] = useState<string>('');
+    const [defaultPassword, setDefaultPassword] = useState<string>('qwerty123');
     const [loading, setLoading] = useState(false);
     const [loadingSchools, setLoadingSchools] = useState(false);
+    const [loadingPreview, setLoadingPreview] = useState(false);
+    const [previewData, setPreviewData] = useState<PreviewData | null>(null);
     const [result, setResult] = useState<ImportResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             fetchSchools();
-            // Reset state
             setFile(null);
-            setDefaultPassword('');
+            setDefaultPassword('qwerty123');
+            setPreviewData(null);
             setResult(null);
             setError(null);
             setSelectedSchool(0);
         }
     }, [isOpen]);
+
+    // Load preview when file + school selected
+    useEffect(() => {
+        if (!file || !selectedSchool || !isOpen) {
+            setPreviewData(null);
+            return;
+        }
+        let cancelled = false;
+        setLoadingPreview(true);
+        setPreviewData(null);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('preview', '1');
+        axiosInstance
+            .post<PreviewData>(`/schools/${selectedSchool}/import-students-excel/`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            })
+            .then((res) => {
+                if (!cancelled && res.data.preview) setPreviewData(res.data);
+            })
+            .catch(() => {
+                if (!cancelled) setPreviewData(null);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingPreview(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [file, selectedSchool, isOpen]);
 
     const fetchSchools = async () => {
         setLoadingSchools(true);
@@ -107,13 +164,13 @@ export default function ImportStudentsExcelModal({
         setLoading(true);
         setError(null);
         setResult(null);
+        setPreviewData(null);
 
         try {
             const formData = new FormData();
             formData.append('file', file);
-            if (defaultPassword) {
-                formData.append('default_password', defaultPassword);
-            }
+            const passwordToSend = defaultPassword.trim() || 'qwerty123';
+            formData.append('default_password', passwordToSend);
 
             const response = await axiosInstance.post(
                 `/schools/${selectedSchool}/import-students-excel/`,
@@ -227,21 +284,63 @@ export default function ImportStudentsExcelModal({
                             <span className="font-mono">last_name</span>
                             <br />
                             Опциональные: <span className="font-mono">email</span>,{' '}
-                            <span className="font-mono">phone_number</span>
+                            <span className="font-mono">phone_number</span>,{' '}
+                            <span className="font-mono">parent_username</span> (по строке)
                         </p>
                     </div>
+
+                    {/* Preview */}
+                    {file && selectedSchool && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Превью</p>
+                            {loadingPreview ? (
+                                <p className="text-sm text-gray-500">Загрузка...</p>
+                            ) : previewData ? (
+                                <div className="space-y-3 text-sm">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        <div>
+                                            <p className="text-gray-500">Новых учеников</p>
+                                            <p className="font-semibold text-green-700">{previewData.summary.students_new}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500">Существующих</p>
+                                            <p className="font-semibold text-blue-700">{previewData.summary.students_existing}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500">Новых родителей</p>
+                                            <p className="font-semibold text-amber-700">{previewData.summary.parents_new}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500">Родителей есть</p>
+                                            <p className="font-semibold text-gray-700">{previewData.summary.parents_existing}</p>
+                                        </div>
+                                    </div>
+                                    {previewData.summary.errors_count > 0 && (
+                                        <p className="text-amber-600">Ошибок в файле: {previewData.summary.errors_count}</p>
+                                    )}
+                                    {previewData.rows.length > 0 && (
+                                        <p className="text-gray-500">
+                                            Строк к импорту: {previewData.summary.rows_count}
+                                            {previewData.rows.length < previewData.summary.rows_count &&
+                                                ` (показаны первые ${previewData.rows.length})`}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : null}
+                        </div>
+                    )}
 
                     {/* Default Password */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Пароль по умолчанию (опционально)
+                            Пароль по умолчанию (для всех созданных учеников и новых родителей)
                         </label>
                         <input
                             type="text"
                             value={defaultPassword}
                             onChange={(e) => setDefaultPassword(e.target.value)}
                             disabled={loading}
-                            placeholder="Если не указан, будет сгенерирован автоматически"
+                            placeholder="qwerty123"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                         />
                     </div>
@@ -298,6 +397,27 @@ export default function ImportStudentsExcelModal({
                                         <p className="text-lg font-mono font-bold text-green-700">
                                             {result.default_password}
                                         </p>
+                                    </div>
+                                )}
+
+                                {(result.created_parents?.length ?? 0) > 0 && (
+                                    <div className="bg-amber-50 border border-amber-300 rounded p-3 mt-3 space-y-3">
+                                        <p className="text-xs text-amber-800 font-medium">
+                                            Созданы родители (username не существовал):
+                                        </p>
+                                        {result.created_parents!.map((p, idx) => (
+                                            <div key={idx} className="bg-white/60 rounded p-2">
+                                                <p className="font-mono font-semibold text-amber-900">{p.username}</p>
+                                                <p className="text-xs text-amber-700 mt-0.5">Пароль: <span className="font-mono font-bold">{p.password}</span></p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {result.created_parent_username && result.created_parent_password && !result.created_parents?.length && (
+                                    <div className="bg-amber-50 border border-amber-300 rounded p-3 mt-3">
+                                        <p className="text-xs text-amber-800 mb-1">Создан родитель:</p>
+                                        <p className="font-mono font-semibold text-amber-900">{result.created_parent_username}</p>
+                                        <p className="text-xs text-amber-700 mt-1">Пароль: <span className="font-mono font-bold">{result.created_parent_password}</span></p>
                                     </div>
                                 )}
 

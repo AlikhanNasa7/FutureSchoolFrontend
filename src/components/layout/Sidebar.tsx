@@ -79,7 +79,7 @@ const navigation = [
         key: 'courses',
         href: '/admin/courses',
         icon: BookOpen,
-        roles: ['superadmin'],
+        roles: ['superadmin', 'schooladmin'],
     },
     {
         key: 'schools',

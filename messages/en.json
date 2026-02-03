@@ -176,7 +176,17 @@
         "saved": "Profile saved",
         "saveError": "Failed to save profile",
         "phonePlaceholder": "Phone number",
-        "averageGrade": "Average grade"
+        "averageGrade": "Average grade",
+        "changePassword": "Change password",
+        "currentPassword": "Current password",
+        "newPassword": "New password",
+        "confirmPassword": "Confirm new password",
+        "passwordRequired": "Enter current and new password",
+        "passwordsMismatch": "Passwords do not match",
+        "passwordChanged": "Password successfully changed",
+        "passwordChangeError": "Failed to change password",
+        "savingPassword": "Saving...",
+        "changePasswordButton": "Change password"
     },
     "dashboard": {
         "welcome": "Welcome",
@@ -246,6 +256,39 @@
         "resource": "resource",
         "assignment": "assignment",
         "testItem": "test"
+    },
+    "parent": {
+        "dashboardTitle": "Parent dashboard",
+        "dashboardSubtitle": "Select a child to view their progress and assignments",
+        "selectChild": "Select a child",
+        "noChildrenTitle": "No linked children",
+        "noChildrenText": "Contact the administrator to link children to your account.",
+        "overview": "Overview",
+        "overviewSubtitle": "Overall progress and attendance",
+        "subjects": "Subjects",
+        "subjectsSubtitle": "Materials and topics",
+        "assignments": "Assignments",
+        "assignmentsSubtitle": "Assignments list",
+        "tests": "Tests",
+        "testsSubtitle": "Test results",
+        "attendance": "Attendance",
+        "attendanceSubtitle": "Lesson attendance details",
+        "averageBySubjects": "Average grade by subjects",
+        "attendanceShort": "Attendance",
+        "childOverviewTitle": "Child overview",
+        "childAttendanceTitle": "Child attendance",
+        "childGradesTitle": "Child grades",
+        "noGrades": "No grade data yet.",
+        "noAttendance": "No attendance data yet.",
+        "noDataForFilter": "No data for the selected filter"
+    },
+    "parentFilters": {
+        "all": "All",
+        "pending": "In progress",
+        "overdue": "Overdue",
+        "submitted": "Submitted",
+        "attempted": "Attempted",
+        "notAttempted": "Not attempted"
     },
     "courseSectionModal": {
         "title": "Add Item to Course Section",

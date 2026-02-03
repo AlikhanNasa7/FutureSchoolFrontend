@@ -23,9 +23,9 @@ export default function CoursesPage() {
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
     const [isBulkCreateModalOpen, setIsBulkCreateModalOpen] = useState(false);
 
-    // Check if user is SuperAdmin
+    // Check access: only superadmin and schooladmin
     useEffect(() => {
-        if (user && user.role !== 'superadmin') {
+        if (user && !['superadmin', 'schooladmin'].includes(user.role)) {
             router.push('/');
         }
     }, [user, router]);
@@ -88,7 +88,7 @@ export default function CoursesPage() {
         return matchesSearch && matchesGrade;
     });
 
-    if (user?.role !== 'superadmin') {
+    if (user && !['superadmin', 'schooladmin'].includes(user.role)) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
@@ -96,7 +96,7 @@ export default function CoursesPage() {
                         Доступ запрещен
                     </h2>
                     <p className="text-gray-600">
-                        Только супер-администратор может просматривать эту страницу.
+                        Только администраторы школы и супер-администратор могут просматривать эту страницу.
                     </p>
                 </div>
             </div>

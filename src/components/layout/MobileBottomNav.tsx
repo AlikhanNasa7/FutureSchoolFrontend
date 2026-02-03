@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Box, BookOpen, FileText, User } from 'lucide-react';
+import { Home, Box, FileText, User, Bell } from 'lucide-react';
 import { useUserState } from '@/contexts/UserContext';
 import { useLocale } from '@/contexts/LocaleContext';
 
@@ -11,7 +11,7 @@ const mobileNavigation = [
         key: 'home',
         href: '/dashboard',
         icon: Home,
-        roles: ['teacher', 'student', 'superadmin', 'schooladmin'],
+        roles: ['teacher', 'student', 'superadmin', 'schooladmin', 'parent'],
     },
     {
         key: 'subjects',
@@ -30,6 +30,12 @@ const mobileNavigation = [
         href: '/diary',
         icon: FileText,
         roles: ['teacher', 'student'],
+    },
+    {
+        key: 'notifications',
+        href: '/notifications',
+        icon: Bell,
+        roles: ['teacher', 'student', 'superadmin', 'schooladmin', 'parent'],
     },
 ];
 
@@ -65,11 +71,15 @@ export default function MobileBottomNav() {
 
                 {/* Navigation Items */}
                 {filteredNavigation.map(item => {
-                    const isActive = pathname === item.href;
+                    let targetHref = item.href;
+                    if (item.key === 'home' && user?.role === 'parent') {
+                        targetHref = '/parent/dashboard';
+                    }
+                    const isActive = pathname === targetHref;
                     return (
                         <Link
                             key={item.key}
-                            href={item.href}
+                            href={targetHref}
                             className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <item.icon

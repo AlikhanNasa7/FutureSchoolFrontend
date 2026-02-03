@@ -176,7 +176,17 @@
         "saved": "Профиль сақталды",
         "saveError": "Профильді сақтау мүмкін болмады",
         "phonePlaceholder": "Телефон нөмірі",
-        "averageGrade": "Орташа баға"
+        "averageGrade": "Орташа баға",
+        "changePassword": "Парольді өзгерту",
+        "currentPassword": "Қазіргі пароль",
+        "newPassword": "Жаңа пароль",
+        "confirmPassword": "Парольді растау",
+        "passwordRequired": "Қазіргі және жаңа парольді енгізіңіз",
+        "passwordsMismatch": "Парольдер сәйкес келмеген",
+        "passwordChanged": "Пароль сәтті өзгертілді",
+        "passwordChangeError": "Парольді өзгерту сәтсіз аяқталды",
+        "savingPassword": "Парольді сақталуда...",
+        "changePasswordButton": "Парольді өзгерту"
     },
     "dashboard": {
         "welcome": "Қош келдіңіз",
@@ -246,6 +256,39 @@
         "resource": "ресурс",
         "assignment": "тапсырма",
         "testItem": "тест"
+    },
+    "parent": {
+        "dashboardTitle": "Ата-ана кабинеті",
+        "dashboardSubtitle": "Балаңыздың үлгерімі мен тапсырмаларын көру үшін баланы таңдаңыз",
+        "selectChild": "Баланы таңдаңыз",
+        "noChildrenTitle": "Байланыстырылған балалар жоқ",
+        "noChildrenText": "Аккаунтқа балаларды байланыстыру үшін әкімшіге жүгініңіз.",
+        "overview": "Шолу",
+        "overviewSubtitle": "Жалпы прогресс пен қатысу",
+        "subjects": "Пәндер",
+        "subjectsSubtitle": "Материалдар мен тақырыптар",
+        "assignments": "Тапсырмалар",
+        "assignmentsSubtitle": "Тапсырмалар тізімі",
+        "tests": "Тесттер",
+        "testsSubtitle": "Тест нәтижелері",
+        "attendance": "Қатысу",
+        "attendanceSubtitle": "Сабаққа қатысу деректері",
+        "averageBySubjects": "Пәндер бойынша орта баға",
+        "attendanceShort": "Қатысу",
+        "childOverviewTitle": "Балаға шолу",
+        "childAttendanceTitle": "Бала қатысуы",
+        "childGradesTitle": "Бала бағалары",
+        "noGrades": "Бағалар туралы деректер әлі жоқ.",
+        "noAttendance": "Қатысу туралы деректер әлі жоқ.",
+        "noDataForFilter": "Таңдалған сүзгі бойынша деректер жоқ"
+    },
+    "parentFilters": {
+        "all": "Барлығы",
+        "pending": "Үдерісте",
+        "overdue": "Мерзімі өткен",
+        "submitted": "Тапсырылған",
+        "attempted": "Өткен",
+        "notAttempted": "Өтпеген"
     },
     "courseSectionModal": {
         "title": "Курс бөліміне элемент қосу",

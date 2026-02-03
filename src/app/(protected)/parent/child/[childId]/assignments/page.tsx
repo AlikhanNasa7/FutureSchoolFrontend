@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, FileText, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, FileText, Calendar, CheckCircle, Clock, Filter } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 
 interface Assignment {
@@ -20,54 +20,61 @@ interface Assignment {
 export default function ParentChildAssignmentsPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const childId = params.childId as string;
+    const subjectGroupId = searchParams.get('subject_group');
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [childName, setChildName] = useState<string>('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'overdue' | 'submitted'>('all');
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!childId) return;
             try {
                 setLoading(true);
-                // Get child info
                 const childResponse = await axiosInstance.get(`/users/${childId}/`);
                 setChildName(`${childResponse.data.first_name} ${childResponse.data.last_name}`);
 
-                // Get assignments for the child's classrooms
-                // Get subject groups for the child
-                const subjectGroupsResponse = await axiosInstance.get('/subject-groups/', {
-                    params: { student: childId }
-                });
-                const subjectGroups = subjectGroupsResponse.data.results || subjectGroupsResponse.data;
-                
-                // Get assignments for all subject groups
+                let subjectGroups: { id: number }[];
+                if (subjectGroupId) {
+                    const res = await axiosInstance.get('/subject-groups/', {
+                        params: { student: childId },
+                    });
+                    const list = res.data.results || res.data;
+                    subjectGroups = list.filter((sg: { id: number }) => sg.id === parseInt(subjectGroupId, 10));
+                } else {
+                    const res = await axiosInstance.get('/subject-groups/', {
+                        params: { student: childId },
+                    });
+                    subjectGroups = res.data.results || res.data;
+                }
+
                 const allAssignments: any[] = [];
                 for (const sg of subjectGroups) {
                     try {
                         const assignmentsResponse = await axiosInstance.get('/assignments/', {
-                            params: { subject_group: sg.id }
+                            params: { subject_group: sg.id },
                         });
-                        const assignments = assignmentsResponse.data.results || assignmentsResponse.data;
-                        allAssignments.push(...assignments);
+                        const list = assignmentsResponse.data.results || assignmentsResponse.data;
+                        allAssignments.push(...list);
                     } catch (error) {
                         console.error(`Failed to fetch assignments for subject group ${sg.id}:`, error);
                     }
                 }
-                
-                // Get submissions to check status
+
                 const submissionsResponse = await axiosInstance.get('/submissions/', {
-                    params: { student: childId }
+                    params: { student: childId },
                 });
                 const submissions = submissionsResponse.data.results || submissionsResponse.data;
                 const submissionsMap = new Map(submissions.map((s: any) => [s.assignment, s]));
-                
-                // Merge assignment data with submission data
-                const assignmentsWithStatus = allAssignments.map(assignment => ({
+
+                const assignmentsWithStatus = allAssignments.map((assignment) => ({
                     ...assignment,
                     is_submitted: submissionsMap.has(assignment.id),
                     grade_value: submissionsMap.get(assignment.id)?.grade_value,
                 }));
-                
+
                 setAssignments(assignmentsWithStatus);
             } catch (error) {
                 console.error('Failed to fetch assignments:', error);
@@ -76,10 +83,8 @@ export default function ParentChildAssignmentsPage() {
             }
         };
 
-        if (childId) {
-            fetchData();
-        }
-    }, [childId]);
+        fetchData();
+    }, [childId, subjectGroupId]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -94,6 +99,20 @@ export default function ParentChildAssignmentsPage() {
     const isOverdue = (dueAt: string) => {
         return new Date(dueAt) < new Date();
     };
+
+    const filteredAssignments = assignments.filter((a) => {
+        if (statusFilter === 'submitted') {
+            return a.is_submitted;
+        }
+        const overdue = isOverdue(a.due_at);
+        if (statusFilter === 'overdue') {
+            return !a.is_submitted && overdue;
+        }
+        if (statusFilter === 'pending') {
+            return !a.is_submitted && !overdue;
+        }
+        return true;
+    });
 
     if (loading) {
         return (
@@ -116,20 +135,38 @@ export default function ParentChildAssignmentsPage() {
             <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                     Задания {childName}
+                    {subjectGroupId ? ' (по предмету)' : ''}
                 </h1>
-                <p className="text-gray-600">
-                    Просмотр заданий и их статуса
-                </p>
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <p className="text-gray-600">
+                        {subjectGroupId
+                            ? 'Задания только по выбранному предмету'
+                            : 'Просмотр заданий и их статуса'}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm">
+                        <Filter className="w-4 h-4 text-gray-500" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value as any)}
+                            className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                        >
+                            <option value="all">Все</option>
+                            <option value="pending">В процессе</option>
+                            <option value="overdue">Просрочено</option>
+                            <option value="submitted">Сдано</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            {assignments.length === 0 ? (
+            {filteredAssignments.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-md p-8 text-center">
                     <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Нет доступных заданий</p>
+                    <p className="text-gray-600">Нет заданий по выбранному фильтру</p>
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {assignments.map((assignment) => (
+                    {filteredAssignments.map((assignment) => (
                         <div
                             key={assignment.id}
                             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
